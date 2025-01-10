@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Filter, X, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { filters } from "../filterData";
@@ -26,18 +26,46 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onFilterChange,
   initialFilters,
 }) => {
-  const pathname = usePathname();
+  const pathname = usePathname() || "";
   const [isOpen, setIsOpen] = useState(false);
   const [openFilter, setOpenFilter] = useState<string | null>(null);
   const [selectedFilters, setSelectedFilters] = useState<FilterState>(
     initialFilters || defaultFilters
   );
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
+  // Modified hasActiveFilters to exclude URL-based product type selections
   const hasActiveFilters =
     selectedFilters.stockLevel !== "all" ||
     selectedFilters.sizes.length > 0 ||
     selectedFilters.colors.length > 0 ||
-    selectedFilters.types.length > 0;
+    // Only consider types if they're explicitly selected through the filter UI
+    (selectedFilters.types.length > 0 &&
+      !isTypeFromURL(selectedFilters.types[0]));
+
+  // Helper function to check if the type is from URL
+  function isTypeFromURL(type: string): boolean {
+    if (!pathname) return false;
+    const pathParts = pathname.split("/");
+    const lastPart = pathParts[pathParts.length - 1];
+    return lastPart === type;
+  }
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target as Node)
+      ) {
+        setOpenFilter(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleFilterClick = (filterName: string) => {
     setOpenFilter(openFilter === filterName ? null : filterName);
@@ -66,8 +94,16 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   };
 
   const handleClearAllFilters = () => {
-    setSelectedFilters(defaultFilters);
-    onFilterChange?.(defaultFilters);
+    // Keep the current URL-based type if it exists
+    const currentUrlType = pathname.split("/").pop();
+    const newFilters = {
+      ...defaultFilters,
+      types:
+        currentUrlType && isTypeFromURL(currentUrlType) ? [currentUrlType] : [],
+    };
+
+    setSelectedFilters(newFilters);
+    onFilterChange?.(newFilters);
     setOpenFilter(null);
   };
 
@@ -84,6 +120,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
     <>
       {/* Desktop Sidebar */}
       <div
+        ref={sidebarRef}
         className={cn(
           "hidden lg:block w-64 bg-background p-4 space-y-4 border border-border rounded-lg",
           className
@@ -132,7 +169,10 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
             className="lg:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
             onClick={toggleSidebar}
           />
-          <div className="lg:hidden fixed right-0 top-0 h-full w-80 bg-background border-l border-border z-50 overflow-y-auto">
+          <div
+            ref={sidebarRef}
+            className="lg:hidden fixed right-0 top-0 h-full w-80 bg-background border-l border-border z-50 overflow-y-auto"
+          >
             <div className="p-4">
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
                 <h2 className="text-xl font-semibold text-foreground">
