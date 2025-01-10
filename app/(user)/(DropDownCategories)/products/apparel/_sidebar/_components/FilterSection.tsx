@@ -8,14 +8,16 @@ import { ProductTypeFilter } from "../ProductTypeFilter";
 import ColorFilter from "../ColorFilter";
 import SizeFilter from "../SizeFilter";
 
-export const FilterSection: React.FC<FilterSectionProps> = ({
+export const FilterSection: React.FC<
+  FilterSectionProps & { isProductTypeFilter?: boolean }
+> = ({
   filter,
   isOpen,
   onToggle,
   selectedValues,
   onFilterChange,
+  isProductTypeFilter,
 }) => {
-  // Handle different types of selected values
   const actualSelectedValue =
     filter.type === "stockLevel"
       ? (selectedValues as string)
@@ -42,7 +44,6 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         />
       </button>
 
-      {/* Always render ProductTypeFilter but conditionally hide it */}
       {filter.type === "types" && (
         <div className={!isOpen ? "hidden" : "mt-2 space-y-2"}>
           <ProductTypeFilter
@@ -54,7 +55,6 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         </div>
       )}
 
-      {/* Other filter sections */}
       {isOpen && filter.type !== "types" && (
         <div className="mt-2 space-y-2">
           {filter.type === "stockLevel" ? (

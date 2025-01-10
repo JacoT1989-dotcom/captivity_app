@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import FilterSidebar from "./_sidebar/_components/FilterSidebar";
 import ProductGridWrapper from "./ProductGridWrapper";
 import { useCategoryStore } from "./_store/apparel-store";
 import { usePathname } from "next/navigation";
 import { FilterState } from "./_store/types";
+import { FilterSidebar } from "./_sidebar/_components/FilterSidebar";
 
 interface LayoutProps {
   children: React.ReactNode;
