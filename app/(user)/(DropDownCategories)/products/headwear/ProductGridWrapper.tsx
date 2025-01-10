@@ -50,8 +50,7 @@ export default function ProductGridWrapper() {
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const shouldShowVariations =
-    filters.colors.length > 0 || filters.sizes.length > 0;
+  const hasColorSelected = filters.colors.length > 0;
 
   // Only handle path changes after initial load
   useEffect(() => {
@@ -237,7 +236,7 @@ export default function ProductGridWrapper() {
 
   const startIndex = (currentPage - 1) * itemsPerPage;
 
-  if (shouldShowVariations) {
+  if (hasColorSelected) {
     const variations = filteredProducts.flatMap(product => {
       return product.variations.filter(variation => {
         const matchesColor =

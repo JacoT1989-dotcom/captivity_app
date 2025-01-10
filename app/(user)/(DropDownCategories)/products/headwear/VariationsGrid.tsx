@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X } from "lucide-react";
-
+import { useCategoryStore } from "./_store/headwear-store";
 interface ProductLookup {
   [key: string]: {
     id: string;
@@ -31,18 +31,19 @@ interface ColorVariation {
 
 interface ProductVariations {
   [productId: string]: {
-    mainVariation: Variation;
-    colorVariations: ColorVariation[];
+    variations: ColorVariation[];
   };
 }
 
-interface VariationsGridProps {
+const VariationsGrid = ({
+  variations,
+  products,
+}: {
   variations: Variation[];
   products: ProductLookup;
-}
-
-const VariationsGrid = ({ variations, products }: VariationsGridProps) => {
+}) => {
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const { filters } = useCategoryStore();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-ZA", {
@@ -51,22 +52,29 @@ const VariationsGrid = ({ variations, products }: VariationsGridProps) => {
     }).format(price);
   };
 
+  // Get all available colors from current variations
+  const availableColors = new Set(variations.map(v => v.color));
+
   // Group variations by product and color
   const groupedVariations = variations.reduce<ProductVariations>(
     (acc, variation) => {
+      // Skip variations with colors that aren't in the currently filtered set
+      if (!availableColors.has(variation.color)) {
+        return acc;
+      }
+
       if (!acc[variation.productId]) {
         acc[variation.productId] = {
-          mainVariation: variation,
-          colorVariations: [],
+          variations: [],
         };
       }
 
-      const existingColor = acc[variation.productId].colorVariations.find(
+      const existingColor = acc[variation.productId].variations.find(
         cv => cv.color === variation.color
       );
 
       if (!existingColor) {
-        acc[variation.productId].colorVariations.push({
+        acc[variation.productId].variations.push({
           color: variation.color,
           variations: [variation],
         });
@@ -79,37 +87,41 @@ const VariationsGrid = ({ variations, products }: VariationsGridProps) => {
     {}
   );
 
-  const colorMap: { [key: string]: string } = {
-    Black: "#000000",
-    White: "#FFFFFF",
-    Navy: "#000080",
-    Grey: "#808080",
-    Red: "#FF0000",
-    Green: "#008000",
-    Blue: "#0000FF",
-    Yellow: "#FFFF00",
-    Purple: "#800080",
-    Orange: "#FFA500",
-    "Army Brown": "#8B4513",
-    "Army Green": "#4B5320",
-    "Black/Grey": "#333333",
-    "Black/Orange": "#FF4500",
-    Bottle: "#006B3C",
-    "Bottle/Khaki": "#4A5D23",
-    "Burgundy/White": "#800020",
-    "Burnt Orange": "#CC5500",
-    "Camo Black": "#1A1A1A",
-    "Camo Blue": "#1B4B7D",
+  // Get display variation based on selected color or first available
+  const getDisplayVariation = (
+    productVariations: ColorVariation[]
+  ): Variation | null => {
+    if (filters.colors.length > 0) {
+      // Find variation matching selected color
+      const colorVariation = productVariations.find(cv =>
+        filters.colors.includes(cv.color)
+      );
+      if (colorVariation) {
+        return colorVariation.variations[0];
+      }
+      return null;
+    }
+    return productVariations[0]?.variations[0] || null;
   };
 
   return (
     <>
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {Object.entries(groupedVariations).map(
-          ([productId, { mainVariation, colorVariations }]) => {
+          ([productId, { variations: colorVariations }]) => {
             const product = products[productId];
-            const initialColors = colorVariations.slice(0, 3);
+            const displayVariation = getDisplayVariation(colorVariations);
+
+            // If a color is selected and this product doesn't have a matching variation, don't show it
+            if (filters.colors.length > 0 && !displayVariation) {
+              return null;
+            }
+
+            // Show color options (up to 3)
+            const availableColors = colorVariations.slice(0, 3);
             const remainingCount = colorVariations.length - 3;
+
+            if (!displayVariation) return null;
 
             return (
               <div
@@ -118,10 +130,10 @@ const VariationsGrid = ({ variations, products }: VariationsGridProps) => {
               >
                 <Link href={`/products/${productId}`}>
                   <div className="aspect-square relative overflow-hidden rounded-t-lg">
-                    {mainVariation.variationImageURL ? (
+                    {displayVariation.variationImageURL ? (
                       <Image
-                        src={mainVariation.variationImageURL}
-                        alt={mainVariation.name}
+                        src={displayVariation.variationImageURL}
+                        alt={displayVariation.name}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                         sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -131,10 +143,10 @@ const VariationsGrid = ({ variations, products }: VariationsGridProps) => {
                       <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
                         <div className="text-center">
                           <span className="block text-lg font-medium text-muted-foreground">
-                            {product?.productName || mainVariation.name}
+                            {product?.productName || displayVariation.name}
                           </span>
                           <span className="block text-sm text-muted-foreground/70 mt-1">
-                            {mainVariation.color} - {mainVariation.size}
+                            {displayVariation.color} - {displayVariation.size}
                           </span>
                         </div>
                       </div>
@@ -142,19 +154,19 @@ const VariationsGrid = ({ variations, products }: VariationsGridProps) => {
 
                     <div className="absolute top-2 left-2">
                       <span className="px-2 py-1 text-xs font-medium bg-secondary text-secondary-foreground rounded-full">
-                        {mainVariation.size}
+                        {displayVariation.size}
                       </span>
                     </div>
 
                     <div className="absolute top-2 right-2">
                       <span
                         className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          mainVariation.quantity > 0
+                          displayVariation.quantity > 0
                             ? "bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-100"
                             : "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-100"
                         }`}
                       >
-                        {mainVariation.quantity > 0
+                        {displayVariation.quantity > 0
                           ? "In Stock"
                           : "Out of Stock"}
                       </span>
@@ -163,43 +175,42 @@ const VariationsGrid = ({ variations, products }: VariationsGridProps) => {
 
                   <div className="p-4">
                     <h3 className="text-lg font-semibold text-foreground line-clamp-1">
-                      {product?.productName || mainVariation.name}
+                      {product?.productName || displayVariation.name}
                     </h3>
 
-                    <div className="mt-4 flex items-center gap-4">
-                      {initialColors.map(({ color }) => (
-                        <div key={color} className="relative group">
-                          <button
-                            className={`relative w-5 h-5 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1`}
-                          >
+                    {!filters.colors.length && colorVariations.length > 0 && (
+                      <div className="mt-4 flex items-center gap-4">
+                        {availableColors.map(({ color, variations }) => (
+                          <div key={color} className="relative group">
                             <div
-                              className={`absolute inset-0 rounded-full ${
-                                color === "White"
+                              className={`relative w-5 h-5 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 ${
+                                color.toLowerCase() === "white"
                                   ? "border border-gray-200"
                                   : ""
                               }`}
                               style={{
-                                backgroundColor: colorMap[color] || "#000000",
+                                backgroundColor:
+                                  variations[0].color.toLowerCase(),
                               }}
                             />
+                            <span className="absolute pointer-events-none bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              {color}
+                            </span>
+                          </div>
+                        ))}
+                        {remainingCount > 0 && (
+                          <button
+                            onClick={e => {
+                              e.preventDefault();
+                              setSelectedProduct(productId);
+                            }}
+                            className="px-3 py-1 text-xs font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                          >
+                            +{remainingCount} more
                           </button>
-                          <span className="absolute pointer-events-none bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            {color}
-                          </span>
-                        </div>
-                      ))}
-                      {remainingCount > 0 && (
-                        <button
-                          onClick={e => {
-                            e.preventDefault();
-                            setSelectedProduct(productId);
-                          }}
-                          className="px-3 py-1 text-xs font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                        >
-                          +{remainingCount} more
-                        </button>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    )}
 
                     {product && (
                       <p className="mt-3 text-lg font-bold text-foreground">
@@ -228,22 +239,20 @@ const VariationsGrid = ({ variations, products }: VariationsGridProps) => {
               <X className="w-4 h-4" />
             </button>
           </div>
-          {selectedProduct && (
+          {selectedProduct && groupedVariations[selectedProduct] && (
             <div className="overflow-y-auto h-[calc(500px-70px)] p-6">
               <div className="grid grid-cols-2 gap-x-12 gap-y-6">
-                {groupedVariations[selectedProduct].colorVariations.map(
+                {groupedVariations[selectedProduct].variations.map(
                   ({ color, variations }) => (
                     <div key={color} className="flex items-center gap-3">
-                      <div className="relative w-5 h-5 rounded-full">
-                        <div
-                          className={`absolute inset-0 rounded-full ${
-                            color === "White" ? "border border-gray-200" : ""
-                          }`}
-                          style={{
-                            backgroundColor: colorMap[color] || "#000000",
-                          }}
-                        />
-                      </div>
+                      <div
+                        className={`relative w-5 h-5 rounded-full ${
+                          color.toLowerCase() === "white"
+                            ? "border border-gray-200"
+                            : ""
+                        }`}
+                        style={{ backgroundColor: color.toLowerCase() }}
+                      />
                       <span className="text-sm text-muted-foreground">
                         {color}
                       </span>

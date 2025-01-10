@@ -88,6 +88,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         newFilters.types = [value];
       } else {
         const arrayKey = filterType as "sizes" | "colors";
+        // Toggle value in array
         if (prev[arrayKey].includes(value)) {
           newFilters[arrayKey] = prev[arrayKey].filter(v => v !== value);
         } else {

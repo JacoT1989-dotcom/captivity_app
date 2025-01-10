@@ -25,6 +25,7 @@ function applyProductFilters(
 
   let categoryFilteredProducts = products;
 
+  // First apply category/pathname filtering
   if (categoryType === "headwear") {
     categoryFilteredProducts = products.filter(product => {
       if (!product.category || product.category.length === 0) {
@@ -53,37 +54,12 @@ function applyProductFilters(
     });
   }
 
-  // Then apply other filters to the category-filtered products
+  // Then apply the rest of the filters
   const filteredProducts = categoryFilteredProducts
     .filter(product => {
-      // Get relevant variations based on color filter first
-      const relevantVariations = product.variations.filter(variation => {
-        if (filters.colors.length > 0) {
-          return filters.colors.includes(variation.color);
-        }
-        return true;
-      });
-
-      // Then check if these variations match other filters
-      const hasMatchingVariation = relevantVariations.some(variation => {
-        const matchesSize =
-          filters.sizes.length === 0 || filters.sizes.includes(variation.size);
-
-        const matchesStock =
-          filters.stockLevel === "all" ||
-          (filters.stockLevel === "in"
-            ? variation.quantity > 0
-            : variation.quantity <= 0);
-
-        return matchesSize && matchesStock;
-      });
-
-      return hasMatchingVariation;
-    })
-    .map(product => ({
-      ...product,
-      variations: product.variations.filter(variation => {
-        // Apply color filter first
+      // First check if product has any variations matching all filters
+      const hasMatchingVariation = product.variations.some(variation => {
+        // Check color filter
         if (
           filters.colors.length > 0 &&
           !filters.colors.includes(variation.color)
@@ -91,7 +67,7 @@ function applyProductFilters(
           return false;
         }
 
-        // Apply size filter
+        // Check size filter
         if (
           filters.sizes.length > 0 &&
           !filters.sizes.includes(variation.size)
@@ -99,7 +75,40 @@ function applyProductFilters(
           return false;
         }
 
-        // Apply stock level filter to the filtered variations
+        // Check stock level
+        if (filters.stockLevel !== "all") {
+          if (filters.stockLevel === "in" && variation.quantity <= 0)
+            return false;
+          if (filters.stockLevel === "out" && variation.quantity > 0)
+            return false;
+        }
+
+        return true;
+      });
+
+      return hasMatchingVariation;
+    })
+    .map(product => ({
+      ...product,
+      // Only keep variations that match all filters
+      variations: product.variations.filter(variation => {
+        // Check color filter
+        if (
+          filters.colors.length > 0 &&
+          !filters.colors.includes(variation.color)
+        ) {
+          return false;
+        }
+
+        // Check size filter
+        if (
+          filters.sizes.length > 0 &&
+          !filters.sizes.includes(variation.size)
+        ) {
+          return false;
+        }
+
+        // Check stock level
         if (filters.stockLevel !== "all") {
           if (filters.stockLevel === "in" && variation.quantity <= 0)
             return false;

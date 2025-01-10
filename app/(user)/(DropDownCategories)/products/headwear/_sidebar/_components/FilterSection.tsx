@@ -41,7 +41,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
       </button>
 
       {isOpen && (
-        <div className="mt-2 space-y-2">
+        <div className="mt-2">
           {filter.type === "stockLevel" ? (
             <StockLevelFilter
               options={filter.options}
@@ -72,3 +72,5 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
     </div>
   );
 };
+
+export default FilterSection;
