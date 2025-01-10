@@ -8,70 +8,74 @@ export const normalizeString = (str: string): string => {
   return str.toLowerCase().replace(/[-_\s]/g, "");
 };
 
-const isHeadwearProduct = (product: Product): boolean => {
-  return product.category.some(cat => {
-    const normalizedCat = normalizeString(cat);
-    return (
-      normalizedCat.includes("hat") ||
-      normalizedCat.includes("cap") ||
-      normalizedCat.includes("beanie") ||
-      normalizedCat.includes("headwear")
-    );
-  });
-};
-
 function applyProductFilters(
   products: Product[],
-  filters: FilterState
+  filters: FilterState,
+  pathname?: string
 ): Product[] {
   console.log("🔍 Applying filters to products:", {
     initialCount: products.length,
     filters,
+    pathname,
   });
 
-  const filteredProducts = products
-    .filter(product => {
-      // Only process headwear products
-      if (!isHeadwearProduct(product)) return false;
+  const pathParts = (pathname || "").split("/").filter(Boolean);
+  const categoryType = pathParts[1] || ""; // e.g., "headwear"
+  const specificCategory = pathParts[2] || ""; // e.g., "beanies"
 
-      // Check if any variations match the stock level filter
-      if (filters.stockLevel !== "all") {
-        const hasMatchingStock = product.variations.some(variation => {
-          if (filters.stockLevel === "in" && variation.quantity > 0)
-            return true;
-          if (filters.stockLevel === "out" && variation.quantity <= 0)
-            return true;
-          return false;
+  let categoryFilteredProducts = products;
+
+  if (categoryType === "headwear") {
+    categoryFilteredProducts = products.filter(product => {
+      if (!product.category || product.category.length === 0) {
+        return false;
+      }
+
+      // For all-in-headwear or no specific category, show all headwear products
+      if (!specificCategory || specificCategory === "all-in-headwear") {
+        return product.category.some(cat => {
+          const normalizedCat = normalizeString(cat);
+          return (
+            normalizedCat.includes("hat") ||
+            normalizedCat.includes("cap") ||
+            normalizedCat.includes("beanie") ||
+            normalizedCat.includes("headwear")
+          );
         });
-        if (!hasMatchingStock) return false;
       }
 
-      // Type filter check
-      if (filters.types.length > 0) {
-        const typeMatch = product.category.some(category =>
-          filters.types.some(type => {
-            const normalizedCat = normalizeString(category);
-            const normalizedType = normalizeString(type);
-            const matches = normalizedCat.includes(normalizedType);
-            console.log("🏷️ Type matching:", {
-              category: normalizedCat,
-              type: normalizedType,
-              matches,
-            });
-            return matches;
-          })
-        );
-        if (!typeMatch) return false;
-      }
+      // For specific categories (e.g., beanies)
+      return product.category.some(cat => {
+        const normalizedCat = normalizeString(cat);
+        const normalizedSpecific = normalizeString(specificCategory);
+        return normalizedCat.includes(normalizedSpecific);
+      });
+    });
+  }
 
-      // Check if product has any variations matching size and color filters
-      const hasMatchingVariation = product.variations.some(variation => {
+  // Then apply other filters to the category-filtered products
+  const filteredProducts = categoryFilteredProducts
+    .filter(product => {
+      // Get relevant variations based on color filter first
+      const relevantVariations = product.variations.filter(variation => {
+        if (filters.colors.length > 0) {
+          return filters.colors.includes(variation.color);
+        }
+        return true;
+      });
+
+      // Then check if these variations match other filters
+      const hasMatchingVariation = relevantVariations.some(variation => {
         const matchesSize =
           filters.sizes.length === 0 || filters.sizes.includes(variation.size);
-        const matchesColor =
-          filters.colors.length === 0 ||
-          filters.colors.includes(variation.color);
-        return matchesSize && matchesColor;
+
+        const matchesStock =
+          filters.stockLevel === "all" ||
+          (filters.stockLevel === "in"
+            ? variation.quantity > 0
+            : variation.quantity <= 0);
+
+        return matchesSize && matchesStock;
       });
 
       return hasMatchingVariation;
@@ -79,6 +83,14 @@ function applyProductFilters(
     .map(product => ({
       ...product,
       variations: product.variations.filter(variation => {
+        // Apply color filter first
+        if (
+          filters.colors.length > 0 &&
+          !filters.colors.includes(variation.color)
+        ) {
+          return false;
+        }
+
         // Apply size filter
         if (
           filters.sizes.length > 0 &&
@@ -87,15 +99,7 @@ function applyProductFilters(
           return false;
         }
 
-        // Apply color filter
-        if (
-          filters.colors.length > 0 &&
-          !filters.colors.includes(variation.color)
-        ) {
-          return false;
-        }
-
-        // Apply stock level filter to individual variations
+        // Apply stock level filter to the filtered variations
         if (filters.stockLevel !== "all") {
           if (filters.stockLevel === "in" && variation.quantity <= 0)
             return false;
@@ -108,7 +112,7 @@ function applyProductFilters(
     }));
 
   console.log("✅ After applying filters:", {
-    finalCount: filteredProducts.length,
+    filteredCount: filteredProducts.length,
     filters,
   });
 
@@ -187,65 +191,19 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
     }
   },
 
-  filterProductsByPath: pathname => {
+  filterProductsByPath: (pathname: string) => {
     const { products, filters } = get();
     console.log("🔍 Starting path filtering:", {
       pathname,
       totalProducts: products.length,
     });
 
-    const pathParts = pathname.split("/").filter(Boolean);
-    const categoryType = pathParts[1] || ""; // e.g., "headwear"
-    const specificCategory = pathParts[2] || ""; // e.g., "all-in-headwear"
-
-    console.log("🛣️ Path analysis:", { categoryType, specificCategory });
-
-    let filteredByPath = products;
-
-    // Filter for headwear products
-    if (categoryType === "headwear") {
-      console.log("👒 Filtering for headwear products");
-      filteredByPath = products.filter(product => {
-        if (!product.category || product.category.length === 0) {
-          return false;
-        }
-
-        // For all-in-headwear or no specific category, show all headwear products
-        if (!specificCategory || specificCategory === "all-in-headwear") {
-          return isHeadwearProduct(product);
-        }
-
-        // For specific categories (e.g., beanies, caps)
-        return product.category.some(cat => {
-          const normalizedCat = normalizeString(cat);
-          const normalizedSpecific = normalizeString(specificCategory);
-          const matches = normalizedCat.includes(normalizedSpecific);
-          console.log("🏷️ Category matching:", {
-            category: normalizedCat,
-            specific: normalizedSpecific,
-            matches,
-          });
-          return matches;
-        });
-      });
-    }
-
-    console.log("🔄 Intermediate results:", {
-      afterPathFilter: filteredByPath.length,
-    });
-
-    // Only apply additional filters if they're not "all" or empty
-    let finalFilters = { ...filters };
-    if (finalFilters.types.includes("all-in-headwear")) {
-      finalFilters = { ...finalFilters, types: [] };
-    }
-
-    const filteredProducts = applyProductFilters(filteredByPath, finalFilters);
+    const filteredProducts = applyProductFilters(products, filters, pathname);
 
     console.log("✅ Final results:", {
       finalCount: filteredProducts.length,
       pathname,
-      filters: finalFilters,
+      filters,
     });
 
     set({
@@ -261,7 +219,12 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
 
     if (currentPath) {
       console.log("🛣️ Using current path:", currentPath);
-      get().filterProductsByPath(currentPath);
+      const filteredProducts = applyProductFilters(
+        products,
+        newFilters,
+        currentPath
+      );
+      set({ filteredProducts });
     } else {
       console.log("⚠️ No current path, applying filters directly");
       const filteredProducts = applyProductFilters(products, newFilters);

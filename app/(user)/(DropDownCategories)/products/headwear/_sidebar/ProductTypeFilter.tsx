@@ -1,6 +1,7 @@
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { FilterOption } from "../_store/types";
+import { useCategoryStore } from "../_store/headwear-store";
 
 interface ProductTypeFilterProps {
   options: FilterOption[];
@@ -15,6 +16,7 @@ export const ProductTypeFilter: React.FC<ProductTypeFilterProps> = ({
 }) => {
   const router = useRouter();
   const pathname = usePathname() || "";
+  const { filterProductsByPath } = useCategoryStore();
 
   const handleTypeChange = async (value: string) => {
     const basePath = "/products/headwear";
@@ -23,8 +25,10 @@ export const ProductTypeFilter: React.FC<ProductTypeFilterProps> = ({
     // First trigger the filter change
     onChange(value);
 
-    // Then update the URL
+    // Then update the URL and filter products
     router.push(newPath, { scroll: false });
+    // Update the filtered products based on the new path
+    filterProductsByPath(newPath);
   };
 
   // Extract the current type from pathname
@@ -51,21 +55,59 @@ export const ProductTypeFilter: React.FC<ProductTypeFilterProps> = ({
   const effectiveSelectedValue =
     getCurrentType() || selectedValue || "all-in-headwear";
 
+  // Calculate the count of products for each type
+  const { products } = useCategoryStore();
+  const getTypeCount = (type: string): number => {
+    return products.filter(product => {
+      if (type === "all-in-headwear") {
+        return product.category.some(cat => {
+          const normalizedCat = cat.toLowerCase().replace(/[-_\s]/g, "");
+          return (
+            normalizedCat.includes("hat") ||
+            normalizedCat.includes("cap") ||
+            normalizedCat.includes("beanie") ||
+            normalizedCat.includes("headwear")
+          );
+        });
+      }
+
+      return product.category.some(cat => {
+        const normalizedCat = cat.toLowerCase().replace(/[-_\s]/g, "");
+        const normalizedType = type.toLowerCase().replace(/[-_\s]/g, "");
+        return normalizedCat.includes(normalizedType);
+      });
+    }).length;
+  };
+
   return (
     <div className="flex flex-col gap-2">
-      {options.map(option => (
-        <label key={option.value} className="inline-flex items-center">
-          <input
-            type="radio"
-            name="productType"
-            value={option.value}
-            checked={effectiveSelectedValue === option.value}
-            onChange={() => handleTypeChange(option.value)}
-            className="relative appearance-none h-4 w-4 rounded-full border border-gray-300 checked:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 checked:bg-white before:content-[''] before:block before:w-2 before:h-2 before:rounded-full before:absolute before:top-1/2 before:left-1/2 before:-translate-x-1/2 before:-translate-y-1/2 checked:before:bg-blue-600"
-          />
-          <span className="ml-2 text-sm text-gray-600">{option.label}</span>
-        </label>
-      ))}
+      {options.map(option => {
+        const count =
+          option.value !== "all-in-headwear"
+            ? getTypeCount(option.value)
+            : null;
+
+        return (
+          <label key={option.value} className="inline-flex items-center">
+            <input
+              type="radio"
+              name="productType"
+              value={option.value}
+              checked={effectiveSelectedValue === option.value}
+              onChange={() => handleTypeChange(option.value)}
+              className="relative appearance-none h-4 w-4 rounded-full border border-gray-300 checked:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 checked:bg-white before:content-[''] before:block before:w-2 before:h-2 before:rounded-full before:absolute before:top-1/2 before:left-1/2 before:-translate-x-1/2 before:-translate-y-1/2 checked:before:bg-blue-600"
+            />
+            <span className="ml-2 text-sm text-gray-600">
+              {option.label}
+              {count !== null && (
+                <span className="ml-1 text-xs text-gray-400">({count})</span>
+              )}
+            </span>
+          </label>
+        );
+      })}
     </div>
   );
 };
+
+export default ProductTypeFilter;
