@@ -1,0 +1,603 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String          @id @default(uuid())
+  username           String          @unique
+  firstName          String
+  lastName           String
+  displayName        String
+  email              String          @unique
+  passwordHash       String
+  vatNumber          String?
+  phoneNumber        String          @default("")
+  streetAddress      String
+  addressLine2       String?
+  suburb             String?
+  townCity           String
+  postcode           String
+  country            String
+  position           String?
+  natureOfBusiness   String
+  currentSupplier    String
+  otherSupplier      String?
+  resellingTo        String?
+  salesRep           String
+  website            String?
+  companyName        String
+  ckNumber           String?
+  avatarUrl          String?
+  backgroundUrl      String?
+  bio                String?
+  agreeTerms         Boolean         @default(false)
+  role               UserRole        @default(USER)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  wpId               String?         @unique
+  resetToken         String?
+  resetTokenExpiry   DateTime?
+  featured           Boolean         @default(false)
+  isVendorActive     Boolean?        @default(false)
+  storeBannerUrl     String?
+  storeBusinessHours String?
+  storeContactEmail  String?
+  storeDescription   String?
+  storeLocation      Json?
+  storeLogoUrl       String?
+  storeName          String?
+  storePhoneNumber   String?
+  storePolicy        String?
+  storeSlug          String?         @unique
+  customDomain       String?         @unique
+  storeSocialMedia   Json?
+  storeTheme         String?         @default("default")
+  vendorApprovedAt   DateTime?
+  vendorCategories   String[]        @default([])
+  vendorRating       Float?
+  cart               Cart?
+  orders             Order[]
+  products           Product[]
+  sessions           Session[]
+  UserSettings       UserSettings?
+  VendorCart         VendorCart?
+  vendorOrders       VendorOrder[]
+  vendorProducts     VendorProduct[]
+  favorites          Favorite[]
+  Help               Help[]
+
+  @@map("users")
+}
+
+model Help {
+  id             String   @id @default(uuid())
+  userId         String?
+  name           String
+  companyName    String
+  email          String
+  assistanceType String
+  suggestions    Json?
+  helpRequests   Json?
+  generalInfo    Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("help_requests")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("favorites")
+}
+
+///////////////////////// Public Models //////////////////////////
+model Product {
+  id             String           @id @default(uuid())
+  userId         String
+  productName    String           @map("product_name")
+  category       String[]
+  description    String
+  sellingPrice   Float            @map("selling_price")
+  isPublished    Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  reviews        Json[]           @default([])
+  dynamicPricing DynamicPricing[]
+  featuredImage  FeaturedImage?
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variations     Variation[]
+  favorites      Favorite[]
+
+  @@map("products")
+}
+
+model DynamicPricing {
+  id        String  @id @default(uuid())
+  from      String
+  to        String
+  type      String
+  amount    String
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("dynamic_pricing")
+}
+
+model Variation {
+  id                String      @id @default(uuid())
+  name              String
+  color             String
+  size              String
+  sku               String
+  sku2              String
+  variationImageURL String      @map("variation_image_URL")
+  quantity          Int
+  productId         String
+  cartItems         CartItem[]
+  orderItems        OrderItem[]
+  product           Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("variations")
+}
+
+model FeaturedImage {
+  id        String  @id @default(uuid())
+  thumbnail String
+  medium    String
+  large     String
+  productId String  @unique
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("featured_images")
+}
+
+/////////////////////////////// Customer Models /////////////////////////////////
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  cartItems CartItem[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("carts")
+}
+
+model CartItem {
+  id          String    @id @default(uuid())
+  cartId      String
+  variationId String
+  quantity    Int
+  cart        Cart      @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variation   Variation @relation(fields: [variationId], references: [id], onDelete: Cascade)
+
+  @@map("cart_items")
+}
+
+model Order {
+  id                  String      @id @default(uuid())
+  userId              String
+  captivityBranch     String
+  methodOfCollection  String
+  salesRep            String?
+  referenceNumber     String?
+  firstName           String
+  lastName            String
+  companyName         String
+  countryRegion       String
+  streetAddress       String
+  apartmentSuite      String?
+  townCity            String
+  province            String
+  postcode            String
+  phone               String
+  email               String
+  orderNotes          String?
+  status              OrderStatus @default(PENDING)
+  totalAmount         Float
+  agreeTerms          Boolean     @default(false)
+  receiveEmailReviews Boolean?    @default(false)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  orderItems          OrderItem[]
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String    @id @default(uuid())
+  orderId     String
+  variationId String
+  quantity    Int
+  price       Float
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variation   Variation @relation(fields: [variationId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+model UserSettings {
+  id               String            @id @default(cuid())
+  userId           String            @unique
+  logoUrl          String?
+  bannerUrl        String?
+  storeName        String?
+  contactEmail     String?
+  phoneNumber      String?
+  businessHours    String?
+  storePolicy      String?
+  socialMedia      Json?
+  location         Json?
+  categories       String[]
+  featured         Boolean           @default(false)
+  generalEmail     String?
+  websiteEmail     String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  storeDescription StoreDescription?
+  BannerImage      BannerImage[]
+  BestSellerImage  BestSellerImage[]
+  CategoryImage    CategoryImage[]
+  OfficeLocation   OfficeLocation[]
+  OpeningHours     OpeningHours[]
+  SocialMediaLink  SocialMediaLink[]
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  HeroSlide        HeroSlide[]
+  Collection       Collection[]
+  CategoryHero     CategoryHero[]
+  NewArrival       NewArrival[]
+  BestSeller       BestSeller[]
+  OnSaleProduct    OnSaleProduct[]
+
+  @@map("user_settings")
+}
+
+////////////////////// Vendor Models connected to Settings ////////////////////
+
+model StoreDescription {
+  id              String       @id @default(cuid())
+  mainDescription String
+  description1    String?
+  description2    String?
+  description3    String?
+  description4    String?
+  userSettingsId  String       @unique
+  userSettings    UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+}
+
+model BannerImage {
+  id             String       @id @default(cuid())
+  url            String
+  userSettingsId String
+  order          Int          @default(0)
+  userSettings   UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+
+  @@map("banner_images")
+}
+
+model BestSellerImage {
+  id             String       @id @default(cuid())
+  url            String
+  productName    String
+  userSettingsId String
+  order          Int          @default(0)
+  userSettings   UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+
+  @@map("best_seller_images")
+}
+
+model CategoryImage {
+  id             String       @id @default(cuid())
+  url            String
+  categoryName   String
+  userSettingsId String
+  order          Int          @default(0)
+  userSettings   UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+
+  @@map("category_images")
+}
+
+model OfficeLocation {
+  id             String       @id @default(cuid())
+  city           String
+  telephone      String
+  general        String
+  websiteQueries String
+  logoUrl        String?
+  userSettingsId String
+  userSettings   UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+
+  @@map("office_locations")
+}
+
+model OpeningHours {
+  id               String       @id @default(cuid())
+  city             String
+  mondayToThursday String
+  friday           String
+  saturdaySunday   String       @default("Closed")
+  publicHolidays   String       @default("Closed")
+  userSettingsId   String
+  userSettings     UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+
+  @@map("opening_hours")
+}
+
+model SocialMediaLink {
+  id             String       @id @default(cuid())
+  platform       String
+  url            String
+  userSettingsId String
+  userSettings   UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+
+  @@map("social_media_links")
+}
+
+////////////////////// Editor Models connected to Settings ////////////////////
+
+model HeroSlide {
+  id              String       @id @default(cuid())
+  image           String
+  backgroundColor String
+  title           String
+  subtitle        String
+  cta             String
+  userSettingsId  String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  userSettings    UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+
+  @@map("hero_slides")
+}
+
+model Collection {
+  id              String       @id @default(cuid())
+  type            String // "tshirt", "apparel", "kids", "headwear"
+  title           String
+  image           String
+  href            String
+  position        Int          @default(0)
+  backgroundColor String?
+  userSettingsId  String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  userSettings    UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+
+  @@map("collections")
+}
+
+model CategoryHero {
+  id              String       @id @default(cuid())
+  imageUrl        String
+  categoryName    String
+  title           String
+  backgroundColor String       @default("#000000")
+  opacity         Float        @default(0.4)
+  userSettingsId  String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  userSettings    UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+
+  @@map("category_heroes")
+}
+
+model NewArrival {
+  id             String       @id @default(cuid())
+  title          String
+  price          Float
+  image          String
+  rating         Float        @default(0)
+  position       Int          @default(0)
+  userSettingsId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  userSettings   UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+
+  @@map("new_arrivals")
+}
+
+model BestSeller {
+  id             String       @id @default(cuid())
+  title          String
+  price          Float
+  image          String
+  rating         Float        @default(0)
+  position       Int          @default(0)
+  userSettingsId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  userSettings   UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+
+  @@map("best_sellers")
+}
+
+model OnSaleProduct {
+  id             String       @id @default(cuid())
+  title          String
+  price          Float
+  salePrice      Float
+  image          String
+  rating         Float        @default(0)
+  position       Int          @default(0)
+  userSettingsId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  userSettings   UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+
+  @@map("on_sale_products")
+}
+
+/////////////////////////// Vendor Website //////////////////////////////
+
+model VendorProduct {
+  id             String                 @id @default(uuid())
+  userId         String
+  productName    String                 @map("product_name")
+  category       String[]
+  description    String
+  sellingPrice   Float                  @map("selling_price")
+  isPublished    Boolean                @default(true)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  dynamicPricing VendorDynamicPricing[]
+  featuredImage  VendorFeaturedImage?
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variations     VendorVariation[]
+
+  @@map("vendor_products")
+}
+
+model VendorDynamicPricing {
+  id              String        @id @default(uuid())
+  from            String
+  to              String
+  type            String
+  amount          String
+  vendorProductId String
+  vendorProduct   VendorProduct @relation(fields: [vendorProductId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_dynamic_pricing")
+}
+
+model VendorVariation {
+  id                String            @id @default(uuid())
+  name              String
+  color             String
+  size              String
+  sku               String
+  sku2              String
+  variationImageURL String            @map("variation_image_URL")
+  quantity          Int
+  vendorProductId   String
+  VendorCartItem    VendorCartItem[]
+  vendorOrderItems  VendorOrderItem[]
+  vendorProduct     VendorProduct     @relation(fields: [vendorProductId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_variations")
+}
+
+model VendorFeaturedImage {
+  id              String        @id @default(uuid())
+  thumbnail       String
+  medium          String
+  large           String
+  vendorProductId String        @unique
+  vendorProduct   VendorProduct @relation(fields: [vendorProductId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_featured_images")
+}
+
+model VendorOrder {
+  id                  String            @id @default(uuid())
+  userId              String
+  methodOfCollection  String
+  salesRep            String?
+  referenceNumber     String?
+  firstName           String
+  lastName            String
+  companyName         String
+  countryRegion       String
+  streetAddress       String
+  apartmentSuite      String?
+  townCity            String
+  province            String
+  postcode            String
+  phone               String
+  email               String
+  orderNotes          String?
+  status              OrderStatus       @default(PENDING)
+  totalAmount         Float
+  agreeTerms          Boolean           @default(false)
+  receiveEmailReviews Boolean?          @default(false)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  vendorBranch        String
+  vendorOrderItems    VendorOrderItem[]
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_orders")
+}
+
+model VendorOrderItem {
+  id                String          @id @default(uuid())
+  vendorOrderId     String
+  vendorVariationId String
+  quantity          Int
+  price             Float
+  vendorOrder       VendorOrder     @relation(fields: [vendorOrderId], references: [id], onDelete: Cascade)
+  vendorVariation   VendorVariation @relation(fields: [vendorVariationId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_order_items")
+}
+
+model VendorCart {
+  id              String           @id @default(uuid())
+  userId          String           @unique
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  vendorCartItems VendorCartItem[]
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_carts")
+}
+
+model VendorCartItem {
+  id                String          @id @default(uuid())
+  vendorCartId      String
+  vendorVariationId String
+  quantity          Int
+  vendorCart        VendorCart      @relation(fields: [vendorCartId], references: [id], onDelete: Cascade)
+  vendorVariation   VendorVariation @relation(fields: [vendorVariationId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_cart_items")
+}
+
+////////////////////////// Enums ///////////////////////////////
+
+enum UserRole {
+  USER
+  CUSTOMER
+  SUBSCRIBER
+  PROMO
+  DISTRIBUTOR
+  SHOPMANAGER
+  EDITOR
+  ADMIN
+  SUPERADMIN
+  VENDOR
+  VENDORCUSTOMER
+  APPROVEDVENDORCUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}

@@ -1,0 +1,30 @@
+/* info-act.module.css */
+
+/* Container styles */
+.infoActContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center horizontally */
+  padding: 1rem; /* Adjust padding as needed */
+  padding-right:10%;
+  
+}
+
+/* Header styles */
+.infoActTitle {
+  color: red;
+  font-size: x-large;
+  text-align: center;
+  position: relative;
+  display:flex;
+  padding-bottom: 1rem; /* Space between the text and the line */
+  padding-top:0%; /* Space above the header */
+  padding-left:1rem;
+}
+
+/* Section styles */
+.infoActSection {
+  text-align:left; /* Align text to the left */
+  max-width: 1000px; /* Constrain the width of the sections */
+}
+

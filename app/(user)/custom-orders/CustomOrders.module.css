@@ -1,0 +1,81 @@
+/* CustomOrders.module.css */
+
+/* Container styles */
+.customOrdersContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center horizontally */
+  padding: 1rem; /* Adjust padding as needed */
+}
+
+/* Header styles */
+.customOrdersTitle {
+  color: red;
+  font-size: xx-large;
+  text-align: center;
+  position: relative;
+  display: inline-block;
+  padding-bottom: 3rem; /* Space between the text and the line */
+  padding-top: 2rem; /* Space above the header */
+}
+
+/* Line under the header */
+.customOrdersTitle::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 400%; /* Length of the line */
+  height: 2px; /* Thickness of the line */
+  background-color: rgb(0, 0, 0); /* Color of the line */
+  transform: translateX(-50%); /* Center the line */
+}
+
+/* General line styles */
+.customLine {
+  position: relative;
+  width: 80%; /* Adjust width for a reasonable line length */
+  max-width: 600px; /* Ensure consistency in max width */
+  height: 2px; /* Thickness of the line */
+  background-color: black; /* Color of the line */
+  margin-bottom: 1rem; /* Space between the line and the section */
+}
+
+/* Ensure centering of lines */
+.customLineWrapper {
+  width: 100%; /* Ensure the wrapper is full width */
+  display: flex;
+  justify-content: center; /* Center the line inside the wrapper */
+}
+
+/* Additional spacing for specific lines */
+.customLineProcedures,
+.customLineHeadwearApparel {
+  margin-top: 2rem; /* Space before the line */
+}
+
+/* Section styles */
+.customOrdersSection {
+  text-align: left; /* Align text to the left */
+  max-width: 800px; /* Constrain the width of the sections */
+}
+
+/* Paragraph styles */
+.customOrdersSection p {
+  color: black; /* Set paragraph text color to black */
+}
+
+/* Custom orders content */
+.customOrdersContent {
+  display: flex; /* Display content in a row */
+  justify-content: space-between; /* Space between the two sections */
+}
+
+.customOrdersSectionContent {
+  width: 48%; /* Adjust width to fit side by side */
+}
+
+/* Scoped anchor tag styles */
+.customOrdersSection a {
+  color: red;
+}
