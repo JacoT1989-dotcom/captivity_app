@@ -8,6 +8,18 @@ export const normalizeString = (str: string): string => {
   return str.toLowerCase().replace(/[-_\s]/g, "");
 };
 
+const isHeadwearProduct = (product: Product): boolean => {
+  return product.category.some(cat => {
+    const normalizedCat = normalizeString(cat);
+    return (
+      normalizedCat.includes("hat") ||
+      normalizedCat.includes("cap") ||
+      normalizedCat.includes("beanie") ||
+      normalizedCat.includes("headwear")
+    );
+  });
+};
+
 function applyProductFilters(
   products: Product[],
   filters: FilterState
@@ -19,6 +31,9 @@ function applyProductFilters(
 
   const filteredProducts = products
     .filter(product => {
+      // Only process headwear products
+      if (!isHeadwearProduct(product)) return false;
+
       // Check if any variations match the stock level filter
       if (filters.stockLevel !== "all") {
         const hasMatchingStock = product.variations.some(variation => {
@@ -46,26 +61,36 @@ function applyProductFilters(
             return matches;
           })
         );
-        return typeMatch;
+        if (!typeMatch) return false;
       }
 
-      return true;
+      // Check if product has any variations matching size and color filters
+      const hasMatchingVariation = product.variations.some(variation => {
+        const matchesSize =
+          filters.sizes.length === 0 || filters.sizes.includes(variation.size);
+        const matchesColor =
+          filters.colors.length === 0 ||
+          filters.colors.includes(variation.color);
+        return matchesSize && matchesColor;
+      });
+
+      return hasMatchingVariation;
     })
     .map(product => ({
       ...product,
       variations: product.variations.filter(variation => {
-        // Apply color filter
-        if (
-          filters.colors.length > 0 &&
-          !filters.colors.includes(variation.color)
-        ) {
-          return false;
-        }
-
         // Apply size filter
         if (
           filters.sizes.length > 0 &&
           !filters.sizes.includes(variation.size)
+        ) {
+          return false;
+        }
+
+        // Apply color filter
+        if (
+          filters.colors.length > 0 &&
+          !filters.colors.includes(variation.color)
         ) {
           return false;
         }
@@ -177,7 +202,7 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
 
     let filteredByPath = products;
 
-    // Handle all headwear products including all-in-headwear
+    // Filter for headwear products
     if (categoryType === "headwear") {
       console.log("👒 Filtering for headwear products");
       filteredByPath = products.filter(product => {
@@ -187,20 +212,7 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
 
         // For all-in-headwear or no specific category, show all headwear products
         if (!specificCategory || specificCategory === "all-in-headwear") {
-          const isHeadwear = product.category.some(cat => {
-            const normalizedCat = normalizeString(cat);
-            return (
-              normalizedCat.includes("hat") ||
-              normalizedCat.includes("cap") ||
-              normalizedCat.includes("beanie") ||
-              normalizedCat.includes("headwear")
-            );
-          });
-          console.log("🎩 Headwear check:", {
-            categories: product.category,
-            isHeadwear,
-          });
-          return isHeadwear;
+          return isHeadwearProduct(product);
         }
 
         // For specific categories (e.g., beanies, caps)

@@ -1,12 +1,14 @@
-"use client";
+// _sidebar/_components/FilterSidebar.tsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Filter, X, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { filters } from "../filterData";
+import { filters as baseFilters } from "../filterData";
 import { FilterSection } from "./FilterSection";
 import { usePathname } from "next/navigation";
 import { FilterState, FilterType } from "../../_store/types";
+import { useDynamicFilterStore } from "../../_store/dynamic-filter-store";
+import { useCategoryStore } from "../../_store/headwear-store";
 
 interface FilterSidebarProps {
   className?: string;
@@ -32,6 +34,39 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const [selectedFilters, setSelectedFilters] = useState<FilterState>(
     initialFilters || defaultFilters
   );
+
+  const { products } = useCategoryStore();
+  const {
+    availableSizes,
+    availableColors,
+    setAvailableSizes,
+    setAvailableColors,
+  } = useDynamicFilterStore();
+
+  // Update available sizes and colors when products change
+  useEffect(() => {
+    if (products.length > 0) {
+      setAvailableSizes(products);
+      setAvailableColors(products);
+    }
+  }, [products, setAvailableSizes, setAvailableColors]);
+
+  // Modify filters to use dynamic options
+  const filters = baseFilters.map(filter => {
+    if (filter.type === "sizes") {
+      return {
+        ...filter,
+        options: availableSizes,
+      };
+    }
+    if (filter.type === "colors") {
+      return {
+        ...filter,
+        options: availableColors,
+      };
+    }
+    return filter;
+  });
 
   const hasActiveFilters =
     selectedFilters.stockLevel !== "all" ||
