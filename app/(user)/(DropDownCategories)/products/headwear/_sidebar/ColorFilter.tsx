@@ -112,9 +112,9 @@ export const ColorFilter: React.FC<ColorFilterProps> = ({
         {remainingCount > 0 && (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="text-xs font-medium text-blue-500 hover:text-blue-700 transition-colors"
+            className="px-3 py-1 text-xs font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            +{remainingCount}
+            +{remainingCount} more
           </button>
         )}
       </div>
