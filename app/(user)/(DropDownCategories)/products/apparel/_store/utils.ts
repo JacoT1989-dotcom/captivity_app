@@ -89,11 +89,16 @@ export const applyProductFilters = (
   // Apply stock level filter
   if (filters.stockLevel !== "all") {
     filteredProducts = filteredProducts.filter(product => {
-      return product.variations.some(variation => {
-        if (filters.stockLevel === "in") return variation.quantity > 0;
-        if (filters.stockLevel === "out") return variation.quantity <= 0;
-        return false;
-      });
+      const hasStock = product.variations.some(
+        variation => variation.quantity > 0
+      );
+      if (filters.stockLevel === "in") {
+        return hasStock;
+      }
+      if (filters.stockLevel === "out") {
+        return !hasStock;
+      }
+      return false;
     });
   }
 
@@ -111,10 +116,19 @@ export const applyProductFilters = (
     });
   }
 
-  // Apply variation filters
+  // Apply color and size filters to variations
   return filteredProducts.map(product => ({
     ...product,
     variations: product.variations.filter(variation => {
+      // For in-stock filter, only keep variations with stock
+      if (filters.stockLevel === "in") {
+        if (variation.quantity <= 0) return false;
+      }
+      // For out-of-stock filter, only keep variations without stock
+      if (filters.stockLevel === "out") {
+        if (variation.quantity > 0) return false;
+      }
+
       const matchesColor =
         filters.colors.length === 0 || filters.colors.includes(variation.color);
       const matchesSize =
