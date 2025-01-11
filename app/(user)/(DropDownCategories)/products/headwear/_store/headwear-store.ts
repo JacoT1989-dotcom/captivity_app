@@ -191,6 +191,8 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
     }
   },
 
+  //
+
   setProducts: products => {
     console.log("📝 Setting products:", products.length);
     set({ products });
