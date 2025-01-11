@@ -1,46 +1,88 @@
 // _store/dynamic-filter-store.ts
-
 import { create } from "zustand";
 import { Product, FilterOption } from "./types";
 
 interface DynamicFilterState {
   availableSizes: FilterOption[];
   availableColors: FilterOption[];
-  setAvailableSizes: (products: Product[]) => void;
-  setAvailableColors: (products: Product[]) => void;
+  setAvailableSizes: (products: Product[], pathname?: string) => void;
+  setAvailableColors: (products: Product[], pathname?: string) => void;
 }
 
 const normalizeString = (str: string): string => {
   return str.toLowerCase().replace(/[-_\s]/g, "");
 };
 
-const isHeadwearProduct = (product: Product): boolean => {
-  return product.category.some(cat => {
-    const normalizedCat = normalizeString(cat);
-    return (
-      normalizedCat.includes("hat") ||
-      normalizedCat.includes("cap") ||
-      normalizedCat.includes("beanie") ||
-      normalizedCat.includes("headwear")
-    );
+const filterProductsByPathname = (
+  products: Product[],
+  pathname?: string
+): Product[] => {
+  if (!pathname) return products;
+
+  const pathParts = pathname.split("/").filter(Boolean);
+  const categoryType = pathParts[1] || ""; // e.g., "headwear"
+  const specificCategory = pathParts[2] || ""; // e.g., "beanies"
+
+  if (categoryType === "headwear") {
+    return products.filter(product => {
+      if (!product.category || product.category.length === 0) {
+        return false;
+      }
+
+      // For all-in-headwear or no specific category, show all headwear products
+      if (!specificCategory || specificCategory === "all-in-headwear") {
+        return product.category.some(cat => {
+          const normalizedCat = normalizeString(cat);
+          return (
+            normalizedCat.includes("hat") ||
+            normalizedCat.includes("cap") ||
+            normalizedCat.includes("beanie") ||
+            normalizedCat.includes("headwear")
+          );
+        });
+      }
+
+      // For specific categories (e.g., beanies)
+      return product.category.some(cat => {
+        const normalizedCat = normalizeString(cat);
+        const normalizedSpecific = normalizeString(specificCategory);
+        return normalizedCat.includes(normalizedSpecific);
+      });
+    });
+  }
+
+  return products;
+};
+
+const countVariationsByColor = (products: Product[]): Map<string, number> => {
+  const colorCounts = new Map<string, number>();
+
+  products.forEach(product => {
+    product.variations.forEach(variation => {
+      if (variation.color) {
+        const currentCount = colorCounts.get(variation.color) || 0;
+        colorCounts.set(variation.color, currentCount + 1);
+      }
+    });
   });
+
+  return colorCounts;
 };
 
 export const useDynamicFilterStore = create<DynamicFilterState>(set => ({
   availableSizes: [],
   availableColors: [],
 
-  setAvailableSizes: (products: Product[]) => {
+  setAvailableSizes: (products: Product[], pathname?: string) => {
+    const filteredProducts = filterProductsByPathname(products, pathname);
     const sizesSet = new Set<string>();
 
-    products.forEach(product => {
-      if (isHeadwearProduct(product)) {
-        product.variations.forEach(variation => {
-          if (variation.size) {
-            sizesSet.add(variation.size);
-          }
-        });
-      }
+    filteredProducts.forEach(product => {
+      product.variations.forEach(variation => {
+        if (variation.size) {
+          sizesSet.add(variation.size);
+        }
+      });
     });
 
     const availableSizes: FilterOption[] = Array.from(sizesSet)
@@ -53,24 +95,15 @@ export const useDynamicFilterStore = create<DynamicFilterState>(set => ({
     set({ availableSizes });
   },
 
-  setAvailableColors: (products: Product[]) => {
-    const colorsSet = new Set<string>();
+  setAvailableColors: (products: Product[], pathname?: string) => {
+    const filteredProducts = filterProductsByPathname(products, pathname);
+    const colorCounts = countVariationsByColor(filteredProducts);
 
-    products.forEach(product => {
-      if (isHeadwearProduct(product)) {
-        product.variations.forEach(variation => {
-          if (variation.color) {
-            colorsSet.add(variation.color);
-          }
-        });
-      }
-    });
-
-    const availableColors: FilterOption[] = Array.from(colorsSet)
-      .sort()
-      .map(color => ({
+    const availableColors: FilterOption[] = Array.from(colorCounts.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([color, count]) => ({
         value: color,
-        label: color,
+        label: `${color} (${count})`,
       }));
 
     set({ availableColors });

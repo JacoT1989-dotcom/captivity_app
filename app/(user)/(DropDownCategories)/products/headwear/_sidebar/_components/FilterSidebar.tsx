@@ -1,5 +1,4 @@
 // _sidebar/_components/FilterSidebar.tsx
-
 import React, { useState, useEffect } from "react";
 import { Filter, X, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -43,13 +42,13 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
     setAvailableColors,
   } = useDynamicFilterStore();
 
-  // Update available sizes and colors when products change
+  // Update available sizes and colors when products or pathname changes
   useEffect(() => {
     if (products.length > 0) {
-      setAvailableSizes(products);
-      setAvailableColors(products);
+      setAvailableSizes(products, pathname || undefined);
+      setAvailableColors(products, pathname || undefined);
     }
-  }, [products, setAvailableSizes, setAvailableColors]);
+  }, [products, pathname, setAvailableSizes, setAvailableColors]);
 
   // Modify filters to use dynamic options
   const filters = baseFilters.map(filter => {
