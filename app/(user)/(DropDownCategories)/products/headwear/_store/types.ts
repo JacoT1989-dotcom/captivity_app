@@ -69,14 +69,14 @@ export interface FilterState {
   sizes: string[];
   colors: string[];
   types: string[];
-  pricingType?: string; // Optional filter for dynamic pricing
+  pricingType?: string;
 }
 
 export interface FilterSectionProps {
   filter: Filter;
   isOpen: boolean;
   onToggle: () => void;
-  selectedValues: string | string[];
+  selectedValues: FilterState[keyof FilterState]; // This allows for both string and string[]
   onFilterChange: (value: string) => void;
 }
 
