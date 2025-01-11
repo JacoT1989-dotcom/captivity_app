@@ -13,26 +13,18 @@ function applyProductFilters(
   filters: FilterState,
   pathname?: string
 ): Product[] {
-  console.log("🔍 Applying filters to products:", {
-    initialCount: products.length,
-    filters,
-    pathname,
-  });
-
   const pathParts = (pathname || "").split("/").filter(Boolean);
-  const categoryType = pathParts[1] || ""; // e.g., "headwear"
-  const specificCategory = pathParts[2] || ""; // e.g., "beanies"
+  const categoryType = pathParts[1] || "";
+  const specificCategory = pathParts[2] || "";
 
   let categoryFilteredProducts = products;
 
-  // First apply category/pathname filtering
   if (categoryType === "headwear") {
     categoryFilteredProducts = products.filter(product => {
       if (!product.category || product.category.length === 0) {
         return false;
       }
 
-      // For all-in-headwear or no specific category, show all headwear products
       if (!specificCategory || specificCategory === "all-in-headwear") {
         return product.category.some(cat => {
           const normalizedCat = normalizeString(cat);
@@ -45,7 +37,6 @@ function applyProductFilters(
         });
       }
 
-      // For specific categories (e.g., beanies)
       return product.category.some(cat => {
         const normalizedCat = normalizeString(cat);
         const normalizedSpecific = normalizeString(specificCategory);
@@ -54,12 +45,9 @@ function applyProductFilters(
     });
   }
 
-  // Then apply the rest of the filters
   const filteredProducts = categoryFilteredProducts
     .filter(product => {
-      // First check if product has any variations matching all filters
       const hasMatchingVariation = product.variations.some(variation => {
-        // Check color filter
         if (
           filters.colors.length > 0 &&
           !filters.colors.includes(variation.color)
@@ -67,7 +55,6 @@ function applyProductFilters(
           return false;
         }
 
-        // Check size filter
         if (
           filters.sizes.length > 0 &&
           !filters.sizes.includes(variation.size)
@@ -75,7 +62,6 @@ function applyProductFilters(
           return false;
         }
 
-        // Check stock level
         if (filters.stockLevel !== "all") {
           if (filters.stockLevel === "in" && variation.quantity <= 0)
             return false;
@@ -90,9 +76,7 @@ function applyProductFilters(
     })
     .map(product => ({
       ...product,
-      // Only keep variations that match all filters
       variations: product.variations.filter(variation => {
-        // Check color filter
         if (
           filters.colors.length > 0 &&
           !filters.colors.includes(variation.color)
@@ -100,7 +84,6 @@ function applyProductFilters(
           return false;
         }
 
-        // Check size filter
         if (
           filters.sizes.length > 0 &&
           !filters.sizes.includes(variation.size)
@@ -108,7 +91,6 @@ function applyProductFilters(
           return false;
         }
 
-        // Check stock level
         if (filters.stockLevel !== "all") {
           if (filters.stockLevel === "in" && variation.quantity <= 0)
             return false;
@@ -119,11 +101,6 @@ function applyProductFilters(
         return true;
       }),
     }));
-
-  console.log("✅ After applying filters:", {
-    filteredCount: filteredProducts.length,
-    filters,
-  });
 
   return filteredProducts;
 }
@@ -152,7 +129,6 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
     const { isLoading } = get();
     if (isLoading) return;
 
-    console.log("🔄 Fetching categories...");
     set({ isLoading: true, error: null });
 
     try {
@@ -161,11 +137,6 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
       if (!result.success || !result.data) {
         throw new Error(result.error || "Failed to fetch categories");
       }
-
-      console.log("📦 Categories fetched:", {
-        categoriesCount: result.data.categories.length,
-        productsCount: result.data.allProducts.length,
-      });
 
       set({
         categories: result.data.categories,
@@ -177,11 +148,9 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
 
       const { currentPath } = get();
       if (currentPath) {
-        console.log("🛣️ Filtering by existing path:", currentPath);
         get().filterProductsByPath(currentPath);
       }
     } catch (error) {
-      console.error("❌ Error fetching categories:", error);
       set({
         isLoading: false,
         error:
@@ -191,10 +160,7 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
     }
   },
 
-  //
-
   setProducts: products => {
-    console.log("📝 Setting products:", products.length);
     set({ products });
     const { currentPath } = get();
     if (currentPath) {
@@ -204,18 +170,7 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
 
   filterProductsByPath: (pathname: string) => {
     const { products, filters } = get();
-    console.log("🔍 Starting path filtering:", {
-      pathname,
-      totalProducts: products.length,
-    });
-
     const filteredProducts = applyProductFilters(products, filters, pathname);
-
-    console.log("✅ Final results:", {
-      finalCount: filteredProducts.length,
-      pathname,
-      filters,
-    });
 
     set({
       filteredProducts,
@@ -224,12 +179,10 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
   },
 
   applyFilters: (newFilters: FilterState) => {
-    console.log("🔄 Applying new filters:", newFilters);
     const { products, currentPath } = get();
     set({ filters: newFilters });
 
     if (currentPath) {
-      console.log("🛣️ Using current path:", currentPath);
       const filteredProducts = applyProductFilters(
         products,
         newFilters,
@@ -237,14 +190,12 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
       );
       set({ filteredProducts });
     } else {
-      console.log("⚠️ No current path, applying filters directly");
       const filteredProducts = applyProductFilters(products, newFilters);
       set({ filteredProducts });
     }
   },
 
   sortProducts: (sortOrder: string) => {
-    console.log("📊 Sorting products:", sortOrder);
     const { filteredProducts } = get();
     let sortedProducts = [...filteredProducts];
 
@@ -273,16 +224,10 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
         break;
     }
 
-    console.log("✅ Sorting complete:", {
-      count: sortedProducts.length,
-      sortOrder,
-    });
-
     set({ filteredProducts: sortedProducts, sortOrder });
   },
 
   reset: () => {
-    console.log("🔄 Resetting store to initial state");
     set(initialState);
   },
 }));
