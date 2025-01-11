@@ -1,12 +1,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import ColorDialog from "./ColorDialog";
 
 interface ProductLookup {
   [key: string]: {
@@ -202,35 +197,12 @@ const VariationsGrid = ({
         )}
       </div>
 
-      <Dialog
-        open={!!selectedProduct}
-        onOpenChange={() => setSelectedProduct(null)}
-      >
-        <DialogContent className="sm:max-w-2xl">
-          {selectedProduct && groupedVariations[selectedProduct] && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Available Colors</DialogTitle>
-              </DialogHeader>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {groupedVariations[selectedProduct].variations.map(
-                  ({ color, variations }) => (
-                    <div key={color} className="flex items-center gap-3">
-                      <div
-                        className="w-6 h-6 rounded-full border border-border"
-                        style={{ backgroundColor: color.toLowerCase() }}
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        {color}
-                      </span>
-                    </div>
-                  )
-                )}
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ColorDialog
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        selectedProduct={selectedProduct}
+        groupedVariations={groupedVariations}
+      />
     </>
   );
 };
