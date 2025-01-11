@@ -311,25 +311,27 @@ export function HeroSlider() {
             className="order-2 md:order-1 flex flex-col justify-center px-4 md:px-16 lg:px-24 transition-colors duration-500 py-8 md:py-0"
             style={{ backgroundColor: currentSlideData.backgroundColor }}
           >
-            <div className="space-y-4 md:space-y-6 max-w-xl text-center">
+            <div className="space-y-4 md:space-y-6 max-w-xl mx-auto text-left">
               <h1 className="text-3xl md:text-5xl font-bold text-gray-900">
                 {currentSlideData.title}
               </h1>
               <p className="text-base md:text-xl text-gray-700">
                 {currentSlideData.subtitle}
               </p>
-              <Link
-                href={
-                  COLLECTION_LINKS.find(link =>
-                    link.href.includes(
-                      currentSlideData.cta.split("/").pop() || ""
-                    )
-                  )?.href || currentSlideData.cta
-                }
-                className="inline-block rounded-md bg-gray-900 px-6 md:px-8 py-2 md:py-3 text-sm font-medium text-white transition hover:bg-gray-700"
-              >
-                {getDisplayNameFromPath(currentSlideData.cta)}
-              </Link>
+              <div className="text-left">
+                <Link
+                  href={
+                    COLLECTION_LINKS.find(link =>
+                      link.href.includes(
+                        currentSlideData.cta.split("/").pop() || ""
+                      )
+                    )?.href || currentSlideData.cta
+                  }
+                  className="inline-block rounded-md bg-gray-900 px-6 md:px-8 py-2 md:py-3 text-sm font-medium text-white transition hover:bg-gray-700"
+                >
+                  {getDisplayNameFromPath(currentSlideData.cta)}
+                </Link>
+              </div>
             </div>
           </div>
 
