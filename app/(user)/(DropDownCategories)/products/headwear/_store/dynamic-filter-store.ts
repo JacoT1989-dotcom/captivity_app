@@ -1,4 +1,3 @@
-// _store/dynamic-filter-store.ts
 import { create } from "zustand";
 import { Product, FilterOption } from "./types";
 
@@ -6,7 +5,11 @@ interface DynamicFilterState {
   availableSizes: FilterOption[];
   availableColors: FilterOption[];
   setAvailableSizes: (products: Product[], pathname?: string) => void;
-  setAvailableColors: (products: Product[], pathname?: string) => void;
+  setAvailableColors: (
+    products: Product[],
+    pathname?: string,
+    selectedSizes?: string[]
+  ) => void;
 }
 
 const normalizeString = (str: string): string => {
@@ -20,8 +23,8 @@ const filterProductsByPathname = (
   if (!pathname) return products;
 
   const pathParts = pathname.split("/").filter(Boolean);
-  const categoryType = pathParts[1] || ""; // e.g., "headwear"
-  const specificCategory = pathParts[2] || ""; // e.g., "beanies"
+  const categoryType = pathParts[1] || "";
+  const specificCategory = pathParts[2] || "";
 
   if (categoryType === "headwear") {
     return products.filter(product => {
@@ -29,7 +32,6 @@ const filterProductsByPathname = (
         return false;
       }
 
-      // For all-in-headwear or no specific category, show all headwear products
       if (!specificCategory || specificCategory === "all-in-headwear") {
         return product.category.some(cat => {
           const normalizedCat = normalizeString(cat);
@@ -42,7 +44,6 @@ const filterProductsByPathname = (
         });
       }
 
-      // For specific categories (e.g., beanies)
       return product.category.some(cat => {
         const normalizedCat = normalizeString(cat);
         const normalizedSpecific = normalizeString(specificCategory);
@@ -54,11 +55,21 @@ const filterProductsByPathname = (
   return products;
 };
 
-const countVariationsByColor = (products: Product[]): Map<string, number> => {
+const countVariationsByColor = (
+  products: Product[],
+  selectedSizes?: string[]
+): Map<string, number> => {
   const colorCounts = new Map<string, number>();
 
   products.forEach(product => {
     product.variations.forEach(variation => {
+      // Only count colors for variations that match the selected sizes
+      if (selectedSizes && selectedSizes.length > 0) {
+        if (!selectedSizes.includes(variation.size)) {
+          return;
+        }
+      }
+
       if (variation.color) {
         const currentCount = colorCounts.get(variation.color) || 0;
         colorCounts.set(variation.color, currentCount + 1);
@@ -95,9 +106,13 @@ export const useDynamicFilterStore = create<DynamicFilterState>(set => ({
     set({ availableSizes });
   },
 
-  setAvailableColors: (products: Product[], pathname?: string) => {
+  setAvailableColors: (
+    products: Product[],
+    pathname?: string,
+    selectedSizes?: string[]
+  ) => {
     const filteredProducts = filterProductsByPathname(products, pathname);
-    const colorCounts = countVariationsByColor(filteredProducts);
+    const colorCounts = countVariationsByColor(filteredProducts, selectedSizes);
 
     const availableColors: FilterOption[] = Array.from(colorCounts.entries())
       .sort(([a], [b]) => a.localeCompare(b))

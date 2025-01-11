@@ -90,19 +90,24 @@ const VariationsGrid = ({
     {}
   );
 
-  const getDisplayVariation = (
+  // Modified to handle multiple color selections
+  const getDisplayVariations = (
     productVariations: ColorVariation[]
-  ): Variation | null => {
+  ): Variation[] => {
     if (filters.colors.length > 0) {
-      const colorVariation = productVariations.find(cv =>
-        filters.colors.includes(cv.color)
-      );
-      if (colorVariation) {
-        return colorVariation.variations[0];
-      }
-      return null;
+      const variations: Variation[] = [];
+      filters.colors.forEach(color => {
+        const colorVariation = productVariations.find(cv => cv.color === color);
+        if (colorVariation && colorVariation.variations[0]) {
+          variations.push(colorVariation.variations[0]);
+        }
+      });
+      return variations;
     }
-    return productVariations[0]?.variations[0] || null;
+    // If no colors selected, return first variation of first color
+    return productVariations[0]?.variations
+      ? [productVariations[0].variations[0]]
+      : [];
   };
 
   return (
@@ -111,20 +116,20 @@ const VariationsGrid = ({
         {Object.entries(groupedVariations).map(
           ([productId, { variations: colorVariations }]) => {
             const product = products[productId];
-            const displayVariation = getDisplayVariation(colorVariations);
+            const displayVariations = getDisplayVariations(colorVariations);
 
-            if (filters.colors.length > 0 && !displayVariation) {
+            if (filters.colors.length > 0 && displayVariations.length === 0) {
               return null;
             }
 
+            // Show first two colors for preview
             const availableColors = colorVariations.slice(0, 2);
             const remainingCount = colorVariations.length - 2;
 
-            if (!displayVariation) return null;
-
-            return (
+            // Create a grid item for each selected color variation
+            return displayVariations.map(displayVariation => (
               <div
-                key={productId}
+                key={`${productId}-${displayVariation.color}`}
                 className="group relative bg-background rounded-lg hover:shadow-lg transition-shadow shadow-lg border border-border"
               >
                 <div className="aspect-square relative overflow-hidden rounded-t-lg">
@@ -213,7 +218,7 @@ const VariationsGrid = ({
                   </Button>
                 </div>
               </div>
-            );
+            ));
           }
         )}
       </div>

@@ -46,9 +46,20 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   useEffect(() => {
     if (products.length > 0) {
       setAvailableSizes(products, pathname || undefined);
-      setAvailableColors(products, pathname || undefined);
+      // Pass selected sizes to filter colors
+      setAvailableColors(
+        products,
+        pathname || undefined,
+        selectedFilters.sizes
+      );
     }
-  }, [products, pathname, setAvailableSizes, setAvailableColors]);
+  }, [
+    products,
+    pathname,
+    selectedFilters.sizes,
+    setAvailableSizes,
+    setAvailableColors,
+  ]);
 
   // Modify filters to use dynamic options
   const filters = baseFilters.map(filter => {
@@ -93,6 +104,19 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         } else {
           newFilters[arrayKey] = [...prev[arrayKey], value];
         }
+      }
+
+      // When size changes, we may need to reset color selection if the selected colors
+      // are no longer available for the selected sizes
+      if (filterType === "sizes") {
+        // Get updated available colors for the new size selection
+        setAvailableColors(products, pathname || undefined, newFilters.sizes);
+
+        // Filter out colors that are no longer available
+        const availableColorValues = availableColors.map(color => color.value);
+        newFilters.colors = newFilters.colors.filter(color =>
+          availableColorValues.includes(color)
+        );
       }
 
       onFilterChange?.(newFilters);
