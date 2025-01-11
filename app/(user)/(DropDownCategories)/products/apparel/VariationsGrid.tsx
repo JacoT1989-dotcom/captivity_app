@@ -1,6 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface ProductLookup {
   [key: string]: {
@@ -10,22 +16,38 @@ interface ProductLookup {
   };
 }
 
-interface VariationsGridProps {
-  variations: Array<{
-    id: string;
-    name: string;
-    color: string;
-    size: string;
-    sku: string;
-    sku2: string;
-    variationImageURL: string;
-    quantity: number;
-    productId: string;
-  }>;
-  products: ProductLookup;
+interface Variation {
+  id: string;
+  name: string;
+  color: string;
+  size: string;
+  sku: string;
+  sku2: string;
+  variationImageURL: string;
+  quantity: number;
+  productId: string;
 }
 
-const VariationsGrid = ({ variations, products }: VariationsGridProps) => {
+interface ColorVariation {
+  color: string;
+  variations: Variation[];
+}
+
+interface ProductVariations {
+  [productId: string]: {
+    variations: ColorVariation[];
+  };
+}
+
+const VariationsGrid = ({
+  variations,
+  products,
+}: {
+  variations: Variation[];
+  products: ProductLookup;
+}) => {
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-ZA", {
       style: "currency",
@@ -33,93 +55,183 @@ const VariationsGrid = ({ variations, products }: VariationsGridProps) => {
     }).format(price);
   };
 
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      {variations.map(variation => {
-        const product = products[variation.productId];
+  const availableColors = new Set(variations.map(v => v.color));
 
-        return (
-          <Link
-            key={variation.id}
-            href={`/products/${variation.productId}`}
-            className="group relative bg-white rounded-lg hover:shadow-lg transition-shadow shadow-lg"
-          >
-            <div className="aspect-square relative overflow-hidden rounded-t-lg">
-              {variation.variationImageURL ? (
-                <Image
-                  src={variation.variationImageURL}
-                  alt={variation.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  priority
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                  <div className="text-center">
-                    <span className="block text-lg font-medium text-gray-600">
-                      {product?.productName || variation.name}
+  const groupedVariations = variations.reduce<ProductVariations>(
+    (acc, variation) => {
+      if (!availableColors.has(variation.color)) {
+        return acc;
+      }
+
+      if (!acc[variation.productId]) {
+        acc[variation.productId] = {
+          variations: [],
+        };
+      }
+
+      const existingColor = acc[variation.productId].variations.find(
+        cv => cv.color === variation.color
+      );
+
+      if (!existingColor) {
+        acc[variation.productId].variations.push({
+          color: variation.color,
+          variations: [variation],
+        });
+      } else {
+        existingColor.variations.push(variation);
+      }
+
+      return acc;
+    },
+    {}
+  );
+
+  return (
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {Object.entries(groupedVariations).map(
+          ([productId, { variations: colorVariations }]) => {
+            const product = products[productId];
+            const displayVariation = colorVariations[0]?.variations[0];
+
+            if (!displayVariation) return null;
+
+            const availableColors = colorVariations.slice(0, 2);
+            const remainingCount = colorVariations.length - 2;
+
+            return (
+              <div
+                key={productId}
+                className="group relative bg-background rounded-lg hover:shadow-lg transition-shadow shadow-lg border border-border"
+              >
+                <div className="aspect-square relative overflow-hidden rounded-t-lg">
+                  {displayVariation.variationImageURL ? (
+                    <Image
+                      src={displayVariation.variationImageURL}
+                      alt={displayVariation.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      priority
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+                      <div className="text-center">
+                        <span className="block text-lg font-medium text-muted-foreground">
+                          {product?.productName || displayVariation.name}
+                        </span>
+                        <span className="block text-sm text-muted-foreground/70 mt-1">
+                          {displayVariation.color} - {displayVariation.size}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="absolute top-2 left-2">
+                    <span className="px-2 py-1 text-xs font-medium bg-secondary text-secondary-foreground rounded-full">
+                      {displayVariation.size}
                     </span>
-                    <span className="block text-sm text-gray-500 mt-1">
-                      {variation.color} - {variation.size}
+                  </div>
+
+                  <div className="absolute top-2 right-2">
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        displayVariation.quantity > 0
+                          ? "bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-100"
+                          : "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-100"
+                      }`}
+                    >
+                      {displayVariation.quantity > 0
+                        ? "In Stock"
+                        : "Out of Stock"}
                     </span>
                   </div>
                 </div>
-              )}
 
-              {/* Size and Color Badge */}
-              <div className="absolute top-2 left-2">
-                <span className="px-2 py-1 text-xs font-medium bg-gray-900 text-white rounded-full">
-                  {variation.size}
-                </span>
-              </div>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-foreground line-clamp-1">
+                    {product?.productName || displayVariation.name}
+                  </h3>
 
-              {/* Stock Badge */}
-              <div className="absolute top-2 right-2">
-                <span
-                  className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    variation.quantity > 0
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
-                  }`}
-                >
-                  {variation.quantity > 0 ? "In Stock" : "Out of Stock"}
-                </span>
-              </div>
-            </div>
+                  {colorVariations.length > 0 && (
+                    <div className="mt-4 flex items-center gap-2">
+                      {availableColors.map(({ color, variations }) => (
+                        <div
+                          key={color}
+                          className="w-6 h-6 rounded-full border border-border"
+                          style={{ backgroundColor: color.toLowerCase() }}
+                          title={color}
+                        />
+                      ))}
+                      {remainingCount > 0 && (
+                        <Button
+                          onClick={() => setSelectedProduct(productId)}
+                          variant="ghost"
+                          className="h-6 px-2 text-xs"
+                        >
+                          +{remainingCount} more
+                        </Button>
+                      )}
+                    </div>
+                  )}
 
-            <div className="p-4">
-              <h3 className="text-lg font-semibold text-gray-800 line-clamp-1">
-                {product?.productName || variation.name}
-              </h3>
+                  {product && (
+                    <p className="mt-3 text-lg font-bold text-foreground">
+                      {formatPrice(product.sellingPrice)}
+                    </p>
+                  )}
 
-              <div className="mt-2 space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded">
-                    {variation.color}
-                  </span>
-                  <span className="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded">
-                    Size: {variation.size}
-                  </span>
+                  <Button
+                    onClick={() => setSelectedProduct(productId)}
+                    className="w-full mt-4"
+                    variant="secondary"
+                  >
+                    View More
+                  </Button>
                 </div>
               </div>
+            );
+          }
+        )}
 
-              {product && (
-                <p className="mt-3 text-lg font-bold text-gray-900">
-                  {formatPrice(product.sellingPrice)}
-                </p>
-              )}
-            </div>
-          </Link>
-        );
-      })}
+        {variations.length === 0 && (
+          <div className="col-span-full text-center py-8 text-muted-foreground">
+            No variations found with selected filters
+          </div>
+        )}
+      </div>
 
-      {variations.length === 0 && (
-        <div className="col-span-full text-center py-8 text-gray-500">
-          No variations found with selected filters
-        </div>
-      )}
-    </div>
+      <Dialog
+        open={!!selectedProduct}
+        onOpenChange={() => setSelectedProduct(null)}
+      >
+        <DialogContent className="sm:max-w-2xl">
+          {selectedProduct && groupedVariations[selectedProduct] && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Available Colors</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {groupedVariations[selectedProduct].variations.map(
+                  ({ color, variations }) => (
+                    <div key={color} className="flex items-center gap-3">
+                      <div
+                        className="w-6 h-6 rounded-full border border-border"
+                        style={{ backgroundColor: color.toLowerCase() }}
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {color}
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
