@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X } from "lucide-react";
@@ -59,6 +59,39 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
+  const [currentVariation, setCurrentVariation] = useState<Variation | null>(
+    null
+  );
+
+  // Reset selections when dialog opens with new product
+  useEffect(() => {
+    if (isOpen && selectedProduct) {
+      setSelectedColor("");
+      setSelectedSize("");
+      setQuantity(1);
+      setCurrentVariation(null);
+    }
+  }, [isOpen, selectedProduct]);
+
+  // Update current variation when color and size are selected
+  useEffect(() => {
+    if (
+      selectedColor &&
+      selectedSize &&
+      selectedProduct &&
+      groupedVariations[selectedProduct]
+    ) {
+      const colorVariation = groupedVariations[selectedProduct].variations.find(
+        v => v.color === selectedColor
+      );
+      const variation = colorVariation?.variations.find(
+        v => v.size === selectedSize
+      );
+      setCurrentVariation(variation || null);
+    } else {
+      setCurrentVariation(null);
+    }
+  }, [selectedColor, selectedSize, selectedProduct, groupedVariations]);
 
   if (!selectedProduct || !groupedVariations[selectedProduct]) {
     return null;
@@ -78,31 +111,23 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
     productData.variations.find(v => v.color === selectedColor)?.variations ||
     [];
 
-  const selectedVariation = selectedColorVariations.find(
-    v => v.size === selectedSize
-  );
-
   const getCurrentImage = () => {
     if (selectedColor) {
-      // Get first variation of selected color
       const colorVariation = productData.variations.find(
         v => v.color === selectedColor
       );
-      // If we have a specific size selected, show that variation
-      if (selectedSize) {
-        const sizeVariation = colorVariation?.variations.find(
+      if (selectedSize && colorVariation) {
+        const sizeVariation = colorVariation.variations.find(
           v => v.size === selectedSize
         );
-        if (sizeVariation) {
+        if (sizeVariation?.variationImageURL) {
           return sizeVariation.variationImageURL;
         }
       }
-      // Otherwise show the first variation of the selected color
-      if (colorVariation?.variations[0]) {
+      if (colorVariation?.variations[0]?.variationImageURL) {
         return colorVariation.variations[0].variationImageURL;
       }
     }
-    // Fallback to first available image
     return productData.variations[0]?.variations[0]?.variationImageURL || "";
   };
 
@@ -128,15 +153,25 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
       : productData.product?.sellingPrice || 0;
   };
 
+  const isAddToBasketEnabled = () => {
+    return (
+      selectedColor &&
+      selectedSize &&
+      currentVariation &&
+      currentVariation.quantity > 0 &&
+      quantity > 0 &&
+      quantity <= currentVariation.quantity
+    );
+  };
+
   const handleAddToBasket = () => {
-    if (!selectedVariation || !productData.product) return;
+    if (!currentVariation || !productData.product) return;
 
     const currentPrice = getCurrentPrice();
 
-    // Add to basket logic here
     console.log({
       productId: selectedProduct,
-      variationId: selectedVariation.id,
+      variationId: currentVariation.id,
       quantity,
       price: currentPrice,
       color: selectedColor,
@@ -231,7 +266,7 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
                       ? selectedColorVariations.some(
                           v => v.size === size && v.quantity > 0
                         )
-                      : true;
+                      : false;
 
                     return (
                       <button
@@ -268,23 +303,34 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
                     value={quantity}
                     onChange={e => {
                       const val = parseInt(e.target.value);
-                      if (!isNaN(val)) {
-                        setQuantity(Math.max(1, val));
+                      if (!isNaN(val) && currentVariation) {
+                        setQuantity(
+                          Math.min(currentVariation.quantity, Math.max(1, val))
+                        );
                       }
                     }}
                     className="w-12 text-center border-x"
                   />
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
+                    onClick={() => {
+                      if (currentVariation) {
+                        setQuantity(
+                          Math.min(currentVariation.quantity, quantity + 1)
+                        );
+                      }
+                    }}
                     className="px-3 py-1 hover:bg-gray-100 transition-colors"
+                    disabled={
+                      !currentVariation || quantity >= currentVariation.quantity
+                    }
                   >
                     +
                   </button>
                 </div>
 
-                {selectedVariation && (
+                {currentVariation && (
                   <div className="text-sm text-yellow-600">
-                    {selectedVariation.quantity} in stock
+                    {currentVariation.quantity} in stock
                   </div>
                 )}
               </div>
@@ -296,7 +342,7 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
               className="w-full py-3 bg-red-600 text-white rounded-md 
                 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed
                 transition-colors"
-              disabled={!selectedColor || !selectedSize}
+              disabled={!isAddToBasketEnabled()}
             >
               ADD TO BASKET
             </button>
