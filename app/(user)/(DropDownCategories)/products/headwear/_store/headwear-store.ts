@@ -8,6 +8,34 @@ export const normalizeString = (str: string): string => {
   return str.toLowerCase().replace(/[-_\s]/g, "");
 };
 
+const getCurrentPricing = (product: Product) => {
+  if (!product.dynamicPricing || product.dynamicPricing.length === 0) {
+    return null;
+  }
+
+  const now = new Date();
+  return (
+    product.dynamicPricing.find(pricing => {
+      const fromDate = new Date(pricing.from);
+      const toDate = new Date(pricing.to);
+      return now >= fromDate && now <= toDate;
+    }) || null
+  );
+};
+
+const getEffectivePrice = (product: Product) => {
+  const currentPricing = getCurrentPricing(product);
+  if (!currentPricing) return product.sellingPrice;
+
+  const amount = parseFloat(currentPricing.amount);
+  if (currentPricing.type === "percentage") {
+    return product.sellingPrice * (1 - amount / 100);
+  } else if (currentPricing.type === "fixed") {
+    return product.sellingPrice - amount;
+  }
+  return product.sellingPrice;
+};
+
 function applyProductFilters(
   products: Product[],
   filters: FilterState,
@@ -47,6 +75,14 @@ function applyProductFilters(
 
   const filteredProducts = categoryFilteredProducts
     .filter(product => {
+      // Filter by pricing type if specified
+      if (filters.pricingType) {
+        const currentPricing = getCurrentPricing(product);
+        if (!currentPricing || currentPricing.type !== filters.pricingType) {
+          return false;
+        }
+      }
+
       const hasMatchingVariation = product.variations.some(variation => {
         if (
           filters.colors.length > 0 &&
@@ -119,6 +155,7 @@ const initialState: CategoryState = {
     sizes: [],
     colors: [],
     types: [],
+    pricingType: undefined,
   },
 };
 
@@ -201,10 +238,14 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
 
     switch (sortOrder) {
       case "price-asc":
-        sortedProducts.sort((a, b) => a.sellingPrice - b.sellingPrice);
+        sortedProducts.sort(
+          (a, b) => getEffectivePrice(a) - getEffectivePrice(b)
+        );
         break;
       case "price-desc":
-        sortedProducts.sort((a, b) => b.sellingPrice - a.sellingPrice);
+        sortedProducts.sort(
+          (a, b) => getEffectivePrice(b) - getEffectivePrice(a)
+        );
         break;
       case "name-asc":
         sortedProducts.sort((a, b) =>
@@ -227,6 +268,9 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
     set({ filteredProducts: sortedProducts, sortOrder });
   },
 
+  getCurrentPricing,
+  getEffectivePrice,
+
   reset: () => {
     set(initialState);
   },
@@ -240,3 +284,7 @@ export const useCategoryLoading = () =>
 export const useCategoryError = () => useCategoryStore(state => state.error);
 export const useCategoryInitialized = () =>
   useCategoryStore(state => state.initialized);
+export const useCurrentPricing = () =>
+  useCategoryStore(state => state.getCurrentPricing);
+export const useEffectivePrice = () =>
+  useCategoryStore(state => state.getEffectivePrice);

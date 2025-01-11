@@ -20,6 +20,15 @@ export interface Variation {
   productId: string;
 }
 
+export interface DynamicPricing {
+  id: string;
+  from: string;
+  to: string;
+  type: string;
+  amount: string;
+  productId: string;
+}
+
 export interface Product {
   id: string;
   userId: string;
@@ -33,6 +42,7 @@ export interface Product {
   reviews: Prisma.JsonValue[];
   featuredImage?: FeaturedImage | null;
   variations: Variation[];
+  dynamicPricing: DynamicPricing[];
 }
 
 // Filter related interfaces
@@ -47,13 +57,19 @@ export interface Filter {
   options: FilterOption[];
 }
 
-export type FilterType = "stockLevel" | "types" | "sizes" | "colors";
+export type FilterType =
+  | "stockLevel"
+  | "types"
+  | "sizes"
+  | "colors"
+  | "pricingType";
 
 export interface FilterState {
   stockLevel: string;
   sizes: string[];
   colors: string[];
   types: string[];
+  pricingType?: string; // Optional filter for dynamic pricing
 }
 
 export interface FilterSectionProps {
@@ -87,6 +103,8 @@ export interface StockLevelFilterProps extends FilterComponentProps {}
 
 export interface ProductTypeFilterProps extends FilterComponentProps {}
 
+export interface PricingFilterProps extends FilterComponentProps {}
+
 // Store related interfaces
 export interface CategoryState {
   categories: string[];
@@ -107,6 +125,8 @@ export interface CategoryActions {
   sortProducts: (sortOrder: string) => void;
   applyFilters: (filters: FilterState) => void;
   reset: () => void;
+  getCurrentPricing: (product: Product) => DynamicPricing | null;
+  getEffectivePrice: (product: Product) => number;
 }
 
 export interface CategoryStore extends CategoryState, CategoryActions {}
