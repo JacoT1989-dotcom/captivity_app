@@ -213,12 +213,12 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
             </h2>
 
             {/* Pricing Table */}
-            <div className="space-y-4">
+            <div className="space-y-4 border rounded-md p-4">
               <div className="grid grid-cols-2 gap-4 text-gray-600">
                 <div>Quantity</div>
                 <div>Price</div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {productData.product?.dynamicPricing
                   ?.sort((a, b) => parseInt(a.from) - parseInt(b.from))
                   .map(pricing => (
@@ -338,13 +338,12 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
 
             {/* Add to Basket */}
             <button
-              onClick={handleAddToBasket}
               className="w-full py-3 bg-red-600 text-white rounded-md 
                 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed
                 transition-colors"
               disabled={!isAddToBasketEnabled()}
             >
-              ADD TO BASKET
+              Login to Add to Cart
             </button>
           </div>
         </div>
