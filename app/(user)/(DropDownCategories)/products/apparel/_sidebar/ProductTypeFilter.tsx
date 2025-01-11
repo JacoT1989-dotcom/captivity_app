@@ -1,6 +1,8 @@
 import React, { useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { FilterOption } from "../_store/types";
+import { useCategoryStore } from "../_store/apparel-store";
+import { normalizeString } from "../_store/utils";
 
 interface ProductTypeFilterProps {
   options: FilterOption[];
@@ -17,6 +19,7 @@ export const ProductTypeFilter: React.FC<ProductTypeFilterProps> = ({
 }) => {
   const router = useRouter();
   const pathname = usePathname() || "";
+  const { products, filters } = useCategoryStore();
 
   const getCurrentType = useCallback((): string => {
     if (!pathname) return "all-in-apparel";
@@ -45,6 +48,49 @@ export const ProductTypeFilter: React.FC<ProductTypeFilterProps> = ({
     router.push(newPath, { scroll: false });
   };
 
+  const getProductCount = (productType: string): number => {
+    let count = 0;
+
+    products.forEach(product => {
+      // Skip if product has no categories
+      if (!product.category || product.category.length === 0) return;
+
+      // Check if product matches the type
+      const matchesType = product.category.some(cat => {
+        const normalizedCat = normalizeString(cat);
+        if (productType === "all-in-apparel") {
+          return (
+            normalizedCat.includes("shirt") ||
+            normalizedCat.includes("hoodie") ||
+            normalizedCat.includes("jacket") ||
+            normalizedCat.includes("vest") ||
+            normalizedCat.includes("apparel")
+          );
+        }
+        return normalizedCat.includes(normalizeString(productType));
+      });
+
+      if (matchesType) {
+        // Count variations that match current filters
+        product.variations.forEach(variation => {
+          if (
+            (filters.colors.length === 0 ||
+              filters.colors.includes(variation.color)) &&
+            (filters.sizes.length === 0 ||
+              filters.sizes.includes(variation.size)) &&
+            (filters.stockLevel === "all" ||
+              (filters.stockLevel === "in" && variation.quantity > 0) ||
+              (filters.stockLevel === "out" && variation.quantity === 0))
+          ) {
+            count++;
+          }
+        });
+      }
+    });
+
+    return count;
+  };
+
   return (
     <div className="flex flex-col gap-2">
       {options.map(option => (
@@ -63,7 +109,9 @@ export const ProductTypeFilter: React.FC<ProductTypeFilterProps> = ({
                   : "none",
             }}
           />
-          <span className="ml-2 text-sm text-gray-600">{option.label}</span>
+          <span className="ml-2 text-sm text-gray-600">
+            {option.label} ({getProductCount(option.value)})
+          </span>
         </label>
       ))}
     </div>
