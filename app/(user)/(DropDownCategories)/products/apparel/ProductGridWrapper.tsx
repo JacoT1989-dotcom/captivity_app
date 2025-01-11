@@ -1,4 +1,4 @@
-"use client"; //
+"use client";
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -18,6 +18,14 @@ interface ProductLookup {
     id: string;
     productName: string;
     sellingPrice: number;
+    dynamicPricing: Array<{
+      id: string;
+      from: string;
+      to: string;
+      type: string;
+      amount: string;
+      productId: string;
+    }>;
   };
 }
 
@@ -30,6 +38,7 @@ const transformProducts = (
     variations: p.variations || [],
     reviews: p.reviews || [],
     category: p.category || [],
+    dynamicPricing: p.dynamicPricing || [],
   }));
 };
 
@@ -153,9 +162,8 @@ export default function ProductGridWrapper() {
   ) => {
     if (totalPages <= 1) return null;
 
-    // Function to get page numbers to display
     const getPageNumbers = () => {
-      const delta = 2; // Number of pages to show before and after current page
+      const delta = 2;
       const range: number[] = [];
       const rangeWithDots: (number | string)[] = [];
       let l: number | undefined = undefined;
@@ -170,7 +178,6 @@ export default function ProductGridWrapper() {
 
       range.push(totalPages);
 
-      // Remove duplicates and sort
       const uniqueRange = [...new Set(range)].sort((a, b) => a - b);
 
       for (const i of uniqueRange) {
@@ -285,6 +292,7 @@ export default function ProductGridWrapper() {
           id: product.id,
           productName: product.productName,
           sellingPrice: product.sellingPrice,
+          dynamicPricing: product.dynamicPricing || [],
         };
         return acc;
       },

@@ -8,6 +8,14 @@ interface ProductLookup {
     id: string;
     productName: string;
     sellingPrice: number;
+    dynamicPricing: Array<{
+      id: string;
+      from: string;
+      to: string;
+      type: string;
+      amount: string;
+      productId: string;
+    }>;
   };
 }
 
@@ -33,6 +41,25 @@ interface ProductVariations {
     variations: ColorVariation[];
   };
 }
+
+const getEffectivePrice = (product: ProductLookup[string]): number => {
+  const now = new Date();
+  const activePricing = product.dynamicPricing.find(
+    pricing => new Date(pricing.from) <= now && new Date(pricing.to) >= now
+  );
+
+  if (!activePricing) return product.sellingPrice;
+
+  if (activePricing.type === "percentage") {
+    const discount = parseFloat(activePricing.amount);
+    return product.sellingPrice * (1 - discount / 100);
+  } else if (activePricing.type === "fixed") {
+    const discount = parseFloat(activePricing.amount);
+    return product.sellingPrice - discount;
+  }
+
+  return product.sellingPrice;
+};
 
 const VariationsGrid = ({
   variations,
@@ -90,10 +117,11 @@ const VariationsGrid = ({
             const product = products[productId];
             const displayVariation = colorVariations[0]?.variations[0];
 
-            if (!displayVariation) return null;
+            if (!displayVariation || !product) return null;
 
             const availableColors = colorVariations.slice(0, 2);
             const remainingCount = colorVariations.length - 2;
+            const effectivePrice = getEffectivePrice(product);
 
             return (
               <div
@@ -171,11 +199,9 @@ const VariationsGrid = ({
                     </div>
                   )}
 
-                  {product && (
-                    <p className="mt-3 text-lg font-bold text-foreground">
-                      {formatPrice(product.sellingPrice)}
-                    </p>
-                  )}
+                  <p className="mt-3 text-lg font-bold text-foreground">
+                    {formatPrice(effectivePrice)}
+                  </p>
 
                   <Button
                     onClick={() => setSelectedProduct(productId)}
@@ -201,7 +227,13 @@ const VariationsGrid = ({
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
         selectedProduct={selectedProduct}
-        groupedVariations={groupedVariations}
+        groupedVariations={{
+          ...groupedVariations,
+          [selectedProduct || ""]: {
+            ...groupedVariations[selectedProduct || ""],
+            product: selectedProduct ? products[selectedProduct] : undefined,
+          },
+        }}
       />
     </>
   );
