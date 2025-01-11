@@ -9,6 +9,15 @@ export type SortOrderType =
   | "name-desc"
   | "newest";
 
+export interface DynamicPricing {
+  id: string;
+  from: string;
+  to: string;
+  type: string;
+  amount: string;
+  productId: string;
+}
+
 export interface FeaturedImage {
   id: string;
   thumbnail: string;
@@ -40,6 +49,7 @@ export interface Product {
   createdAt: Date;
   updatedAt: Date;
   reviews: Prisma.JsonValue[];
+  dynamicPricing: DynamicPricing[];
   featuredImage?: FeaturedImage | null;
   variations: Variation[];
 }

@@ -18,6 +18,15 @@ type MainCategory =
   | "african-collection"
   | "camo-collection";
 
+interface DynamicPricing {
+  id: string;
+  from: string;
+  to: string;
+  type: string;
+  amount: string;
+  productId: string;
+}
+
 interface PrismaProduct {
   id: string;
   userId: string;
@@ -29,6 +38,7 @@ interface PrismaProduct {
   createdAt: Date;
   updatedAt: Date;
   reviews: Prisma.JsonValue[];
+  dynamicPricing: DynamicPricing[];
   featuredImage?: {
     id: string;
     thumbnail: string;
@@ -80,7 +90,7 @@ function isMainCategory(category: string): category is MainCategory {
 export const getAllCategories = cache(
   async (): Promise<CategoryActionResult> => {
     try {
-      // Fetch all products with their variations and featured images
+      // Fetch all products with their variations, featured images, and dynamic pricing
       const products = await prisma.product.findMany({
         select: {
           id: true,
@@ -93,6 +103,16 @@ export const getAllCategories = cache(
           createdAt: true,
           updatedAt: true,
           reviews: true,
+          dynamicPricing: {
+            select: {
+              id: true,
+              from: true,
+              to: true,
+              type: true,
+              amount: true,
+              productId: true,
+            },
+          },
           featuredImage: true,
           variations: {
             select: {
@@ -110,7 +130,9 @@ export const getAllCategories = cache(
         },
       });
 
-      console.log(`Found ${products.length} total products with variations`);
+      console.log(
+        `Found ${products.length} total products with variations and dynamic pricing`
+      );
 
       // Extract and flatten categories
       const allCategories = products.flatMap(product => product.category);

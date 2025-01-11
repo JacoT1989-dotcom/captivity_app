@@ -34,6 +34,25 @@ interface ColorStats {
   total: number;
 }
 
+const getEffectivePrice = (product: Product): number => {
+  const now = new Date();
+  const activePricing = product.dynamicPricing.find(
+    pricing => new Date(pricing.from) <= now && new Date(pricing.to) >= now
+  );
+
+  if (!activePricing) return product.sellingPrice;
+
+  if (activePricing.type === "percentage") {
+    const discount = parseFloat(activePricing.amount);
+    return product.sellingPrice * (1 - discount / 100);
+  } else if (activePricing.type === "fixed") {
+    const discount = parseFloat(activePricing.amount);
+    return product.sellingPrice - discount;
+  }
+
+  return product.sellingPrice;
+};
+
 const matchesCategory = (
   textToSearch: string,
   categoryType: string
@@ -252,10 +271,14 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
 
     switch (sortOrder) {
       case "price-asc":
-        sortedProducts.sort((a, b) => a.sellingPrice - b.sellingPrice);
+        sortedProducts.sort(
+          (a, b) => getEffectivePrice(a) - getEffectivePrice(b)
+        );
         break;
       case "price-desc":
-        sortedProducts.sort((a, b) => b.sellingPrice - a.sellingPrice);
+        sortedProducts.sort(
+          (a, b) => getEffectivePrice(b) - getEffectivePrice(a)
+        );
         break;
       case "name-asc":
         sortedProducts.sort((a, b) =>
@@ -282,13 +305,63 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
     set(initialState);
   },
 }));
-
 // Selector hooks for accessing store state
 export const useCategories = () => useCategoryStore(state => state.categories);
+
+export const useProducts = () => useCategoryStore(state => state.products);
+
 export const useFilteredProducts = () =>
   useCategoryStore(state => state.filteredProducts);
+
 export const useCategoryLoading = () =>
   useCategoryStore(state => state.isLoading);
+
 export const useCategoryError = () => useCategoryStore(state => state.error);
+
 export const useCategoryInitialized = () =>
   useCategoryStore(state => state.initialized);
+
+export const useSortOrder = () => useCategoryStore(state => state.sortOrder);
+
+export const useFilters = () => useCategoryStore(state => state.filters);
+
+export const useCurrentPath = () =>
+  useCategoryStore(state => state.currentPath);
+
+// Action hooks
+export const useFetchCategories = () =>
+  useCategoryStore(state => state.fetchCategories);
+
+export const useSetProducts = () =>
+  useCategoryStore(state => state.setProducts);
+
+export const useFilterProductsByPath = () =>
+  useCategoryStore(state => state.filterProductsByPath);
+
+export const useApplyFilters = () =>
+  useCategoryStore(state => state.applyFilters);
+
+export const useSortProducts = () =>
+  useCategoryStore(state => state.sortProducts);
+
+export const useResetStore = () => useCategoryStore(state => state.reset);
+
+// Dynamic pricing hooks
+export const useEffectivePrice = (product: Product): number =>
+  getEffectivePrice(product);
+
+export const useHasActiveDynamicPricing = (product: Product): boolean => {
+  const now = new Date();
+  return product.dynamicPricing.some(
+    pricing => new Date(pricing.from) <= now && new Date(pricing.to) >= now
+  );
+};
+
+export const useDiscountPercentage = (product: Product): number | null => {
+  const effectivePrice = getEffectivePrice(product);
+  if (effectivePrice === product.sellingPrice) return null;
+
+  const discountPercentage =
+    ((product.sellingPrice - effectivePrice) / product.sellingPrice) * 100;
+  return Math.round(discountPercentage);
+};
