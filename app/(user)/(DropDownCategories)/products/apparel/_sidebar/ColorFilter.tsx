@@ -1,81 +1,167 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { FilterOption } from "../_store/types";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Product, ColorFilterProps } from "../_store/types";
 
-interface ColorFilterProps {
-  options: FilterOption[];
-  selectedValue: string[];
-  onChange: (value: string) => void;
+interface DynamicColorFilterProps extends ColorFilterProps {
+  products: Product[];
 }
 
-const colorMap: { [key: string]: string } = {
-  Black: "#000000",
-  White: "#FFFFFF",
-  Navy: "#000080",
-  Grey: "#808080",
-  Red: "#FF0000",
-  Green: "#008000",
-  Blue: "#0000FF",
-  Yellow: "#FFFF00",
-  Purple: "#800080",
-  Orange: "#FFA500",
-};
+interface ColorCount {
+  color: string;
+  count: number;
+}
 
-export const ColorFilter: React.FC<ColorFilterProps> = ({
-  options,
-  selectedValue,
-  onChange,
-}) => {
+const ColorButton: React.FC<{
+  colorData: ColorCount;
+  isSelected: boolean;
+  onChange: () => void;
+  showCount?: boolean;
+}> = ({ colorData, isSelected, onChange, showCount }) => {
+  const isWhite = colorData.color.toLowerCase() === "white";
+
   return (
-    <div className="grid grid-cols-5 gap-2">
-      {options.map(option => {
-        const isSelected = selectedValue.includes(option.value);
-        const bgColor = colorMap[option.value] || "#000000";
-        const isWhite = option.value === "White";
-
-        return (
-          <div key={option.value} className="relative group">
-            <button
-              onClick={() => onChange(option.value)}
-              className={cn(
-                "relative w-8 h-8 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-                isSelected && "ring-2 ring-blue-500 ring-offset-2"
-              )}
-              aria-label={`Select ${option.label} color`}
-              title={option.label}
-            >
-              <div
-                className={cn(
-                  "absolute inset-0 rounded-full",
-                  isWhite && "border border-gray-200"
-                )}
-                style={{ backgroundColor: bgColor }}
-              />
-              {isSelected && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Check
-                    className={cn(
-                      "w-4 h-4",
-                      isWhite ? "text-black" : "text-white"
-                    )}
-                  />
-                </div>
-              )}
-            </button>
-
-            {/* Tooltip */}
-            <span
-              className="absolute pointer-events-none bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-              role="tooltip"
-            >
-              {option.label}
-            </span>
+    <div className="relative group">
+      <button
+        onClick={onChange}
+        className={cn(
+          "relative w-5 h-5 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1",
+          isSelected && "ring-1 ring-blue-500 ring-offset-1"
+        )}
+        aria-label={`Select ${colorData.color} color`}
+        title={colorData.color}
+      >
+        <div
+          className={cn(
+            "absolute inset-0 rounded-full",
+            isWhite && "border border-gray-200"
+          )}
+          style={{ backgroundColor: isWhite ? "#FFFFFF" : colorData.color }}
+        />
+        {isSelected && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Check
+              className={cn("w-3 h-3", isWhite ? "text-black" : "text-white")}
+            />
           </div>
-        );
-      })}
+        )}
+      </button>
+
+      {!showCount && (
+        <span
+          className="absolute pointer-events-none bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          role="tooltip"
+        >
+          {colorData.color} ({colorData.count})
+        </span>
+      )}
     </div>
   );
 };
 
-export default ColorFilter;
+const DynamicColorFilter: React.FC<DynamicColorFilterProps> = ({
+  selectedValue,
+  onChange,
+  products,
+}) => {
+  const pathname = usePathname() ?? "";
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [colorCounts, setColorCounts] = useState<ColorCount[]>([]);
+
+  useEffect(() => {
+    const colorMap = new Map<string, number>();
+
+    products.forEach(product => {
+      // Check if product belongs to current collection
+      const pathParts = pathname.split("/");
+      const currentCollection = pathParts[pathParts.length - 1];
+      const isInCurrentCollection =
+        currentCollection === "all-in-apparel" ||
+        product.category.some(
+          cat =>
+            cat.toLowerCase() === currentCollection.toLowerCase() ||
+            cat.toLowerCase().includes(currentCollection.toLowerCase())
+        );
+
+      if (isInCurrentCollection) {
+        product.variations.forEach(variation => {
+          if (variation.color) {
+            const color = variation.color;
+            colorMap.set(color, (colorMap.get(color) || 0) + 1);
+          }
+        });
+      }
+    });
+
+    // Convert map to array and sort by count descending, then alphabetically
+    const sortedColors = Array.from(colorMap.entries())
+      .map(([color, count]) => ({ color, count }))
+      .sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.color.localeCompare(b.color);
+      });
+
+    setColorCounts(sortedColors);
+  }, [products, pathname]);
+
+  const initialColors = colorCounts.slice(0, 3);
+  const remainingCount = Math.max(0, colorCounts.length - 3);
+
+  return (
+    <>
+      <div className="flex items-center gap-4">
+        {initialColors.map(colorData => (
+          <ColorButton
+            key={colorData.color}
+            colorData={colorData}
+            isSelected={selectedValue.includes(colorData.color)}
+            onChange={() => onChange(colorData.color)}
+          />
+        ))}
+        {remainingCount > 0 && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-3 py-1 text-xs font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            +{remainingCount} more
+          </button>
+        )}
+      </div>
+
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-[500px] w-[500px] max-h-[500px] h-[500px] p-0">
+          <div className="relative border-b px-6 py-4">
+            <h2 className="text-lg font-semibold">Select Color</h2>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 hover:text-muted-foreground transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="overflow-y-auto h-[calc(500px-70px)] p-6">
+            <div className="grid grid-cols-2 gap-x-12 gap-y-6">
+              {colorCounts.map(colorData => (
+                <div key={colorData.color} className="flex items-center gap-3">
+                  <ColorButton
+                    colorData={colorData}
+                    isSelected={selectedValue.includes(colorData.color)}
+                    onChange={() => onChange(colorData.color)}
+                    showCount={true}
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {colorData.color} ({colorData.count})
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default DynamicColorFilter;

@@ -1,12 +1,13 @@
-// FilterSection.tsx
-import { useEffect } from "react";
+import React from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+
 import { FilterSectionProps } from "../../_store/types";
 import { StockLevelFilter } from "../StockLevelFilter";
 import { ProductTypeFilter } from "../ProductTypeFilter";
-import ColorFilter from "../ColorFilter";
 import SizeFilter from "../SizeFilter";
+import { useCategoryStore } from "../../_store/apparel-store";
+import DynamicColorFilter from "../ColorFilter";
 
 export const FilterSection: React.FC<
   FilterSectionProps & { isProductTypeFilter?: boolean }
@@ -18,6 +19,9 @@ export const FilterSection: React.FC<
   onFilterChange,
   isProductTypeFilter,
 }) => {
+  // Get products from the store
+  const products = useCategoryStore(state => state.products);
+
   const actualSelectedValue =
     filter.type === "stockLevel"
       ? (selectedValues as string)
@@ -30,10 +34,10 @@ export const FilterSection: React.FC<
           : [];
 
   return (
-    <div className="border-b border-gray-200 pb-4">
+    <div className="border-b border-border pb-4">
       <button
         onClick={onToggle}
-        className="w-full flex justify-between items-center py-2 text-left text-gray-700 hover:text-gray-900"
+        className="w-full flex justify-between items-center py-2 text-left text-foreground hover:text-foreground/90"
       >
         <span className="font-medium">{filter.name}</span>
         <ChevronDown
@@ -64,10 +68,11 @@ export const FilterSection: React.FC<
               onChange={onFilterChange}
             />
           ) : filter.type === "colors" ? (
-            <ColorFilter
+            <DynamicColorFilter
               options={filter.options}
               selectedValue={actualSelectedValue as string[]}
               onChange={onFilterChange}
+              products={products}
             />
           ) : filter.type === "sizes" ? (
             <SizeFilter
@@ -81,3 +86,5 @@ export const FilterSection: React.FC<
     </div>
   );
 };
+
+export default FilterSection;

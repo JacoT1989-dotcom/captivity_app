@@ -28,7 +28,11 @@ const initialState: CategoryState = {
   },
 };
 
-const DEBUG = process.env.NODE_ENV === "development";
+interface ColorStats {
+  uniqueColors: string[];
+  distribution: { [color: string]: number };
+  total: number;
+}
 
 const matchesCategory = (
   textToSearch: string,
@@ -80,15 +84,69 @@ const isApparelProduct = (textToSearch: string): boolean => {
   return apparelTerms.some(term => text.includes(term));
 };
 
+const analyzeColors = (products: Product[]): ColorStats => {
+  const distribution: { [color: string]: number } = {};
+  const uniqueColors = new Set<string>();
+
+  if (!products?.length) {
+    return { uniqueColors: [], distribution: {}, total: 0 };
+  }
+
+  products.forEach(product => {
+    if (
+      isApparelProduct([...product.category, product.productName].join(" "))
+    ) {
+      product.variations?.forEach(variation => {
+        if (variation?.color) {
+          const normalizedColor = variation.color.toLowerCase().trim();
+          uniqueColors.add(normalizedColor);
+          distribution[normalizedColor] =
+            (distribution[normalizedColor] || 0) + 1;
+        }
+      });
+    }
+  });
+
+  const sortedColors = Array.from(uniqueColors).sort();
+
+  // Only log if there are colors found
+  if (sortedColors.length > 0) {
+    console.log("\n=== Color Analysis Report ===");
+    console.log(`Total unique colors: ${sortedColors.length}`);
+
+    console.log("\n--- Top 10 Most Common Colors ---");
+    Object.entries(distribution)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .forEach(([color, count]) => {
+        console.log(`${color}: ${count} items`);
+      });
+
+    console.log("\n--- All Available Colors ---");
+    console.log("Alphabetical list of all colors:");
+    console.log(sortedColors.join(", "));
+
+    console.log("\n--- Full Color Distribution ---");
+    Object.entries(distribution)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([color, count]) => {
+        console.log(`${color}: ${count} items`);
+      });
+  }
+
+  return {
+    uniqueColors: sortedColors,
+    distribution,
+    total: sortedColors.length,
+  };
+};
+
 export const useCategoryStore = create<CategoryStore>()((set, get) => ({
   ...initialState,
 
   fetchCategories: async () => {
     const { isLoading } = get();
-    if (isLoading) {
-      if (DEBUG) console.log("Fetch categories skipped - already loading");
-      return;
-    }
+    if (isLoading) return;
 
     set({ isLoading: true, error: null });
 
@@ -99,20 +157,7 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
         throw new Error(result.error || "Failed to fetch categories");
       }
 
-      if (DEBUG) {
-        console.log("API Response:", {
-          success: result.success,
-          categoriesCount: result.data.categories.length,
-          productsCount: result.data.allProducts.length,
-          sampleProduct: result.data.allProducts[0]
-            ? {
-                id: result.data.allProducts[0].id,
-                name: result.data.allProducts[0].productName,
-                categories: result.data.allProducts[0].category,
-              }
-            : "No products",
-        });
-      }
+      const colorStats = analyzeColors(result.data.allProducts);
 
       set({
         categories: result.data.categories,
@@ -128,7 +173,6 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
         get().filterProductsByPath(currentPath);
       }
     } catch (error) {
-      console.error("Error in fetchCategories:", error);
       set({
         isLoading: false,
         error:
@@ -139,14 +183,9 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
   },
 
   setProducts: products => {
-    if (DEBUG) {
-      console.log("Setting products:", {
-        count: products.length,
-        sampleCategories: products[0]?.category || [],
-      });
-    }
-
+    analyzeColors(products);
     set({ products });
+
     const { currentPath } = get();
     if (currentPath) {
       get().filterProductsByPath(currentPath);
@@ -155,11 +194,6 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
 
   filterProductsByPath: pathname => {
     const { products, filters } = get();
-
-    if (DEBUG) {
-      console.log("Starting product filtering for path:", pathname);
-    }
-
     const pathParts = pathname.split("/").filter(Boolean);
     const categoryType = pathParts[1] || "";
     const specificCategory = pathParts[2] || "";
@@ -168,33 +202,23 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
 
     if (categoryType === "apparel") {
       filteredByPath = products.filter(product => {
-        // Combine all searchable text
         const searchableText = [...product.category, product.productName].join(
           " "
         );
 
-        // Check if it's an apparel product first
         if (!isApparelProduct(searchableText)) {
           return false;
         }
 
-        // If no specific category or showing all apparel, return all apparel products
         if (!specificCategory || specificCategory === "all-in-apparel") {
           return true;
         }
 
-        // Check for specific category matches
         return matchesCategory(searchableText, specificCategory);
       });
 
-      if (DEBUG) {
-        console.log("Category filtering results:", {
-          type: categoryType,
-          specific: specificCategory,
-          remainingProducts: filteredByPath.length,
-          sampleProducts: filteredByPath.slice(0, 3).map(p => p.productName),
-        });
-      }
+      // Only analyze colors for apparel category
+      analyzeColors(filteredByPath);
     }
 
     const finalFilters = { ...filters };
@@ -204,15 +228,6 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
 
     const filteredProducts = applyProductFilters(filteredByPath, finalFilters);
 
-    if (DEBUG) {
-      console.log("Final filtered results:", {
-        totalProducts: filteredProducts.length,
-        hasVariations: filteredProducts.filter(p => p.variations.length > 0)
-          .length,
-        sampleProducts: filteredProducts.slice(0, 3).map(p => p.productName),
-      });
-    }
-
     set({
       filteredProducts,
       currentPath: pathname,
@@ -220,10 +235,6 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
   },
 
   applyFilters: (newFilters: FilterState) => {
-    if (DEBUG) {
-      console.log("Applying filters:", newFilters);
-    }
-
     const { products, currentPath } = get();
     set({ filters: newFilters });
 
@@ -236,10 +247,6 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
   },
 
   sortProducts: (sortOrder: SortOrderType) => {
-    if (DEBUG) {
-      console.log("Sorting products:", { sortOrder });
-    }
-
     const { filteredProducts } = get();
     let sortedProducts = [...filteredProducts];
 
@@ -272,7 +279,6 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
   },
 
   reset: () => {
-    if (DEBUG) console.log("Resetting store to initial state");
     set(initialState);
   },
 }));
