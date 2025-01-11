@@ -311,7 +311,7 @@ export function HeroSlider() {
             className="order-2 md:order-1 flex flex-col justify-center px-4 md:px-16 lg:px-24 transition-colors duration-500 py-8 md:py-0"
             style={{ backgroundColor: currentSlideData.backgroundColor }}
           >
-            <div className="space-y-4 md:space-y-6 max-w-xl">
+            <div className="space-y-4 md:space-y-6 max-w-xl text-center">
               <h1 className="text-3xl md:text-5xl font-bold text-gray-900">
                 {currentSlideData.title}
               </h1>
