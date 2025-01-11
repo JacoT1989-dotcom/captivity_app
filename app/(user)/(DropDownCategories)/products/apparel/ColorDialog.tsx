@@ -82,9 +82,28 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
     v => v.size === selectedSize
   );
 
-  const getDefaultImage = () => {
-    const firstVariation = productData.variations[0]?.variations[0];
-    return firstVariation?.variationImageURL || "";
+  const getCurrentImage = () => {
+    if (selectedColor) {
+      // Get first variation of selected color
+      const colorVariation = productData.variations.find(
+        v => v.color === selectedColor
+      );
+      // If we have a specific size selected, show that variation
+      if (selectedSize) {
+        const sizeVariation = colorVariation?.variations.find(
+          v => v.size === selectedSize
+        );
+        if (sizeVariation) {
+          return sizeVariation.variationImageURL;
+        }
+      }
+      // Otherwise show the first variation of the selected color
+      if (colorVariation?.variations[0]) {
+        return colorVariation.variations[0].variationImageURL;
+      }
+    }
+    // Fallback to first available image
+    return productData.variations[0]?.variations[0]?.variationImageURL || "";
   };
 
   const formatPrice = (price: number) => {
@@ -142,7 +161,7 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
           <div>
             <div className="aspect-square relative rounded-md overflow-hidden bg-gray-100">
               <Image
-                src={selectedVariation?.variationImageURL || getDefaultImage()}
+                src={getCurrentImage()}
                 alt={productData.product?.productName || "Product"}
                 fill
                 className="object-contain"
