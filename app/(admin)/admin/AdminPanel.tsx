@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useCallback, useRef, memo } from "react";
+import React, { useEffect, useCallback, useRef, memo, useState } from "react";
 import {
   Activity,
   Users,
@@ -7,10 +7,17 @@ import {
   ShoppingCart,
   AlertCircle,
   LucideIcon,
+  UserPlus,
+  Package,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { useUserStatsStore } from "./useUserStatsStore";
+import { formatDistanceToNow } from "date-fns";
+import { Activity as ActivityType } from "./activity/types";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 // Interfaces
 interface Stats {
@@ -131,10 +138,67 @@ const ActivityItem = memo<ActivityItemProps>(({ activity }) => (
 
 ActivityItem.displayName = "ActivityItem";
 
-const AdminPanel: React.FC = () => {
+interface PaginationInfo {
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  hasMore: boolean;
+}
+
+interface ActivityProps {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  createdAt: Date;
+  metadata?: any;
+}
+
+interface AdminPanelProps {
+  initialActivities: ActivityProps[];
+  pagination: PaginationInfo;
+}
+
+const getActivityColor = (type: string): string => {
+  switch (type) {
+    case "ORDER":
+      return "#3B82F6"; // blue
+    case "USER":
+      return "#8B5CF6"; // purple
+    case "PRODUCT":
+      return "#10B981"; // green
+    default:
+      return "#6B7280"; // gray
+  }
+};
+
+const ActivityIcon = ({ type }: { type: string }) => {
+  switch (type) {
+    case "ORDER":
+      return <ShoppingCart className="w-4 h-4" />;
+    case "USER":
+      return <UserPlus className="w-4 h-4" />;
+    case "PRODUCT":
+      return <Package className="w-4 h-4" />;
+    default:
+      return <Activity className="w-4 h-4" />;
+  }
+};
+const AdminPanel: React.FC<AdminPanelProps> = ({
+  initialActivities,
+  pagination,
+}) => {
   const { stats, isLoading, error, fetchStats } = useUserStatsStore();
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const router = useRouter();
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    router.refresh();
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
 
   // Stable fetch implementation
   const fetchStatsOnce = useCallback(async () => {
@@ -215,21 +279,6 @@ const AdminPanel: React.FC = () => {
     },
   ];
 
-  const activities = [
-    {
-      title: "New order received",
-      time: "2 minutes ago",
-      description: "Order #1234 received from Customer A",
-      color: "blue",
-    },
-    {
-      title: "Project update",
-      time: "1 hour ago",
-      description: "Website redesign progress at 75%",
-      color: "purple",
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <header className="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg">
@@ -268,14 +317,98 @@ const AdminPanel: React.FC = () => {
 
         <Card className="shadow-lg overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900 text-white">
-            <CardTitle>Recent Activity</CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle>Recent Activity</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRefresh}
+                className="text-white hover:text-white/80"
+                disabled={isRefreshing}
+              >
+                <RefreshCw
+                  className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-gray-100">
-              {activities.map((activity, index) => (
-                <ActivityItem key={index} activity={activity} />
-              ))}
+              {initialActivities.length === 0 ? (
+                <div className="p-4 text-center text-gray-500">
+                  No activity in the last 24 hours
+                </div>
+              ) : (
+                initialActivities.map(activity => (
+                  <div
+                    key={activity.id}
+                    className="flex items-start space-x-4 p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div
+                      className="mt-1 p-2 rounded-full bg-opacity-20"
+                      style={{
+                        backgroundColor: getActivityColor(activity.type),
+                      }}
+                    >
+                      <div style={{ color: getActivityColor(activity.type) }}>
+                        <ActivityIcon type={activity.type} />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <p className="text-sm font-medium text-gray-900">
+                          {activity.title}
+                        </p>
+                        <span className="text-xs text-gray-500">
+                          {formatDistanceToNow(new Date(activity.createdAt), {
+                            addSuffix: true,
+                          })}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-gray-600">
+                        {activity.description}
+                      </p>
+                      {activity.type === "ORDER" && activity.metadata && (
+                        <p className="mt-1 text-xs text-gray-500">
+                          {activity.metadata.items} items · Total: R
+                          {activity.metadata.totalAmount}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
+
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="flex justify-between items-center p-4 border-t border-gray-100">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.currentPage === 1}
+                  onClick={() =>
+                    router.push(`/admin?page=${pagination.currentPage - 1}`)
+                  }
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Page {pagination.currentPage} of {pagination.totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!pagination.hasMore}
+                  onClick={() =>
+                    router.push(`/admin?page=${pagination.currentPage + 1}`)
+                  }
+                >
+                  Next
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>
