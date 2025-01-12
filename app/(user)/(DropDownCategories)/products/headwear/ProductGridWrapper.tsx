@@ -19,6 +19,14 @@ interface ProductLookup {
     id: string;
     productName: string;
     sellingPrice: number;
+    dynamicPricing: {
+      id: string;
+      from: string;
+      to: string;
+      type: string;
+      amount: string;
+      productId: string;
+    }[];
   };
 }
 
@@ -254,6 +262,7 @@ export default function ProductGridWrapper() {
           id: product.id,
           productName: product.productName,
           sellingPrice: product.sellingPrice,
+          dynamicPricing: product.dynamicPricing || [],
         };
         return acc;
       },

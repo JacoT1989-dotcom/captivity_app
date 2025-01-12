@@ -9,6 +9,14 @@ interface ProductLookup {
     id: string;
     productName: string;
     sellingPrice: number;
+    dynamicPricing: {
+      id: string;
+      from: string;
+      to: string;
+      type: string;
+      amount: string;
+      productId: string;
+    }[];
   };
 }
 

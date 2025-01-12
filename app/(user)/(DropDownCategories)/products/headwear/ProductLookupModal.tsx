@@ -1,19 +1,20 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCategoryStore } from "./_store/headwear-store";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 
 interface ProductLookup {
   id: string;
   productName: string;
   sellingPrice: number;
+  dynamicPricing: {
+    id: string;
+    from: string;
+    to: string;
+    type: string;
+    amount: string;
+    productId: string;
+  }[];
 }
 
 interface Variation {
@@ -52,118 +53,277 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
   product,
   productVariations,
 }) => {
-  const { getCurrentPricing, getEffectivePrice } = useCategoryStore();
+  const [selectedColor, setSelectedColor] = useState<string>("");
+  const [selectedSize, setSelectedSize] = useState<string>("");
+  const [quantity, setQuantity] = useState(1);
+  const [currentVariation, setCurrentVariation] = useState<Variation | null>(
+    null
+  );
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-ZA", {
-      style: "currency",
-      currency: "ZAR",
-    }).format(price);
-  };
+  useEffect(() => {
+    if (isOpen && productId) {
+      setSelectedColor("");
+      setSelectedSize("");
+      setQuantity(1);
+      setCurrentVariation(null);
+    }
+  }, [isOpen, productId]);
+
+  useEffect(() => {
+    if (selectedColor && selectedSize && productVariations) {
+      const colorVariation = productVariations.variations.find(
+        v => v.color === selectedColor
+      );
+      const variation = colorVariation?.variations.find(
+        v => v.size === selectedSize
+      );
+      setCurrentVariation(variation || null);
+    } else {
+      setCurrentVariation(null);
+    }
+  }, [selectedColor, selectedSize, productVariations]);
 
   if (!productId || !product || !productVariations) {
     return null;
   }
 
-  const groupedByColor = productVariations.variations.reduce<
-    Record<string, Variation[]>
-  >((acc, { color, variations }) => {
-    acc[color] = variations;
-    return acc;
-  }, {});
+  const allColors = productVariations.variations.map(v => v.color);
+  const allSizes = Array.from(
+    new Set(
+      productVariations.variations.flatMap(colorVar =>
+        colorVar.variations.map(v => v.size)
+      )
+    )
+  ).sort();
+
+  const selectedColorVariations =
+    productVariations.variations.find(v => v.color === selectedColor)
+      ?.variations || [];
+
+  const getCurrentImage = () => {
+    if (selectedColor) {
+      const colorVariation = productVariations.variations.find(
+        v => v.color === selectedColor
+      );
+      if (selectedSize && colorVariation) {
+        const sizeVariation = colorVariation.variations.find(
+          v => v.size === selectedSize
+        );
+        if (sizeVariation?.variationImageURL) {
+          return sizeVariation.variationImageURL;
+        }
+      }
+      if (colorVariation?.variations[0]?.variationImageURL) {
+        return colorVariation.variations[0].variationImageURL;
+      }
+    }
+    return (
+      productVariations.variations[0]?.variations[0]?.variationImageURL || ""
+    );
+  };
+
+  const formatPrice = (price: number) => {
+    return `R${price.toFixed(2)}`;
+  };
+
+  const isAddToBasketEnabled = () => {
+    return (
+      selectedColor &&
+      selectedSize &&
+      currentVariation &&
+      currentVariation.quantity > 0 &&
+      quantity > 0 &&
+      quantity <= currentVariation.quantity
+    );
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            {product.productName}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-[900px] p-0">
+        <div className="flex justify-end p-2">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
-        <Tabs defaultValue={Object.keys(groupedByColor)[0]} className="w-full">
-          <TabsList className="flex flex-wrap gap-2 h-auto">
-            {Object.keys(groupedByColor).map(color => (
-              <TabsTrigger
-                key={color}
-                value={color}
-                className="flex items-center gap-2"
-              >
-                <div
-                  className="w-4 h-4 rounded-full border border-border"
-                  style={{ backgroundColor: color.toLowerCase() }}
-                />
-                <span>{color}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 pt-0">
+          {/* Left Column - Image */}
+          <div>
+            <div className="aspect-square relative rounded-md overflow-hidden bg-gray-100">
+              <Image
+                src={getCurrentImage()}
+                alt={product.productName}
+                fill
+                className="object-contain"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
+              />
+            </div>
+          </div>
 
-          {Object.entries(groupedByColor).map(([color, variations]) => (
-            <TabsContent key={color} value={color} className="mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {variations.map(variation => (
-                  <div
-                    key={variation.id}
-                    className="bg-background rounded-lg border border-border p-4"
-                  >
-                    <div className="aspect-square relative rounded-lg overflow-hidden mb-4">
-                      {variation.variationImageURL ? (
-                        <Image
-                          src={variation.variationImageURL}
-                          alt={variation.name}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 50vw, 33vw"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center bg-muted">
-                          <span className="text-muted-foreground">
-                            No image
-                          </span>
+          {/* Right Column - Details */}
+          <div className="space-y-6">
+            <h2 className="text-2xl font-semibold text-red-600">
+              {product.productName}
+            </h2>
+
+            {/* Product Information */}
+            <div>
+              <p className="text-gray-600">Product Information</p>
+              <p className="text-xl text-gray-700">Select a variation</p>
+            </div>
+
+            {/* Pricing Table */}
+            <div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-gray-600">Quantity</div>
+                <div className="text-gray-600">Price</div>
+              </div>
+              <div className="space-y-1">
+                {product.dynamicPricing?.length > 0 ? (
+                  [...product.dynamicPricing]
+                    .sort((a, b) => parseInt(a.from) - parseInt(b.from))
+                    .map(pricing => (
+                      <div
+                        key={`${pricing.from}-${pricing.to}`}
+                        className="grid grid-cols-2 gap-4"
+                      >
+                        <div className="text-gray-600">
+                          {`${pricing.from} - ${pricing.to}`}
                         </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">
-                          {variation.name}
-                        </span>
-                        <span className="text-sm font-medium">
-                          {variation.size}
-                        </span>
+                        <div className="text-gray-600">
+                          {formatPrice(parseFloat(pricing.amount))}
+                        </div>
                       </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          SKU: {variation.sku}
-                        </span>
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            variation.quantity > 0
-                              ? "bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-100"
-                              : "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-100"
-                          }`}
-                        >
-                          {variation.quantity > 0 ? "In Stock" : "Out of Stock"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold">
-                          {formatPrice(product.sellingPrice)}
-                        </span>
-                        <Button variant="secondary" size="sm">
-                          Add to Cart
-                        </Button>
-                      </div>
+                    ))
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-gray-600">1+</div>
+                    <div className="text-gray-600">
+                      {formatPrice(product.sellingPrice)}
                     </div>
                   </div>
-                ))}
+                )}
               </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+            </div>
+
+            <div className="space-y-4">
+              {/* Color Selection */}
+              <div>
+                <label className="block text-sm mb-2">Colour:</label>
+                <div className="flex gap-2">
+                  {allColors.map(color => (
+                    <button
+                      key={color}
+                      onClick={() => {
+                        setSelectedColor(color);
+                        setSelectedSize("");
+                      }}
+                      className={`w-8 h-8 rounded-sm border transition-all ${
+                        selectedColor === color
+                          ? "ring-2 ring-black ring-offset-2"
+                          : "hover:opacity-80"
+                      }`}
+                      style={{ backgroundColor: color.toLowerCase() }}
+                      title={color}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Size Selection */}
+              <div>
+                <label className="block text-sm mb-2">Size:</label>
+                <div className="flex flex-wrap gap-2">
+                  {allSizes.map(size => {
+                    const isAvailable = selectedColor
+                      ? selectedColorVariations.some(
+                          v => v.size === size && v.quantity > 0
+                        )
+                      : false;
+
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`min-w-[48px] px-3 py-1.5 text-sm border transition-colors ${
+                          selectedSize === size
+                            ? "bg-black text-white"
+                            : isAvailable
+                              ? "hover:bg-gray-100"
+                              : "opacity-50 cursor-not-allowed"
+                        }`}
+                        disabled={!isAvailable}
+                      >
+                        {size}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Quantity */}
+              <div className="flex items-center gap-4">
+                <div className="flex border">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-3 py-1 hover:bg-gray-100 transition-colors"
+                    disabled={quantity <= 1}
+                  >
+                    -
+                  </button>
+                  <input
+                    type="text"
+                    value={quantity}
+                    onChange={e => {
+                      const val = parseInt(e.target.value);
+                      if (!isNaN(val) && currentVariation) {
+                        setQuantity(
+                          Math.min(currentVariation.quantity, Math.max(1, val))
+                        );
+                      }
+                    }}
+                    className="w-12 text-center border-x"
+                  />
+                  <button
+                    onClick={() => {
+                      if (currentVariation) {
+                        setQuantity(
+                          Math.min(currentVariation.quantity, quantity + 1)
+                        );
+                      }
+                    }}
+                    className="px-3 py-1 hover:bg-gray-100 transition-colors"
+                    disabled={
+                      !currentVariation || quantity >= currentVariation.quantity
+                    }
+                  >
+                    +
+                  </button>
+                </div>
+
+                {currentVariation && (
+                  <div className="text-sm text-yellow-600">
+                    {currentVariation.quantity} in stock
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Add to Cart */}
+            <button
+              className="w-full py-3 bg-red-600 text-white rounded-md 
+                hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed
+                transition-colors"
+              disabled={!isAddToBasketEnabled()}
+            >
+              Login to Add to Cart
+            </button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
