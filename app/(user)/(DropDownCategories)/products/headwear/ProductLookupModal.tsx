@@ -139,8 +139,9 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[900px] p-0">
-        <div className="flex justify-end p-2">
+      <DialogContent className="max-w-[900px] p-0 h-[80vh] sm:h-auto mx-auto w-[calc(100%-2rem)]">
+        {/* Close button - fixed position on mobile */}
+        <div className="flex justify-end p-2 sticky top-0 bg-white z-10 border-b sm:border-none">
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -149,10 +150,10 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 pt-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 px-4 md:p-8 pt-0 overflow-y-auto max-h-[calc(100vh-4rem)] md:max-h-none">
           {/* Left Column - Image */}
-          <div>
-            <div className="aspect-square relative rounded-md overflow-hidden bg-gray-100">
+          <div className="md:sticky md:top-0">
+            <div className="aspect-square relative rounded-md overflow-hidden p-4 bg-gray-100">
               <Image
                 src={getCurrentImage()}
                 alt={product.productName}
@@ -165,31 +166,35 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
           </div>
 
           {/* Right Column - Details */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-red-600">
+          <div className="space-y-4 md:space-y-6">
+            <h2 className="text-xl md:text-2xl font-semibold text-red-600">
               {product.productName}
             </h2>
 
             {/* Product Information */}
             <div>
-              <p className="text-gray-600">Product Information</p>
-              <p className="text-xl text-gray-700">Select a variation</p>
+              <p className="text-sm md:text-base text-gray-600">
+                Product Information
+              </p>
+              <p className="text-lg md:text-xl text-gray-700">
+                Select a variation
+              </p>
             </div>
 
             {/* Pricing Table */}
-            <div>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="grid grid-cols-2 gap-4 text-sm md:text-base">
                 <div className="text-gray-600">Quantity</div>
                 <div className="text-gray-600">Price</div>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 mt-2">
                 {product.dynamicPricing?.length > 0 ? (
                   [...product.dynamicPricing]
                     .sort((a, b) => parseInt(a.from) - parseInt(b.from))
                     .map(pricing => (
                       <div
                         key={`${pricing.from}-${pricing.to}`}
-                        className="grid grid-cols-2 gap-4"
+                        className="grid grid-cols-2 gap-4 text-sm md:text-base"
                       >
                         <div className="text-gray-600">
                           {`${pricing.from} - ${pricing.to}`}
@@ -200,7 +205,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                       </div>
                     ))
                 ) : (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm md:text-base">
                     <div className="text-gray-600">1+</div>
                     <div className="text-gray-600">
                       {formatPrice(product.sellingPrice)}
@@ -214,7 +219,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
               {/* Color Selection */}
               <div>
                 <label className="block text-sm mb-2">Colour:</label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {allColors.map(color => (
                     <button
                       key={color}
@@ -314,14 +319,16 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
             </div>
 
             {/* Add to Cart */}
-            <button
-              className="w-full py-3 bg-red-600 text-white rounded-md 
+            <div className="pb-4">
+              <button
+                className="w-full py-3 bg-red-600 text-white rounded-md 
                 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed
                 transition-colors"
-              disabled={!isAddToBasketEnabled()}
-            >
-              Login to Add to Cart
-            </button>
+                disabled={!isAddToBasketEnabled()}
+              >
+                Login to Add to Cart
+              </button>
+            </div>
           </div>
         </div>
       </DialogContent>
