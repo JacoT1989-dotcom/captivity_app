@@ -1,4 +1,4 @@
-// Layout.tsx
+// app/(user)/products/headwear/layout.tsx
 "use client";
 
 import React, { useEffect } from "react";
