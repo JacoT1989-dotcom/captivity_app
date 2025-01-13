@@ -46,6 +46,51 @@ interface ProductLookupModalProps {
   productVariations: ProductVariations | undefined;
 }
 
+const PricingRanges: React.FC<{
+  dynamicPricing: ProductLookup["dynamicPricing"];
+  sellingPrice: number;
+}> = ({ dynamicPricing, sellingPrice }) => {
+  // Define our desired ranges
+  const desiredRanges = [
+    { from: "1", to: "24" },
+    { from: "25", to: "100" },
+    { from: "101", to: "600" },
+    { from: "601", to: "2000" },
+  ];
+
+  // Function to find the price for a given range
+  const getPriceForRange = (from: string, to: string) => {
+    if (!dynamicPricing?.length) {
+      return sellingPrice;
+    }
+
+    const pricing = dynamicPricing.find(
+      p => parseInt(p.from) <= parseInt(from) && parseInt(p.to) >= parseInt(to)
+    );
+
+    return pricing ? parseFloat(pricing.amount) : sellingPrice;
+  };
+
+  const formatPrice = (price: number) => {
+    return `R${price.toFixed(2)}`;
+  };
+
+  return (
+    <div className="grid grid-cols-2 gap-y-5 text-sm gap-x-2">
+      <div className="font-medium text-gray-700">Quantity</div>
+      <div className="font-medium text-gray-700">Price</div>
+      {desiredRanges.map(range => (
+        <React.Fragment key={`${range.from}-${range.to}`}>
+          <div className="text-gray-600">{`${range.from} - ${range.to}`}</div>
+          <div className="text-gray-600">
+            {formatPrice(getPriceForRange(range.from, range.to))}
+          </div>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+};
+
 const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
   isOpen,
   onClose,
@@ -141,10 +186,6 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
     return (
       productVariations.variations[0]?.variations[0]?.variationImageURL || ""
     );
-  };
-
-  const formatPrice = (price: number) => {
-    return `R${price.toFixed(2)}`;
   };
 
   return (
@@ -329,29 +370,10 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
             {/* Right Column - Pricing */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg border p-3">
-                <div className="grid grid-cols-2 gap-y-5 text-sm gap-x-2 ">
-                  <div className="font-medium text-gray-700">Quantity</div>
-                  <div className="font-medium text-gray-700">Price</div>
-                  {product.dynamicPricing?.length > 0 ? (
-                    [...product.dynamicPricing]
-                      .sort((a, b) => parseInt(a.from) - parseInt(b.from))
-                      .map(pricing => (
-                        <React.Fragment key={`${pricing.from}-${pricing.to}`}>
-                          <div className="text-gray-600">{`${pricing.from} - ${pricing.to}`}</div>
-                          <div className="text-gray-600">
-                            {formatPrice(parseFloat(pricing.amount))}
-                          </div>
-                        </React.Fragment>
-                      ))
-                  ) : (
-                    <>
-                      <div className="text-gray-600">1+</div>
-                      <div className="text-gray-600">
-                        {formatPrice(product.sellingPrice)}
-                      </div>
-                    </>
-                  )}
-                </div>
+                <PricingRanges
+                  dynamicPricing={product.dynamicPricing}
+                  sellingPrice={product.sellingPrice}
+                />
               </div>
             </div>
           </div>
