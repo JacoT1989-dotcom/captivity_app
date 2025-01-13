@@ -1,24 +1,100 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Image from "next/image";
-import { Product } from "./_store/types";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import ColorDialog from "./ColorDialog";
+import ProductDetailsDialog from "./ProductDetailsDialog";
+
+interface Variation {
+  id: string;
+  name: string;
+  color: string;
+  size: string;
+  sku: string;
+  sku2: string;
+  variationImageURL: string;
+  quantity: number;
+  productId: string;
+}
+
+interface ColorVariation {
+  color: string;
+  variations: Variation[];
+}
+
+interface DynamicPricing {
+  id: string;
+  from: string;
+  to: string;
+  type: string;
+  amount: string;
+  productId: string;
+}
+
+interface FeaturedImage {
+  large: string;
+}
+
+interface Product {
+  id: string;
+  productName: string;
+  sellingPrice: number;
+  dynamicPricing: DynamicPricing[];
+  featuredImage: FeaturedImage | null;
+  category: string[];
+  variations: Variation[];
+}
+
+interface ProductVariations {
+  [productId: string]: {
+    variations: ColorVariation[];
+    product?: Product;
+  };
+}
 
 interface ProductGridProps {
-  products: Array<
-    Product & {
-      featuredImage: Product["featuredImage"] | null;
-    }
-  >;
+  products: Array<Product>;
 }
 
 const ProductGrid = ({ products }: ProductGridProps) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isColorDialogOpen, setIsColorDialogOpen] = useState(false);
+  const [colorDialogProductId, setColorDialogProductId] = useState<
+    string | null
+  >(null);
+
+  // Create grouped variations structure
+  const groupedVariations = useMemo(() => {
+    const grouped: ProductVariations = {};
+
+    products.forEach(product => {
+      // Group variations by color
+      const colorGroups = product.variations.reduce(
+        (acc: { [color: string]: Variation[] }, variation) => {
+          if (!acc[variation.color]) {
+            acc[variation.color] = [];
+          }
+          acc[variation.color].push(variation);
+          return acc;
+        },
+        {}
+      );
+
+      // Convert to ColorVariation[] format
+      const colorVariations: ColorVariation[] = Object.entries(colorGroups).map(
+        ([color, variations]) => ({
+          color,
+          variations,
+        })
+      );
+
+      grouped[product.id] = {
+        variations: colorVariations,
+        product: product,
+      };
+    });
+
+    return grouped;
+  }, [products]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-ZA", {
@@ -27,11 +103,20 @@ const ProductGrid = ({ products }: ProductGridProps) => {
     }).format(price);
   };
 
-  const getTotalStock = (variations: Product["variations"]) => {
+  const getTotalStock = (variations: Variation[]) => {
     return variations.reduce(
       (total, variation) => total + variation.quantity,
       0
     );
+  };
+
+  const handleColorDialogOpen = (productId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const productData = groupedVariations[productId];
+    if (productData && productData.variations.length > 0) {
+      setColorDialogProductId(productId);
+      setIsColorDialogOpen(true);
+    }
   };
 
   return (
@@ -95,18 +180,22 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                   .map(color => (
                     <div
                       key={color}
-                      className="w-6 h-6 rounded-full border border-border"
+                      className="w-6 h-6 rounded-md border border-border"
                       style={{ backgroundColor: color.toLowerCase() }}
                       title={color}
                     />
                   ))}
-                {product.variations.length > 2 && (
+                {Array.from(new Set(product.variations.map(v => v.color)))
+                  .length > 2 && (
                   <Button
-                    onClick={() => setSelectedProduct(product)}
+                    onClick={e => handleColorDialogOpen(product.id, e)}
                     variant="ghost"
                     className="h-6 px-2 text-xs"
                   >
-                    +{product.variations.length - 2} more
+                    +
+                    {Array.from(new Set(product.variations.map(v => v.color)))
+                      .length - 2}{" "}
+                    more
                   </Button>
                 )}
               </div>
@@ -128,83 +217,22 @@ const ProductGrid = ({ products }: ProductGridProps) => {
         )}
       </div>
 
-      <Dialog
-        open={!!selectedProduct}
-        onOpenChange={() => setSelectedProduct(null)}
-      >
-        <DialogContent className="sm:max-w-2xl">
-          {selectedProduct && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selectedProduct.productName}</DialogTitle>
-              </DialogHeader>
+      {/* Product Details Dialog */}
+      <ProductDetailsDialog
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="aspect-square relative rounded-lg overflow-hidden">
-                  {selectedProduct.featuredImage ? (
-                    <Image
-                      src={selectedProduct.featuredImage.large}
-                      alt={selectedProduct.productName}
-                      fill
-                      className="object-cover"
-                      priority
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                      <span className="text-6xl font-bold text-muted-foreground/50">
-                        {selectedProduct.productName.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-4">
-                  <p className="text-2xl font-bold">
-                    {formatPrice(selectedProduct.sellingPrice)}
-                  </p>
-
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Available Colors:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {Array.from(
-                        new Set(selectedProduct.variations.map(v => v.color))
-                      ).map(color => (
-                        <span
-                          key={color}
-                          className="px-3 py-1 text-sm font-medium bg-muted text-muted-foreground rounded-full"
-                        >
-                          {color}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">Stock Status:</h4>
-                    <span
-                      className={`px-3 py-1 text-sm font-medium rounded-full ${
-                        getTotalStock(selectedProduct.variations) > 0
-                          ? "bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-100"
-                          : "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-100"
-                      }`}
-                    >
-                      {getTotalStock(selectedProduct.variations) > 0
-                        ? `In Stock (${getTotalStock(selectedProduct.variations)} units)`
-                        : "Out of Stock"}
-                    </span>
-                  </div>
-
-                  <Button className="w-full" asChild>
-                    <a href={`/products/${selectedProduct.id}`}>
-                      View Full Details
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Color Selection Dialog */}
+      <ColorDialog
+        isOpen={isColorDialogOpen}
+        onClose={() => {
+          setIsColorDialogOpen(false);
+          setColorDialogProductId(null);
+        }}
+        selectedProduct={colorDialogProductId}
+        groupedVariations={groupedVariations}
+      />
     </>
   );
 };
