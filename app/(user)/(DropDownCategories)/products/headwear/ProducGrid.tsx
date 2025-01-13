@@ -126,7 +126,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                   .length > 2 && (
                   <Button
                     onClick={e => handleColorDialogOpen(product, e)}
-                    variant="ghost"
+                    variant="default"
                     className="h-6 px-2 text-xs"
                   >
                     +
