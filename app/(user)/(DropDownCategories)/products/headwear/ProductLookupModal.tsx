@@ -211,7 +211,11 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                         ? selectedColorVariations.some(
                             v => v.size === size && v.quantity > 0
                           )
-                        : false;
+                        : productVariations.variations.some(colorVar =>
+                            colorVar.variations.some(
+                              v => v.size === size && v.quantity > 0
+                            )
+                          );
 
                       return (
                         <button
@@ -266,7 +270,38 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                       </button>
                     </div>
                     <div className="text-sm text-yellow-600">
-                      {productVariations.variations[0].variations[0].quantity}{" "}
+                      {(() => {
+                        // If both color and size are selected
+                        if (selectedColor && selectedSize) {
+                          return productVariations.variations
+                            .find(v => v.color === selectedColor)
+                            ?.variations.find(v => v.size === selectedSize)
+                            ?.quantity;
+                        }
+                        // If only color is selected
+                        if (selectedColor) {
+                          const colorVariation =
+                            productVariations.variations.find(
+                              v => v.color === selectedColor
+                            );
+                          return colorVariation?.variations[0]?.quantity;
+                        }
+                        // If only size is selected
+                        if (selectedSize) {
+                          const firstVariationWithSize =
+                            productVariations.variations
+                              .find(colorVar =>
+                                colorVar.variations.some(
+                                  v => v.size === selectedSize
+                                )
+                              )
+                              ?.variations.find(v => v.size === selectedSize);
+                          return firstVariationWithSize?.quantity;
+                        }
+                        // Default to first variation
+                        return productVariations.variations[0].variations[0]
+                          .quantity;
+                      })()}{" "}
                       in stock
                     </div>
                   </div>
@@ -277,7 +312,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
               <a
                 href="/login"
                 className="block w-full py-2.5 bg-red-600 text-white rounded-md
-              hover:bg-red-700 transition-colors shadow-sm text-center"
+                hover:bg-red-700 transition-colors shadow-sm text-center"
               >
                 Login to Add to Cart
               </a>
