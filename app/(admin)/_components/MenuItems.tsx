@@ -230,8 +230,8 @@ export function useMenuItems() {
       {
         title: "Orders",
         links: [
-          { name: "All Orders", href: "/admin/orders" },
-          { name: "Pending Orders", href: "/admin/orders/pending" },
+          { name: "All Orders", href: "/admin/orders/orders" },
+          { name: "Pending Orders", href: "/admin/pendingOrders" },
           { name: "Processing Orders", href: "/admin/orders/processing" },
           { name: "Completed Orders", href: "/admin/orders/completed" },
           { name: "Cancelled Orders", href: "/admin/orders/cancelled" },
