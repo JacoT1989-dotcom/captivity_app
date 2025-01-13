@@ -63,17 +63,21 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
     null
   );
 
-  // Reset selections when dialog opens with new product
   useEffect(() => {
-    if (isOpen && selectedProduct) {
-      setSelectedColor("");
-      setSelectedSize("");
-      setQuantity(1);
-      setCurrentVariation(null);
+    if (isOpen && selectedProduct && groupedVariations[selectedProduct]) {
+      const variations = groupedVariations[selectedProduct].variations;
+      const firstAvailableVariation = variations[0]?.variations.find(
+        v => v.quantity > 0
+      );
+      if (firstAvailableVariation) {
+        setSelectedColor(variations[0].color);
+        setSelectedSize(firstAvailableVariation.size);
+        setQuantity(1);
+        setCurrentVariation(firstAvailableVariation);
+      }
     }
-  }, [isOpen, selectedProduct]);
+  }, [isOpen, selectedProduct, groupedVariations]);
 
-  // Update current variation when color and size are selected
   useEffect(() => {
     if (
       selectedColor &&
@@ -88,8 +92,6 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
         v => v.size === selectedSize
       );
       setCurrentVariation(variation || null);
-    } else {
-      setCurrentVariation(null);
     }
   }, [selectedColor, selectedSize, selectedProduct, groupedVariations]);
 
@@ -112,22 +114,37 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
     [];
 
   const getCurrentImage = () => {
+    if (selectedColor && selectedSize) {
+      const colorVariation = productData.variations.find(
+        v => v.color === selectedColor
+      );
+      const sizeVariation = colorVariation?.variations.find(
+        v => v.size === selectedSize
+      );
+      if (sizeVariation?.variationImageURL)
+        return sizeVariation.variationImageURL;
+    }
+
+    if (selectedSize) {
+      const variationWithSize = productData.variations.find(colorVar =>
+        colorVar.variations.some(v => v.size === selectedSize)
+      );
+      const sizeVariation = variationWithSize?.variations.find(
+        v => v.size === selectedSize
+      );
+      if (sizeVariation?.variationImageURL)
+        return sizeVariation.variationImageURL;
+    }
+
     if (selectedColor) {
       const colorVariation = productData.variations.find(
         v => v.color === selectedColor
       );
-      if (selectedSize && colorVariation) {
-        const sizeVariation = colorVariation.variations.find(
-          v => v.size === selectedSize
-        );
-        if (sizeVariation?.variationImageURL) {
-          return sizeVariation.variationImageURL;
-        }
-      }
       if (colorVariation?.variations[0]?.variationImageURL) {
         return colorVariation.variations[0].variationImageURL;
       }
     }
+
     return productData.variations[0]?.variations[0]?.variationImageURL || "";
   };
 
@@ -135,216 +152,196 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
     return `R${price.toFixed(2)}`;
   };
 
-  const getCurrentPriceTier = () => {
-    if (!productData.product?.dynamicPricing || quantity <= 0) return null;
-
-    return productData.product.dynamicPricing
-      .filter(
-        pricing =>
-          quantity >= parseInt(pricing.from) && quantity <= parseInt(pricing.to)
-      )
-      .sort((a, b) => parseFloat(a.amount) - parseFloat(b.amount))[0];
-  };
-
-  const getCurrentPrice = () => {
-    const currentTier = getCurrentPriceTier();
-    return currentTier
-      ? parseFloat(currentTier.amount)
-      : productData.product?.sellingPrice || 0;
-  };
-
-  const isAddToBasketEnabled = () => {
-    return (
-      selectedColor &&
-      selectedSize &&
-      currentVariation &&
-      currentVariation.quantity > 0 &&
-      quantity > 0 &&
-      quantity <= currentVariation.quantity
-    );
-  };
-
-  const handleAddToBasket = () => {
-    if (!currentVariation || !productData.product) return;
-
-    const currentPrice = getCurrentPrice();
-
-    console.log({
-      productId: selectedProduct,
-      variationId: currentVariation.id,
-      quantity,
-      price: currentPrice,
-      color: selectedColor,
-      size: selectedSize,
-    });
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[900px] p-0">
-        <div className="flex justify-end p-2">
+    <Dialog open={isOpen}>
+      <DialogContent className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-5xl h-[90vh] md:h-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-3 border-b bg-white sticky top-0 z-10">
+          <h2 className="text-lg font-semibold text-red-600">
+            {productData.product?.productName}
+          </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 pt-0">
-          {/* Left Column - Image */}
-          <div>
-            <div className="aspect-square relative rounded-md overflow-hidden bg-gray-100">
-              <Image
-                src={getCurrentImage()}
-                alt={productData.product?.productName || "Product"}
-                fill
-                className="object-contain"
-                sizes="(max-width: 768px) 100vw, 50vw"
-                priority
-              />
-            </div>
-          </div>
-
-          {/* Right Column - Details */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-red-600">
-              {productData.product?.productName}
-            </h2>
-
-            {/* Pricing Table */}
-            <div className="space-y-4 border rounded-md p-4">
-              <div className="grid grid-cols-2 gap-4 text-gray-600">
-                <div>Quantity</div>
-                <div>Price</div>
-              </div>
-              <div className="space-y-1">
-                {productData.product?.dynamicPricing
-                  ?.sort((a, b) => parseInt(a.from) - parseInt(b.from))
-                  .map(pricing => (
-                    <div
-                      key={`${pricing.from}-${pricing.to}`}
-                      className="grid grid-cols-2 gap-4"
-                    >
-                      <div>{`${pricing.from} - ${pricing.to}`}</div>
-                      <div>{formatPrice(parseFloat(pricing.amount))}</div>
-                    </div>
-                  ))}
+        {/* Main Content */}
+        <div className="overflow-y-auto md:overflow-hidden h-[calc(100%-3.5rem)]">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 p-4">
+            {/* Left Column - Image */}
+            <div className="lg:col-span-2">
+              <div className="aspect-square relative rounded-lg overflow-hidden bg-gray-50 border">
+                <Image
+                  src={getCurrentImage()}
+                  alt={productData.product?.productName || "Product"}
+                  fill
+                  className="object-contain p-4"
+                  sizes="(max-width: 1024px) 100vw, 40vw"
+                  priority
+                />
               </div>
             </div>
 
-            <div className="space-y-4 border rounded-md p-4">
-              {/* Color Selection */}
-              <div>
-                <label className="block text-sm mb-2">Colour:</label>
-                <div className="flex gap-2">
-                  {allColors.map(color => (
-                    <button
-                      key={color}
-                      onClick={() => {
-                        setSelectedColor(color);
-                        setSelectedSize("");
-                      }}
-                      className={`w-8 h-8 rounded-sm border transition-all ${
-                        selectedColor === color
-                          ? "ring-2 ring-black ring-offset-2"
-                          : "hover:opacity-80"
-                      }`}
-                      style={{ backgroundColor: color.toLowerCase() }}
-                      title={color}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Size Selection */}
-              <div>
-                <label className="block text-sm mb-2">Size:</label>
-                <div className="flex flex-wrap gap-2">
-                  {allSizes.map(size => {
-                    const isAvailable = selectedColor
-                      ? selectedColorVariations.some(
-                          v => v.size === size && v.quantity > 0
-                        )
-                      : false;
-
-                    return (
+            {/* Middle Column - Product Options */}
+            <div className="lg:col-span-2 space-y-3">
+              {/* Product Options Card */}
+              <div className="bg-white rounded-lg border p-3 space-y-3">
+                {/* Color Selection */}
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1.5">
+                    Colour:
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {allColors.map(color => (
                       <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={`min-w-[48px] px-3 py-1.5 text-sm border transition-colors ${
-                          selectedSize === size
-                            ? "bg-black text-white"
-                            : isAvailable
-                              ? "hover:bg-gray-100"
-                              : "opacity-50 cursor-not-allowed"
+                        key={color}
+                        onClick={() => setSelectedColor(color)}
+                        className={`w-8 h-8 rounded-md border transition-all ${
+                          selectedColor === color
+                            ? "ring-2 ring-red-600 ring-offset-1"
+                            : "hover:opacity-80"
                         }`}
-                        disabled={!isAvailable}
-                      >
-                        {size}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Quantity */}
-              <div className="flex items-center gap-4">
-                <div className="flex border">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3 py-1 hover:bg-gray-100 transition-colors"
-                    disabled={quantity <= 1}
-                  >
-                    -
-                  </button>
-                  <input
-                    type="text"
-                    value={quantity}
-                    onChange={e => {
-                      const val = parseInt(e.target.value);
-                      if (!isNaN(val) && currentVariation) {
-                        setQuantity(
-                          Math.min(currentVariation.quantity, Math.max(1, val))
-                        );
-                      }
-                    }}
-                    className="w-12 text-center border-x"
-                  />
-                  <button
-                    onClick={() => {
-                      if (currentVariation) {
-                        setQuantity(
-                          Math.min(currentVariation.quantity, quantity + 1)
-                        );
-                      }
-                    }}
-                    className="px-3 py-1 hover:bg-gray-100 transition-colors"
-                    disabled={
-                      !currentVariation || quantity >= currentVariation.quantity
-                    }
-                  >
-                    +
-                  </button>
-                </div>
-
-                {currentVariation && (
-                  <div className="text-sm text-yellow-600">
-                    {currentVariation.quantity} in stock
+                        style={{ backgroundColor: color.toLowerCase() }}
+                        title={color}
+                      />
+                    ))}
                   </div>
-                )}
+                </div>
+
+                {/* Size Selection */}
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1.5">
+                    Size:
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {allSizes.map(size => {
+                      const isAvailable = selectedColor
+                        ? selectedColorVariations.some(
+                            v => v.size === size && v.quantity > 0
+                          )
+                        : productData.variations.some(colorVar =>
+                            colorVar.variations.some(
+                              v => v.size === size && v.quantity > 0
+                            )
+                          );
+
+                      return (
+                        <button
+                          key={size}
+                          onClick={() => setSelectedSize(size)}
+                          className={`min-w-[44px] px-3 py-1.5 text-sm border rounded-md transition-colors ${
+                            selectedSize === size
+                              ? "bg-red-600 text-white border-red-600"
+                              : isAvailable
+                                ? "hover:bg-gray-50"
+                                : "opacity-50 cursor-not-allowed bg-gray-50"
+                          }`}
+                          disabled={!isAvailable}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Quantity Selection */}
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1.5">
+                    Quantity:
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <div className="flex border rounded-md shadow-sm">
+                      <button
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="px-3 py-1.5 hover:bg-gray-50 transition-colors border-r"
+                        disabled={quantity <= 1}
+                      >
+                        -
+                      </button>
+                      <input
+                        type="text"
+                        value={quantity}
+                        onChange={e => {
+                          const val = parseInt(e.target.value);
+                          if (!isNaN(val) && currentVariation) {
+                            setQuantity(
+                              Math.min(
+                                currentVariation.quantity,
+                                Math.max(1, val)
+                              )
+                            );
+                          }
+                        }}
+                        className="w-14 text-center"
+                      />
+                      <button
+                        onClick={() => {
+                          if (currentVariation) {
+                            setQuantity(
+                              Math.min(currentVariation.quantity, quantity + 1)
+                            );
+                          }
+                        }}
+                        className="px-3 py-1.5 hover:bg-gray-50 transition-colors border-l"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className="text-sm text-yellow-600">
+                      {currentVariation
+                        ? `${currentVariation.quantity} in stock`
+                        : ""}
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* Login Button */}
+              <button
+                className="w-full py-2.5 bg-red-600 text-white rounded-md
+                hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 
+                disabled:cursor-not-allowed"
+                disabled={!currentVariation || currentVariation.quantity === 0}
+              >
+                Login to Add to Cart
+              </button>
             </div>
 
-            {/* Add to Basket */}
-            <button
-              className="w-full py-3 bg-red-600 text-white rounded-md 
-                hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed
-                transition-colors"
-              disabled={!isAddToBasketEnabled()}
-            >
-              Login to Add to Cart
-            </button>
+            {/* Right Column - Pricing */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-lg border p-3">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  Price List
+                </h3>
+                <div className="grid grid-cols-2 gap-y-1.5 text-sm">
+                  <div className="font-medium text-gray-700">Quantity</div>
+                  <div className="font-medium text-gray-700">Price</div>
+                  {productData.product?.dynamicPricing?.length ? (
+                    productData.product.dynamicPricing
+                      .sort((a, b) => parseInt(a.from) - parseInt(b.from))
+                      .map(pricing => (
+                        <React.Fragment key={`${pricing.from}-${pricing.to}`}>
+                          <div className="text-gray-600">{`${pricing.from} - ${pricing.to}`}</div>
+                          <div className="text-gray-600">
+                            {formatPrice(parseFloat(pricing.amount))}
+                          </div>
+                        </React.Fragment>
+                      ))
+                  ) : (
+                    <>
+                      <div className="text-gray-600">1+</div>
+                      <div className="text-gray-600">
+                        {formatPrice(productData.product?.sellingPrice || 0)}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </DialogContent>
