@@ -82,11 +82,11 @@ const ProductGrid = ({ products }: ProductGridProps) => {
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1 sm:gap-4 lg:gap-8  sm:mr-0">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-8">
         {products.map(product => (
           <div
             key={product.id}
-            className="group relative bg-background rounded-lg hover:shadow-lg transition-shadow shadow-lg border border-border w-[89%] sm:w-full"
+            className="group relative bg-background rounded-lg hover:shadow-lg transition-shadow shadow-lg border border-border"
           >
             <div className="relative w-full pb-[100%] overflow-hidden rounded-t-lg">
               {product.featuredImage ? (
@@ -126,7 +126,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
               </div>
             </div>
 
-            <div className="p-1 sm:p-4">
+            <div className="p-2 sm:p-4">
               <h3 className="text-lg font-semibold text-foreground group-hover:text-foreground/90 transition-colors line-clamp-1 hover:line-clamp-none">
                 {product.productName}
               </h3>
