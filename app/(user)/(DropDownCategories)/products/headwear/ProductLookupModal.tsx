@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X } from "lucide-react";
-import Link from "next/link";
 
 interface ProductLookup {
   id: string;
@@ -62,13 +61,17 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
   );
 
   useEffect(() => {
-    if (isOpen && productId) {
-      setSelectedColor("");
-      setSelectedSize("");
-      setQuantity(1);
-      setCurrentVariation(null);
+    if (isOpen && productId && productVariations) {
+      const firstAvailableVariation =
+        productVariations.variations[0].variations.find(v => v.quantity > 0);
+      if (firstAvailableVariation) {
+        setSelectedColor(productVariations.variations[0].color);
+        setSelectedSize(firstAvailableVariation.size);
+        setQuantity(1);
+        setCurrentVariation(firstAvailableVariation);
+      }
     }
-  }, [isOpen, productId]);
+  }, [isOpen, productId, productVariations]);
 
   useEffect(() => {
     if (selectedColor && selectedSize && productVariations) {
@@ -79,8 +82,6 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
         v => v.size === selectedSize
       );
       setCurrentVariation(variation || null);
-    } else {
-      setCurrentVariation(null);
     }
   }, [selectedColor, selectedSize, productVariations]);
 
@@ -102,22 +103,41 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
       ?.variations || [];
 
   const getCurrentImage = () => {
+    // If both color and size are selected
+    if (selectedColor && selectedSize) {
+      const colorVariation = productVariations.variations.find(
+        v => v.color === selectedColor
+      );
+      const sizeVariation = colorVariation?.variations.find(
+        v => v.size === selectedSize
+      );
+      if (sizeVariation?.variationImageURL)
+        return sizeVariation.variationImageURL;
+    }
+
+    // If only size is selected
+    if (selectedSize) {
+      const variationWithSize = productVariations.variations.find(colorVar =>
+        colorVar.variations.some(v => v.size === selectedSize)
+      );
+      const sizeVariation = variationWithSize?.variations.find(
+        v => v.size === selectedSize
+      );
+      if (sizeVariation?.variationImageURL)
+        return sizeVariation.variationImageURL;
+    }
+
+    // If only color is selected
     if (selectedColor) {
       const colorVariation = productVariations.variations.find(
         v => v.color === selectedColor
       );
-      if (selectedSize && colorVariation) {
-        const sizeVariation = colorVariation.variations.find(
-          v => v.size === selectedSize
-        );
-        if (sizeVariation?.variationImageURL) {
-          return sizeVariation.variationImageURL;
-        }
-      }
       if (colorVariation?.variations[0]?.variationImageURL) {
         return colorVariation.variations[0].variationImageURL;
       }
     }
+
+    // Default image
     return (
       productVariations.variations[0]?.variations[0]?.variationImageURL || ""
     );
@@ -125,17 +145,6 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
 
   const formatPrice = (price: number) => {
     return `R${price.toFixed(2)}`;
-  };
-
-  const isAddToBasketEnabled = () => {
-    return (
-      selectedColor &&
-      selectedSize &&
-      currentVariation &&
-      currentVariation.quantity > 0 &&
-      quantity > 0 &&
-      quantity <= currentVariation.quantity
-    );
   };
 
   return (
@@ -186,7 +195,6 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                         key={color}
                         onClick={() => {
                           setSelectedColor(color);
-                          setSelectedSize("");
                         }}
                         className={`w-8 h-8 rounded-md border transition-all ${
                           selectedColor === color
