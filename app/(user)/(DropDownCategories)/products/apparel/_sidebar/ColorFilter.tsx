@@ -27,7 +27,7 @@ const ColorButton: React.FC<{
       <button
         onClick={onChange}
         className={cn(
-          "relative w-5 h-5 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1",
+          "relative w-6 h-6 sm:w-5 sm:h-5 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1",
           isSelected && "ring-1 ring-blue-500 ring-offset-1"
         )}
         aria-label={`Select ${colorData.color} color`}
@@ -43,7 +43,10 @@ const ColorButton: React.FC<{
         {isSelected && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Check
-              className={cn("w-3 h-3", isWhite ? "text-black" : "text-white")}
+              className={cn(
+                "w-4 h-4 sm:w-3 sm:h-3",
+                isWhite ? "text-black" : "text-white"
+              )}
             />
           </div>
         )}
@@ -131,9 +134,9 @@ const DynamicColorFilter: React.FC<DynamicColorFilterProps> = ({
       </div>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-[500px] w-[500px] max-h-[500px] h-[500px] p-0">
-          <div className="relative border-b px-6 py-4">
-            <h2 className="text-lg font-semibold">Select Color</h2>
+        <DialogContent className="w-11/12 max-w-lg mx-auto h-auto max-h-[85vh] p-0">
+          <div className="relative border-b px-4 sm:px-6 py-4">
+            <h2 className="text-base sm:text-lg font-semibold">Select Color</h2>
             <button
               onClick={() => setIsModalOpen(false)}
               className="absolute top-4 right-4 hover:text-muted-foreground transition-colors"
@@ -141,8 +144,8 @@ const DynamicColorFilter: React.FC<DynamicColorFilterProps> = ({
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="overflow-y-auto h-[calc(500px-70px)] p-6">
-            <div className="grid grid-cols-2 gap-x-12 gap-y-6">
+          <div className="overflow-y-auto max-h-[60vh] sm:max-h-[400px] p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-x-12 sm:gap-y-6">
               {colorCounts.map(colorData => (
                 <div key={colorData.color} className="flex items-center gap-3">
                   <ColorButton
