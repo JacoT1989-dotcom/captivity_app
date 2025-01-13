@@ -44,9 +44,9 @@ export default function ContentWrapper() {
   };
 
   return (
-    <div className="flex w-full overflow-hidden">
+    <div className="flex w-full relative">
       <div className="hidden lg:block w-64 flex-shrink-0">
-        <div className="sticky top-[76px] shadow-lg">
+        <div className="sticky top-[76px]">
           <FilterSidebar
             className="border-r border-gray-200"
             onFilterChange={handleFilterChange}
