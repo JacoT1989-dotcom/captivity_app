@@ -252,7 +252,7 @@ export default function ProductGridWrapper() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
         {[...Array(12)].map((_, i) => (
           <div
             key={i}
@@ -314,7 +314,7 @@ export default function ProductGridWrapper() {
     );
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {renderControls(startIndex, totalItems, itemsPerPage, true)}
         <VariationsGrid
           variations={paginatedVariations}
@@ -333,7 +333,7 @@ export default function ProductGridWrapper() {
     );
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {renderControls(startIndex, totalItems, itemsPerPage, false)}
         <ProductGrid products={paginatedProducts} />
         {renderPagination(currentPage, totalPages, setCurrentPage)}
