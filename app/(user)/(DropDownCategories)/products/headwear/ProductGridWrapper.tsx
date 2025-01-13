@@ -299,7 +299,7 @@ export default function ProductGridWrapper() {
     return (
       <div className="space-y-4 sm:space-y-6">
         {renderControls(startIndex, totalItems, itemsPerPage, false)}
-        <div className="px-2 sm:px-4 md:px-6">
+        <div>
           <ProductGrid products={paginatedProducts} />
         </div>
         {renderPagination(currentPage, totalPages, setCurrentPage)}
