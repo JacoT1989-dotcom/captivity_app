@@ -151,7 +151,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
     <Dialog open={isOpen}>
       <DialogContent className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-7xl h-[90vh] md:h-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-3 border-b bg-white sticky top-0 z-10">
+        <div className="flex items-center justify-between p-3 border-b rounded-md bg-white sticky top-0 z-10">
           <h2 className="text-lg font-semibold text-red-600">
             {product.productName}
           </h2>
