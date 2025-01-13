@@ -9,7 +9,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="flex flex-col w-full">
       <div className="w-full relative z-30">{children}</div>
-      <div className="w-full px-2 sm:px-4 lg:px-8">
+      <div className="w-full px-0.5 sm:px-4 lg:px-8">
         <ContentWrapper />
       </div>
     </div>

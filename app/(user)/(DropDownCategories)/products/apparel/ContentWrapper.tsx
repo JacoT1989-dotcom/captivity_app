@@ -44,7 +44,7 @@ export default function ContentWrapper() {
   };
 
   return (
-    <div className="flex w-full">
+    <div className="flex w-full overflow-hidden">
       <div className="hidden lg:block w-64 flex-shrink-0">
         <div className="sticky top-[76px] shadow-lg">
           <FilterSidebar
@@ -54,7 +54,7 @@ export default function ContentWrapper() {
         </div>
       </div>
 
-      <div className="w-full lg:ml-6">
+      <div className="w-full -mr-1 sm:mr-0 lg:ml-6">
         <ProductGridWrapper />
       </div>
 
