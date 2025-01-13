@@ -1,24 +1,36 @@
 import React, { useState } from "react";
 import Image from "next/image";
-import { Product } from "./_store/types";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import ProductDetailsDialog from "./ProductDetailsDialog";
+import ProductLookupModal from "./ProductLookupModal";
+import { Product as StoreProduct } from "./_store/types";
+
+// Define a simplified Product type for the grid
+interface Product {
+  id: string;
+  productName: string;
+  sellingPrice: number;
+  featuredImage: { large: string } | null;
+  variations: Array<{
+    id: string;
+    color: string;
+    quantity: number;
+  }>;
+  category: string[];
+}
 
 interface ProductGridProps {
-  products: Array<
-    Product & {
-      featuredImage: Product["featuredImage"] | null;
-    }
-  >;
+  products: StoreProduct[]; // Changed to use the store's Product type
 }
 
 const ProductGrid = ({ products }: ProductGridProps) => {
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<StoreProduct | null>(
+    null
+  );
+  const [isColorDialogOpen, setIsColorDialogOpen] = useState(false);
+  const [colorDialogProductId, setColorDialogProductId] = useState<
+    string | null
+  >(null);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-ZA", {
@@ -27,11 +39,21 @@ const ProductGrid = ({ products }: ProductGridProps) => {
     }).format(price);
   };
 
-  const getTotalStock = (variations: Product["variations"]) => {
+  const getTotalStock = (variations: StoreProduct["variations"]) => {
     return variations.reduce(
       (total, variation) => total + variation.quantity,
       0
     );
+  };
+
+  const handleColorDialogOpen = (
+    product: StoreProduct,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation();
+    setSelectedProduct(product);
+    setColorDialogProductId(product.id);
+    setIsColorDialogOpen(true);
   };
 
   return (
@@ -95,18 +117,22 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                   .map(color => (
                     <div
                       key={color}
-                      className="w-6 h-6 rounded-full border border-border"
+                      className="w-6 h-6 rounded-md border border-border"
                       style={{ backgroundColor: color.toLowerCase() }}
                       title={color}
                     />
                   ))}
-                {product.variations.length > 2 && (
+                {Array.from(new Set(product.variations.map(v => v.color)))
+                  .length > 2 && (
                   <Button
-                    onClick={() => setSelectedProduct(product)}
+                    onClick={e => handleColorDialogOpen(product, e)}
                     variant="ghost"
                     className="h-6 px-2 text-xs"
                   >
-                    +{product.variations.length - 2} more
+                    +
+                    {Array.from(new Set(product.variations.map(v => v.color)))
+                      .length - 2}{" "}
+                    more
                   </Button>
                 )}
               </div>
@@ -120,91 +146,44 @@ const ProductGrid = ({ products }: ProductGridProps) => {
             </div>
           </div>
         ))}
-
-        {products.length === 0 && (
-          <div className="col-span-full text-center py-8 text-muted-foreground">
-            No products found in this category
-          </div>
-        )}
       </div>
 
-      <Dialog
-        open={!!selectedProduct}
-        onOpenChange={() => setSelectedProduct(null)}
-      >
-        <DialogContent className="sm:max-w-2xl">
-          {selectedProduct && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selectedProduct.productName}</DialogTitle>
-              </DialogHeader>
+      {/* Product Details Dialog */}
+      <ProductDetailsDialog
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="aspect-square relative rounded-lg overflow-hidden">
-                  {selectedProduct.featuredImage ? (
-                    <Image
-                      src={selectedProduct.featuredImage.large}
-                      alt={selectedProduct.productName}
-                      fill
-                      className="object-cover"
-                      priority
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                      <span className="text-6xl font-bold text-muted-foreground/50">
-                        {selectedProduct.productName.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-4">
-                  <p className="text-2xl font-bold">
-                    {formatPrice(selectedProduct.sellingPrice)}
-                  </p>
-
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Available Colors:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {Array.from(
-                        new Set(selectedProduct.variations.map(v => v.color))
-                      ).map(color => (
-                        <span
-                          key={color}
-                          className="px-3 py-1 text-sm font-medium bg-muted text-muted-foreground rounded-full"
-                        >
-                          {color}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">Stock Status:</h4>
-                    <span
-                      className={`px-3 py-1 text-sm font-medium rounded-full ${
-                        getTotalStock(selectedProduct.variations) > 0
-                          ? "bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-100"
-                          : "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-100"
-                      }`}
-                    >
-                      {getTotalStock(selectedProduct.variations) > 0
-                        ? `In Stock (${getTotalStock(selectedProduct.variations)} units)`
-                        : "Out of Stock"}
-                    </span>
-                  </div>
-
-                  <Button className="w-full" asChild>
-                    <a href={`/products/${selectedProduct.id}`}>
-                      View Full Details
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Color Selection Dialog */}
+      {selectedProduct && (
+        <ProductLookupModal
+          isOpen={isColorDialogOpen}
+          onClose={() => {
+            setIsColorDialogOpen(false);
+            setColorDialogProductId(null);
+            setSelectedProduct(null);
+          }}
+          productId={colorDialogProductId}
+          product={selectedProduct}
+          productVariations={{
+            variations: selectedProduct.variations.reduce(
+              (acc, curr) => {
+                const existing = acc.find(v => v.color === curr.color);
+                if (existing) {
+                  existing.variations.push(curr);
+                } else {
+                  acc.push({ color: curr.color, variations: [curr] });
+                }
+                return acc;
+              },
+              [] as Array<{
+                color: string;
+                variations: typeof selectedProduct.variations;
+              }>
+            ),
+          }}
+        />
+      )}
     </>
   );
 };

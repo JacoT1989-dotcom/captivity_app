@@ -3,44 +3,10 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import ColorDialog from "./ColorDialog";
 import ProductDetailsDialog from "./ProductDetailsDialog";
-
-interface Variation {
-  id: string;
-  name: string;
-  color: string;
-  size: string;
-  sku: string;
-  sku2: string;
-  variationImageURL: string;
-  quantity: number;
-  productId: string;
-}
+import { Product, Variation } from "./_store/types"; // Import the Product type from your store
 
 interface ColorVariation {
   color: string;
-  variations: Variation[];
-}
-
-interface DynamicPricing {
-  id: string;
-  from: string;
-  to: string;
-  type: string;
-  amount: string;
-  productId: string;
-}
-
-interface FeaturedImage {
-  large: string;
-}
-
-interface Product {
-  id: string;
-  productName: string;
-  sellingPrice: number;
-  dynamicPricing: DynamicPricing[];
-  featuredImage: FeaturedImage | null;
-  category: string[];
   variations: Variation[];
 }
 
@@ -52,7 +18,7 @@ interface ProductVariations {
 }
 
 interface ProductGridProps {
-  products: Array<Product>;
+  products: Product[];
 }
 
 const ProductGrid = ({ products }: ProductGridProps) => {

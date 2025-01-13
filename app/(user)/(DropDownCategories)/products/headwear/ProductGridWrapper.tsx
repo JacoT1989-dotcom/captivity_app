@@ -30,15 +30,23 @@ interface ProductLookup {
   };
 }
 
-const transformProducts = (
-  products: Product[]
-): Array<Product & { featuredImage: Product["featuredImage"] | null }> => {
+// Updated transform function to handle the correct types
+const transformProducts = (products: Product[]): Product[] => {
   return products.map(p => ({
     ...p,
     featuredImage: p.featuredImage || null,
     variations: p.variations || [],
     reviews: p.reviews || [],
     category: p.category || [],
+    // Ensure all required properties from Product interface are included
+    userId: p.userId,
+    productName: p.productName,
+    description: p.description,
+    sellingPrice: p.sellingPrice,
+    isPublished: p.isPublished,
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt,
+    dynamicPricing: p.dynamicPricing || [],
   }));
 };
 
@@ -60,7 +68,6 @@ export default function ProductGridWrapper() {
 
   const hasColorSelected = filters.colors.length > 0;
 
-  // Only handle path changes after initial load
   useEffect(() => {
     if (initialized && pathname) {
       filterProductsByPath(pathname);
@@ -73,6 +80,7 @@ export default function ProductGridWrapper() {
     setCurrentPage(1);
   };
 
+  // Extracted renderControls function
   const renderControls = (
     startIndex: number,
     totalItems: number,
@@ -124,6 +132,7 @@ export default function ProductGridWrapper() {
     );
   };
 
+  // Extracted renderPagination function
   const renderPagination = (
     currentPage: number,
     totalPages: number,
@@ -131,34 +140,25 @@ export default function ProductGridWrapper() {
   ) => {
     if (totalPages <= 1) return null;
 
-    // Calculate the range of pages to show
     const getPageNumbers = () => {
-      const delta = 2; // Number of pages to show on each side of current page
+      const delta = 2;
       const range: (number | string)[] = [];
-
-      // Always show first page
       range.push(1);
-
-      // Calculate start and end of range
       let start = Math.max(2, currentPage - delta);
       let end = Math.min(totalPages - 1, currentPage + delta);
 
-      // Add ellipsis after first page if needed
       if (start > 2) {
         range.push("...");
       }
 
-      // Add pages in range
       for (let i = start; i <= end; i++) {
         range.push(i);
       }
 
-      // Add ellipsis before last page if needed
       if (end < totalPages - 1) {
         range.push("...");
       }
 
-      // Always show last page if there is more than one page
       if (totalPages > 1) {
         range.push(totalPages);
       }

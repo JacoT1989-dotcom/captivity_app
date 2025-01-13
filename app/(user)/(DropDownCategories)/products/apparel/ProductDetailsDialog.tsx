@@ -7,26 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-
-interface Variation {
-  id: string;
-  name: string;
-  color: string;
-  size: string;
-  sku: string;
-  sku2: string;
-  variationImageURL: string;
-  quantity: number;
-  productId: string;
-}
-
-interface Product {
-  id: string;
-  productName: string;
-  sellingPrice: number;
-  featuredImage: { large: string } | null;
-  variations: Variation[];
-}
+import { Product, Variation } from "./_store/types"; // Import types from your store
 
 interface ProductDetailsDialogProps {
   product: Product | null;
@@ -62,7 +43,7 @@ const ProductDetailsDialog = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="aspect-square relative rounded-lg overflow-hidden">
-                {product.featuredImage ? (
+                {product.featuredImage?.large ? (
                   <Image
                     src={product.featuredImage.large}
                     alt={product.productName}
