@@ -88,7 +88,7 @@ export default function ProductGridWrapper() {
     isVariationView: boolean
   ) => {
     return (
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-3 sm:p-4 mx-3 sm:mx-4 md:mx-6 bg-white rounded-lg border border-gray-100 shadow-lg">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-3 sm:p-4 mx-2 sm:mx-4 md:mx-6 bg-white rounded-lg border border-gray-100 shadow-lg">
         <div className="text-sm text-gray-600">
           Showing {startIndex + 1} -{" "}
           {Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems}{" "}
@@ -166,7 +166,7 @@ export default function ProductGridWrapper() {
     };
 
     return (
-      <div className="flex justify-center items-center gap-2 my-8 sm:my-16 pb-4 sm:pb-8 px-3 sm:px-4 md:px-6">
+      <div className="flex justify-center items-center gap-2 my-8 sm:my-16 pb-4 sm:pb-8 px-2 sm:px-4 md:px-6">
         <div className="inline-flex items-center gap-2 rounded-lg bg-white p-1 shadow-sm border border-gray-200">
           <button
             onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
@@ -214,7 +214,7 @@ export default function ProductGridWrapper() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mx-3 sm:mx-4 md:mx-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mx-2 sm:mx-4 md:mx-6">
         {[...Array(12)].map((_, i) => (
           <div
             key={i}
@@ -227,7 +227,7 @@ export default function ProductGridWrapper() {
 
   if (error) {
     return (
-      <div className="text-center text-red-500 py-8 mx-3 sm:mx-4 md:mx-6">
+      <div className="text-center text-red-500 py-8 mx-2 sm:mx-4 md:mx-6">
         Error loading products: {error}
       </div>
     );
@@ -235,7 +235,7 @@ export default function ProductGridWrapper() {
 
   if (!filteredProducts || filteredProducts.length === 0) {
     return (
-      <div className="text-center py-8 mx-3 sm:mx-4 md:mx-6">
+      <div className="text-center py-8 mx-2 sm:mx-4 md:mx-6">
         No products found with current filters
       </div>
     );
@@ -276,9 +276,9 @@ export default function ProductGridWrapper() {
     );
 
     return (
-      <div className="space-y-4 sm:space-y-6 max-w-[100vw] overflow-x-hidden">
+      <div className="space-y-4 sm:space-y-6">
         {renderControls(startIndex, totalItems, itemsPerPage, true)}
-        <div className="px-3 sm:px-4 md:px-6">
+        <div className="px-2 sm:px-4 md:px-6">
           <VariationsGrid
             variations={paginatedVariations}
             products={productsLookup}
@@ -297,9 +297,9 @@ export default function ProductGridWrapper() {
     );
 
     return (
-      <div className="space-y-4 sm:space-y-6 max-w-[100vw] overflow-x-hidden">
+      <div className="space-y-4 sm:space-y-6">
         {renderControls(startIndex, totalItems, itemsPerPage, false)}
-        <div className="px-3 sm:px-4 md:px-6">
+        <div className="px-2 sm:px-4 md:px-6">
           <ProductGrid products={paginatedProducts} />
         </div>
         {renderPagination(currentPage, totalPages, setCurrentPage)}
