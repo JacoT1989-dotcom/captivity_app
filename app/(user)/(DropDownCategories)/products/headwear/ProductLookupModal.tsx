@@ -181,9 +181,9 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
             </div>
 
             {/* Middle Column - Product Options */}
-            <div className="lg:col-span-2 space-y-7">
+            <div className="lg:col-span-2 space-y-8">
               {/* Product Options Card */}
-              <div className="bg-white rounded-lg border p-3 space-y-4">
+              <div className="bg-white rounded-lg border p-2 space-y-6">
                 {/* Color Selection */}
                 <div>
                   <label className="block text-sm text-gray-600 mb-1.5">
@@ -329,10 +329,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
             {/* Right Column - Pricing */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg border p-3">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  Price List
-                </h3>
-                <div className="grid grid-cols-2 gap-y-3.5 text-sm gap-x-2 ">
+                <div className="grid grid-cols-2 gap-y-5 text-sm gap-x-2 ">
                   <div className="font-medium text-gray-700">Quantity</div>
                   <div className="font-medium text-gray-700">Price</div>
                   {product.dynamicPricing?.length > 0 ? (
