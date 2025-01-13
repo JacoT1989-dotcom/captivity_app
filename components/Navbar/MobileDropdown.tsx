@@ -11,12 +11,14 @@ interface NavItem {
 
 interface MobileDropdownProps {
   title: string;
+  href: string; // Add href for the parent link
   items: NavItem[];
   onItemClick?: () => void;
 }
 
 const MobileDropdown: React.FC<MobileDropdownProps> = ({
   title,
+  href,
   items,
   onItemClick,
 }) => {
@@ -24,17 +26,26 @@ const MobileDropdown: React.FC<MobileDropdownProps> = ({
 
   return (
     <div className="border-b border-border">
-      <button
-        className="w-full px-4 py-3 flex justify-between items-center hover:bg-muted text-foreground"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span className="flex-1 text-left">{title}</span>
-        {isOpen ? (
-          <ChevronUp className="h-4 w-4 ml-2" />
-        ) : (
-          <ChevronDown className="h-4 w-4 ml-2" />
-        )}
-      </button>
+      <div className="flex items-center">
+        <Link
+          href={href}
+          className="flex-1 px-4 py-3 hover:bg-muted text-foreground"
+          onClick={onItemClick}
+        >
+          {title}
+        </Link>
+        <button
+          className="px-4 py-3 hover:bg-muted text-foreground"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label={isOpen ? "Close menu" : "Open menu"}
+        >
+          {isOpen ? (
+            <ChevronUp className="h-4 w-4" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
+          )}
+        </button>
+      </div>
       {isOpen && (
         <ul className="bg-muted/50">
           {items.map(item => (
