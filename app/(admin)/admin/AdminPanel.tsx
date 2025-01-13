@@ -261,7 +261,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
       description: "Handle new customer orders",
       gradient:
         "bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200",
-      onClick: () => console.log("Handle pending orders"),
+      href: "/admin/pendingOrders",
     },
     {
       title: "Create Product",
