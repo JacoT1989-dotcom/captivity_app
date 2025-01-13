@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X } from "lucide-react";
+import Link from "next/link";
 
 interface ProductLookup {
   id: string;
@@ -251,52 +252,35 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                         value={quantity}
                         onChange={e => {
                           const val = parseInt(e.target.value);
-                          if (!isNaN(val) && currentVariation) {
-                            setQuantity(
-                              Math.min(
-                                currentVariation.quantity,
-                                Math.max(1, val)
-                              )
-                            );
+                          if (!isNaN(val)) {
+                            setQuantity(Math.max(1, val));
                           }
                         }}
                         className="w-14 text-center"
                       />
                       <button
-                        onClick={() => {
-                          if (currentVariation) {
-                            setQuantity(
-                              Math.min(currentVariation.quantity, quantity + 1)
-                            );
-                          }
-                        }}
+                        onClick={() => setQuantity(quantity + 1)}
                         className="px-3 py-1.5 hover:bg-gray-50 transition-colors border-l"
-                        disabled={
-                          !currentVariation ||
-                          quantity >= currentVariation.quantity
-                        }
                       >
                         +
                       </button>
                     </div>
-                    {currentVariation && (
-                      <div className="text-sm text-yellow-600">
-                        {currentVariation.quantity} in stock
-                      </div>
-                    )}
+                    <div className="text-sm text-yellow-600">
+                      {productVariations.variations[0].variations[0].quantity}{" "}
+                      in stock
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Add to Cart Button */}
-              <button
-                className="w-full py-2.5 bg-red-600 text-white rounded-md
-                hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed
-                transition-colors shadow-sm"
-                disabled={!isAddToBasketEnabled()}
+              {/* Login Link */}
+              <a
+                href="/login"
+                className="block w-full py-2.5 bg-red-600 text-white rounded-md
+              hover:bg-red-700 transition-colors shadow-sm text-center"
               >
                 Login to Add to Cart
-              </button>
+              </a>
             </div>
 
             {/* Right Column - Pricing */}
