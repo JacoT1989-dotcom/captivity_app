@@ -154,7 +154,7 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
 
   return (
     <Dialog open={isOpen}>
-      <DialogContent className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-5xl h-[90vh] md:h-auto">
+      <DialogContent className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-7xl h-[95vh] md:h-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-3 border-b bg-white sticky top-0 z-10">
           <h2 className="text-lg font-semibold text-red-600">
@@ -307,7 +307,7 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
                 disabled:cursor-not-allowed"
                 disabled={!currentVariation || currentVariation.quantity === 0}
               >
-                Login to Add to Cart
+                Login & Add to Cart
               </button>
             </div>
 
@@ -317,7 +317,7 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
                 <h3 className="text-sm font-medium text-gray-700 mb-2">
                   Price List
                 </h3>
-                <div className="grid grid-cols-2 gap-y-1.5 text-sm">
+                <div className="grid grid-cols-2 gap-y-1.5 gap-x-2 text-sm">
                   <div className="font-medium text-gray-700">Quantity</div>
                   <div className="font-medium text-gray-700">Price</div>
                   {productData.product?.dynamicPricing?.length ? (
