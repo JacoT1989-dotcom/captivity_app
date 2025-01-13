@@ -94,45 +94,48 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
     }
   };
 
+  const renderFilterContent = () => (
+    <>
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
+        <h2 className="text-xl font-semibold text-foreground">Filters</h2>
+        <button
+          onClick={handleClearAllFilters}
+          className="flex items-center px-3 py-1.5 text-sm font-medium text-destructive-foreground bg-destructive hover:bg-destructive/90 rounded-md transition-colors"
+        >
+          <Trash2 className="w-4 h-4 mr-1.5" />
+          Clear
+        </button>
+      </div>
+
+      {filters.map(filter => (
+        <FilterSection
+          key={filter.name}
+          filter={filter}
+          isOpen={openFilter === filter.name}
+          onToggle={() => handleFilterClick(filter.name)}
+          selectedValues={selectedFilters[filter.type as keyof FilterState]}
+          onFilterChange={(value: string) =>
+            handleFilterChange(filter.type as FilterType, value)
+          }
+          isProductTypeFilter={filter.type === "types"}
+        />
+      ))}
+    </>
+  );
+
   return (
     <>
       {/* Desktop Sidebar */}
       <div
-        ref={sidebarRef}
         className={cn(
           "hidden lg:block w-64 bg-background p-4 space-y-4 border border-border rounded-lg",
           className
         )}
       >
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
-          <h2 className="text-xl font-semibold text-foreground">Filters</h2>
-          {hasActiveFilters && (
-            <button
-              onClick={handleClearAllFilters}
-              className="flex items-center px-3 py-1.5 text-sm font-medium text-destructive-foreground bg-destructive hover:bg-destructive/90 rounded-md transition-colors"
-            >
-              <Trash2 className="w-4 h-4 mr-1.5" />
-              Clear
-            </button>
-          )}
-        </div>
-
-        {filters.map(filter => (
-          <FilterSection
-            key={filter.name}
-            filter={filter}
-            isOpen={openFilter === filter.name}
-            onToggle={() => handleFilterClick(filter.name)}
-            selectedValues={selectedFilters[filter.type as keyof FilterState]}
-            onFilterChange={(value: string) =>
-              handleFilterChange(filter.type as FilterType, value)
-            }
-            isProductTypeFilter={filter.type === "types"}
-          />
-        ))}
+        {renderFilterContent()}
       </div>
 
-      {/* Mobile components remain the same */}
+      {/* Mobile Filter Button */}
       <button
         onClick={toggleSidebar}
         className="lg:hidden fixed bottom-6 right-6 z-50 flex items-center bg-background border border-border rounded-full px-6 py-3 shadow-lg"
@@ -141,6 +144,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         <span className="font-medium text-sm text-foreground">Filters</span>
       </button>
 
+      {/* Mobile Sidebar */}
       {isOpen && (
         <>
           <div
@@ -149,12 +153,22 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           />
           <div
             ref={sidebarRef}
-            className="lg:hidden fixed right-0 top-0 h-full w-80 bg-background border-l border-border z-50 overflow-y-auto"
+            className="lg:hidden fixed right-0 top-0 h-full w-80 bg-background border-l border-border z-50 overflow-y-auto p-4"
           >
-            {/* Mobile content remains the same */}
+            <div className="flex items-center justify-end mb-4">
+              <button
+                onClick={toggleSidebar}
+                className="p-2 hover:bg-accent rounded-md"
+              >
+                <X className="w-6 h-6 text-foreground" />
+              </button>
+            </div>
+            {renderFilterContent()}
           </div>
         </>
       )}
     </>
   );
 };
+
+export default FilterSidebar;

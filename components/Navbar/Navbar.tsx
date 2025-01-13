@@ -81,16 +81,19 @@ const Navbar: React.FC = () => {
                 <div className="py-2 text-black">
                   <MobileDropdown
                     title="Headwear"
+                    href="/products/headwear/all-in-headwear" // Add this
                     items={headwearItems}
                     onItemClick={() => setIsMenuOpen(false)}
                   />
                   <MobileDropdown
                     title="Apparel"
+                    href="/products/apparel/all-in-apparel" // Add this
                     items={apparelItems}
                     onItemClick={() => setIsMenuOpen(false)}
                   />
                   <MobileDropdown
                     title="All Collections"
+                    href="/products/all-collections/all-in-collections" // Add this
                     items={collectionsItems}
                     onItemClick={() => setIsMenuOpen(false)}
                   />
