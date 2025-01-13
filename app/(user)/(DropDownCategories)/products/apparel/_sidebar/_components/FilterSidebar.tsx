@@ -98,15 +98,13 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
     <>
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
         <h2 className="text-xl font-semibold text-foreground">Filters</h2>
-        {hasActiveFilters && (
-          <button
-            onClick={handleClearAllFilters}
-            className="flex items-center px-3 py-1.5 text-sm font-medium text-destructive-foreground bg-destructive hover:bg-destructive/90 rounded-md transition-colors"
-          >
-            <Trash2 className="w-4 h-4 mr-1.5" />
-            Clear
-          </button>
-        )}
+        <button
+          onClick={handleClearAllFilters}
+          className="flex items-center px-3 py-1.5 text-sm font-medium text-destructive-foreground bg-destructive hover:bg-destructive/90 rounded-md transition-colors"
+        >
+          <Trash2 className="w-4 h-4 mr-1.5" />
+          Clear
+        </button>
       </div>
 
       {filters.map(filter => (
@@ -157,8 +155,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
             ref={sidebarRef}
             className="lg:hidden fixed right-0 top-0 h-full w-80 bg-background border-l border-border z-50 overflow-y-auto p-4"
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-foreground">Filters</h2>
+            <div className="flex items-center justify-end mb-4">
               <button
                 onClick={toggleSidebar}
                 className="p-2 hover:bg-accent rounded-md"
