@@ -318,7 +318,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         <Card className="shadow-lg overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900 text-white">
             <div className="flex justify-between items-center">
-              <CardTitle>Recent Activity</CardTitle>
+              <CardTitle>in the last 24 hours</CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
