@@ -88,44 +88,46 @@ export default function ProductGridWrapper() {
     isVariationView: boolean
   ) => {
     return (
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-3 sm:p-4 mx-2 sm:mx-4 md:mx-6 bg-white rounded-lg border border-gray-100 shadow-lg">
-        <div className="text-sm text-gray-600">
-          Showing {startIndex + 1} -{" "}
-          {Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems}{" "}
-          {isVariationView ? "variations" : "products"}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6 w-full sm:w-auto">
-          <div className="flex items-center gap-2">
-            <SortAsc className="w-4 h-4 text-gray-500" />
-            <select
-              className="text-sm border-0 bg-transparent focus:ring-0 text-gray-600 cursor-pointer max-w-[200px]"
-              onChange={e => handleSortChange(e.target.value)}
-            >
-              <option value="relevance">Sort by Relevance</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="newest">Newest First</option>
-              <option value="name-asc">Name: A to Z</option>
-              <option value="name-desc">Name: Z to A</option>
-            </select>
+      <div className="w-full bg-white rounded-lg border border-gray-100 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4">
+          <div className="text-sm text-gray-600">
+            Showing {startIndex + 1} -{" "}
+            {Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems}{" "}
+            {isVariationView ? "variations" : "products"}
           </div>
 
-          <div className="flex items-center gap-2 sm:border-l sm:border-gray-200 sm:pl-6">
-            <span className="text-sm text-gray-500">Show</span>
-            <select
-              className="text-sm border-0 bg-transparent focus:ring-0 text-gray-600 cursor-pointer"
-              value={itemsPerPage}
-              onChange={e => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-            >
-              <option value="12">12</option>
-              <option value="24">24</option>
-              <option value="36">36</option>
-              <option value="48">48</option>
-            </select>
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6 w-full sm:w-auto">
+            <div className="flex items-center gap-2">
+              <SortAsc className="w-4 h-4 text-gray-500" />
+              <select
+                className="text-sm border-0 bg-transparent focus:ring-0 text-gray-600 cursor-pointer max-w-[200px]"
+                onChange={e => handleSortChange(e.target.value)}
+              >
+                <option value="relevance">Sort by Relevance</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="newest">Newest First</option>
+                <option value="name-asc">Name: A to Z</option>
+                <option value="name-desc">Name: Z to A</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 sm:border-l sm:border-gray-200 sm:pl-6">
+              <span className="text-sm text-gray-500">Show</span>
+              <select
+                className="text-sm border-0 bg-transparent focus:ring-0 text-gray-600 cursor-pointer"
+                value={itemsPerPage}
+                onChange={e => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="12">12</option>
+                <option value="24">24</option>
+                <option value="36">36</option>
+                <option value="48">48</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -146,43 +148,32 @@ export default function ProductGridWrapper() {
       let start = Math.max(2, currentPage - delta);
       let end = Math.min(totalPages - 1, currentPage + delta);
 
-      if (start > 2) {
-        range.push("...");
-      }
-
-      for (let i = start; i <= end; i++) {
-        range.push(i);
-      }
-
-      if (end < totalPages - 1) {
-        range.push("...");
-      }
-
-      if (totalPages > 1) {
-        range.push(totalPages);
-      }
+      if (start > 2) range.push("...");
+      for (let i = start; i <= end; i++) range.push(i);
+      if (end < totalPages - 1) range.push("...");
+      if (totalPages > 1) range.push(totalPages);
 
       return range;
     };
 
     return (
-      <div className="flex justify-center items-center gap-2 my-8 sm:my-16 pb-4 sm:pb-8 px-2 sm:px-4 md:px-6">
+      <div className="flex justify-center items-center gap-2 py-8">
         <div className="inline-flex items-center gap-2 rounded-lg bg-white p-1 shadow-sm border border-gray-200">
           <button
             onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
             disabled={currentPage === 1}
-            className="px-3 sm:px-4 py-2 text-sm font-medium transition-colors rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
 
-          <div className="flex items-center gap-1 px-1 sm:px-2">
+          <div className="flex items-center gap-1">
             {getPageNumbers().map((page, index) =>
               typeof page === "number" ? (
                 <button
                   key={index}
                   onClick={() => setCurrentPage(page)}
-                  className={`min-w-[2rem] sm:min-w-[2.5rem] px-2 sm:px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  className={`min-w-[2rem] px-2 py-2 text-sm font-medium rounded-md transition-colors ${
                     currentPage === page
                       ? "bg-gray-900 text-white hover:bg-gray-800"
                       : "text-gray-700 hover:bg-gray-50"
@@ -191,7 +182,7 @@ export default function ProductGridWrapper() {
                   {page}
                 </button>
               ) : (
-                <span key={index} className="px-1 sm:px-2 text-gray-400">
+                <span key={index} className="px-1 text-gray-400">
                   {page}
                 </span>
               )
@@ -203,7 +194,7 @@ export default function ProductGridWrapper() {
               setCurrentPage(Math.min(currentPage + 1, totalPages))
             }
             disabled={currentPage === totalPages}
-            className="px-3 sm:px-4 py-2 text-sm font-medium transition-colors rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
           </button>
@@ -214,20 +205,22 @@ export default function ProductGridWrapper() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-        {[...Array(12)].map((_, i) => (
-          <div
-            key={i}
-            className="bg-gray-200 animate-pulse rounded-lg aspect-square"
-          />
-        ))}
+      <div className="w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={i}
+              className="bg-gray-200 animate-pulse rounded-lg aspect-square w-full"
+            />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center text-red-500 py-8 mx-2 sm:mx-4 md:mx-6">
+      <div className="text-center text-red-500 py-8">
         Error loading products: {error}
       </div>
     );
@@ -235,7 +228,7 @@ export default function ProductGridWrapper() {
 
   if (!filteredProducts || filteredProducts.length === 0) {
     return (
-      <div className="text-center py-8 mx-2 sm:mx-4 md:mx-6">
+      <div className="text-center py-8">
         No products found with current filters
       </div>
     );
@@ -276,9 +269,9 @@ export default function ProductGridWrapper() {
     );
 
     return (
-      <div className="space-y-4 sm:space-y-6">
+      <div className="w-full space-y-6">
         {renderControls(startIndex, totalItems, itemsPerPage, true)}
-        <div className="px-2 sm:px-4 md:px-6">
+        <div className="w-full">
           <VariationsGrid
             variations={paginatedVariations}
             products={productsLookup}
@@ -287,23 +280,23 @@ export default function ProductGridWrapper() {
         {renderPagination(currentPage, totalPages, setCurrentPage)}
       </div>
     );
-  } else {
-    const transformedProducts = transformProducts(filteredProducts);
-    const totalItems = transformedProducts.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const paginatedProducts = transformedProducts.slice(
-      startIndex,
-      startIndex + itemsPerPage
-    );
-
-    return (
-      <div className="space-y-4 sm:space-y-6">
-        {renderControls(startIndex, totalItems, itemsPerPage, false)}
-        <div>
-          <ProductGrid products={paginatedProducts} />
-        </div>
-        {renderPagination(currentPage, totalPages, setCurrentPage)}
-      </div>
-    );
   }
+
+  const transformedProducts = transformProducts(filteredProducts);
+  const totalItems = transformedProducts.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const paginatedProducts = transformedProducts.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
+
+  return (
+    <div className="w-full space-y-6">
+      {renderControls(startIndex, totalItems, itemsPerPage, false)}
+      <div className="w-full">
+        <ProductGrid products={paginatedProducts} />
+      </div>
+      {renderPagination(currentPage, totalPages, setCurrentPage)}
+    </div>
+  );
 }

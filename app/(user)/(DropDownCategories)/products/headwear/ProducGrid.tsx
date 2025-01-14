@@ -1,22 +1,11 @@
+"use client";
+
 import React, { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import ProductDetailsDialog from "./ProductDetailsDialog";
 import ProductLookupModal from "./ProductLookupModal";
 import { Product as StoreProduct } from "./_store/types";
-
-interface Product {
-  id: string;
-  productName: string;
-  sellingPrice: number;
-  featuredImage: { large: string } | null;
-  variations: Array<{
-    id: string;
-    color: string;
-    quantity: number;
-  }>;
-  category: string[];
-}
 
 interface ProductGridProps {
   products: StoreProduct[];
@@ -57,19 +46,20 @@ const ProductGrid = ({ products }: ProductGridProps) => {
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
         {products.map(product => (
           <div
             key={product.id}
-            className="group relative bg-background rounded-lg hover:shadow-lg transition-shadow shadow-lg border border-border overflow-hidden"
+            className="relative bg-background rounded-lg border border-border overflow-hidden"
+            style={{ width: "100%" }}
           >
-            <div className="aspect-square relative">
+            <div className="aspect-square relative w-full">
               {product.featuredImage ? (
                 <Image
                   src={product.featuredImage.large}
                   alt={product.productName}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="object-cover"
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                   priority
                 />
@@ -85,7 +75,6 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                   </div>
                 </div>
               )}
-              <div className="absolute inset-0 bg-foreground opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
 
               <div className="absolute top-2 right-2">
                 <span
@@ -103,7 +92,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
             </div>
 
             <div className="p-3 sm:p-4">
-              <h3 className="text-base sm:text-lg font-semibold text-foreground group-hover:text-foreground/90 transition-colors line-clamp-2">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground line-clamp-2">
                 {product.productName}
               </h3>
               <p className="mt-2 text-base sm:text-lg font-bold text-foreground">
