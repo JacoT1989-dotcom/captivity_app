@@ -92,7 +92,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
             </div>
 
             <div className="p-3 sm:p-4">
-              <h3 className="text-base sm:text-lg font-semibold text-foreground line-clamp-2">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground line-clamp-1 hover:line-clamp-none">
                 {product.productName}
               </h3>
               <p className="mt-2 text-base sm:text-lg font-bold text-foreground">
