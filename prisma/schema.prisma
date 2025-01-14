@@ -241,8 +241,8 @@ model OrderItem {
 }
 
 model UserSettings {
-  id               String            @id @default(cuid())
-  userId           String            @unique
+  id               String             @id @default(cuid())
+  userId           String             @unique
   logoUrl          String?
   bannerUrl        String?
   storeName        String?
@@ -253,11 +253,11 @@ model UserSettings {
   socialMedia      Json?
   location         Json?
   categories       String[]
-  featured         Boolean           @default(false)
+  featured         Boolean            @default(false)
   generalEmail     String?
   websiteEmail     String?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
   storeDescription StoreDescription?
   BannerImage      BannerImage[]
   BestSellerImage  BestSellerImage[]
@@ -265,13 +265,14 @@ model UserSettings {
   OfficeLocation   OfficeLocation[]
   OpeningHours     OpeningHours[]
   SocialMediaLink  SocialMediaLink[]
-  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   HeroSlide        HeroSlide[]
   Collection       Collection[]
   CategoryHero     CategoryHero[]
   NewArrival       NewArrival[]
   BestSeller       BestSeller[]
   OnSaleProduct    OnSaleProduct[]
+  CollectionBanner CollectionBanner[]
 
   @@map("user_settings")
 }
@@ -375,17 +376,18 @@ model HeroSlide {
 }
 
 model Collection {
-  id              String       @id @default(cuid())
-  type            String // "tshirt", "apparel", "kids", "headwear"
-  title           String
-  image           String
-  href            String
-  position        Int          @default(0)
-  backgroundColor String?
-  userSettingsId  String
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  userSettings    UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+  id               String             @id @default(cuid())
+  type             String // "tshirt", "apparel", "kids", "headwear"
+  title            String
+  image            String
+  href             String
+  position         Int                @default(0)
+  backgroundColor  String?
+  userSettingsId   String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  userSettings     UserSettings       @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+  CollectionBanner CollectionBanner[]
 
   @@map("collections")
 }
@@ -449,6 +451,22 @@ model OnSaleProduct {
   userSettings   UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
 
   @@map("on_sale_products")
+}
+
+model CollectionBanner {
+  id              String       @id @default(cuid())
+  imageUrl        String
+  collectionId    String // Reference to Collection model
+  title           String
+  backgroundColor String       @default("#000000")
+  opacity         Float        @default(0.4)
+  userSettingsId  String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  userSettings    UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+  collection      Collection   @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@map("collection_banners")
 }
 
 /////////////////////////// Vendor Website //////////////////////////////
