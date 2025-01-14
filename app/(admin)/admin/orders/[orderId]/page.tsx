@@ -198,7 +198,7 @@ export default async function OrderDetailPage({
       </div>
     );
   } catch (error) {
-    console.error("Error in OrderDetailPage:", error);
+  
     return (
       <div className="h-full flex items-center justify-center">
         <Card>
