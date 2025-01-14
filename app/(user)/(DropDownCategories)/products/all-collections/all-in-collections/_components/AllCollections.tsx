@@ -20,8 +20,8 @@ const AllCollectionsProductList: React.FC = () => {
     }
   }, [initialized, fetchHeroes]);
 
-  const allHeadwearHero = useMemo(
-    () => heroes.find(hero => hero.categoryName === "ALL_HEADWEAR"),
+  const allCollectionsHero = useMemo(
+    () => heroes.find(hero => hero.categoryName === "ALL_COLLECTIONS"),
     [heroes]
   );
 
@@ -30,16 +30,16 @@ const AllCollectionsProductList: React.FC = () => {
       const title = formData.get("title") as string;
       const categoryName = formData.get("categoryName") as string;
 
-      if (allHeadwearHero) {
-        await update(allHeadwearHero.id, {
-          title: title || allHeadwearHero.title,
-          categoryName: categoryName || allHeadwearHero.categoryName,
-          backgroundColor: allHeadwearHero.backgroundColor,
-          opacity: allHeadwearHero.opacity,
+      if (allCollectionsHero) {
+        await update(allCollectionsHero.id, {
+          title: title || allCollectionsHero.title,
+          categoryName: categoryName || allCollectionsHero.categoryName,
+          backgroundColor: allCollectionsHero.backgroundColor,
+          opacity: allCollectionsHero.opacity,
         });
       } else {
-        formData.set("title", "ALL IN HEADWEAR");
-        formData.set("categoryName", "ALL_HEADWEAR");
+        formData.set("title", "ALL COLLECTIONS");
+        formData.set("categoryName", "ALL_COLLECTIONS");
         formData.set("backgroundColor", "#000000");
         formData.set("opacity", "0.4");
         await upload(formData);
@@ -59,21 +59,21 @@ const AllCollectionsProductList: React.FC = () => {
     );
   }
 
-  if (!allHeadwearHero && isEditor) {
+  if (!allCollectionsHero && isEditor) {
     return (
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         <EmptyHeroUpload
           onUpload={handleHeroUpdate}
-          defaultTitle="ALL IN HEADWEAR"
-          defaultCategory="ALL_HEADWEAR"
+          defaultTitle="ALL COLLECTIONS"
+          defaultCategory="ALL_COLLECTIONS"
         />
       </div>
     );
   }
 
-  return allHeadwearHero ? (
+  return allCollectionsHero ? (
     <HeroSection
-      heroData={allHeadwearHero}
+      heroData={allCollectionsHero}
       onUpdate={isEditor ? handleHeroUpdate : undefined}
     />
   ) : null;

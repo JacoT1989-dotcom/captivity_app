@@ -47,24 +47,18 @@ function applyProductFilters(
 
   let categoryFilteredProducts = products;
 
-  if (categoryType === "headwear") {
+  if (categoryType === "collections") {
     categoryFilteredProducts = products.filter(product => {
       if (!product.category || product.category.length === 0) {
         return false;
       }
 
-      if (!specificCategory || specificCategory === "all-in-headwear") {
-        return product.category.some(cat => {
-          const normalizedCat = normalizeString(cat);
-          return (
-            normalizedCat.includes("hat") ||
-            normalizedCat.includes("cap") ||
-            normalizedCat.includes("beanie") ||
-            normalizedCat.includes("headwear")
-          );
-        });
+      if (!specificCategory || specificCategory === "all-collections") {
+        // Return all products when viewing all collections
+        return true;
       }
 
+      // Filter by specific collection category
       return product.category.some(cat => {
         const normalizedCat = normalizeString(cat);
         const normalizedSpecific = normalizeString(specificCategory);

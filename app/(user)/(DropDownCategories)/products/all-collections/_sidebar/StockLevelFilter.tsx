@@ -1,6 +1,9 @@
 import React from "react";
 import { usePathname } from "next/navigation";
-import { normalizeString, useCategoryStore } from "../_store/headwear-store";
+import {
+  normalizeString,
+  useCategoryStore,
+} from "../_store/all-collections-store";
 
 interface StockLevelFilterProps {
   options: Array<{ value: string; label: string }>;

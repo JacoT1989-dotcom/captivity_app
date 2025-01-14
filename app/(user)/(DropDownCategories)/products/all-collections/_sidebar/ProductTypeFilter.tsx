@@ -1,7 +1,7 @@
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { FilterOption } from "../_store/types";
-import { useCategoryStore } from "../_store/headwear-store";
+import { useCategoryStore } from "../_store/all-collections-store";
 
 interface ProductTypeFilterProps {
   options: FilterOption[];
@@ -19,7 +19,8 @@ export const ProductTypeFilter: React.FC<ProductTypeFilterProps> = ({
   const { filterProductsByPath } = useCategoryStore();
 
   const handleTypeChange = async (value: string) => {
-    const basePath = "/products/headwear";
+    ``;
+    const basePath = "/products/all-collections";
     const newPath = `${basePath}/${value}`;
 
     // First trigger the filter change
@@ -34,13 +35,13 @@ export const ProductTypeFilter: React.FC<ProductTypeFilterProps> = ({
   // Extract the current type from pathname
   const getCurrentType = (): string => {
     // Handle empty pathname
-    if (!pathname) return "all-in-headwear";
+    if (!pathname) return "all-collections";
 
     // Split the pathname and remove empty strings
     const pathParts = pathname.split("/").filter(Boolean);
 
     // Check if we have enough parts in the path
-    if (pathParts.length < 3) return "all-in-headwear";
+    if (pathParts.length < 3) return "all-collections";
 
     // The type should be the last part of the path
     const currentType = pathParts[pathParts.length - 1];
@@ -48,27 +49,20 @@ export const ProductTypeFilter: React.FC<ProductTypeFilterProps> = ({
     // Verify if the current type exists in options
     return options.some(option => option.value === currentType)
       ? currentType
-      : "all-in-headwear";
+      : "all-collections";
   };
 
   // Use pathname to determine selected value, fallback to provided selectedValue
   const effectiveSelectedValue =
-    getCurrentType() || selectedValue || "all-in-headwear";
+    getCurrentType() || selectedValue || "all-collections";
 
   // Calculate the count of products for each type
   const { products } = useCategoryStore();
   const getTypeCount = (type: string): number => {
     return products.filter(product => {
-      if (type === "all-in-headwear") {
-        return product.category.some(cat => {
-          const normalizedCat = cat.toLowerCase().replace(/[-_\s]/g, "");
-          return (
-            normalizedCat.includes("hat") ||
-            normalizedCat.includes("cap") ||
-            normalizedCat.includes("beanie") ||
-            normalizedCat.includes("headwear")
-          );
-        });
+      if (type === "all-collections") {
+        // Return true for all products when viewing all collections
+        return true;
       }
 
       return product.category.some(cat => {
@@ -83,7 +77,7 @@ export const ProductTypeFilter: React.FC<ProductTypeFilterProps> = ({
     <div className="flex flex-col gap-2">
       {options.map(option => {
         const count =
-          option.value !== "all-in-headwear"
+          option.value !== "all-collections"
             ? getTypeCount(option.value)
             : null;
 

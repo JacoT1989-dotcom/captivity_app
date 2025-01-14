@@ -7,7 +7,7 @@ import { FilterSection } from "./FilterSection";
 import { usePathname } from "next/navigation";
 import { FilterState, FilterType } from "../../_store/types";
 import { useDynamicFilterStore } from "../../_store/dynamic-filter-store";
-import { useCategoryStore } from "../../_store/headwear-store";
+import { useCategoryStore } from "../../_store/all-collections-store";
 
 interface FilterSidebarProps {
   className?: string;

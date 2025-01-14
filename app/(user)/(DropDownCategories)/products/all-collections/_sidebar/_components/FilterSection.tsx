@@ -19,8 +19,8 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
       ? (selectedValues as string)
       : filter.type === "types"
         ? Array.isArray(selectedValues)
-          ? selectedValues[0] || "all-in-headwear"
-          : selectedValues || "all-in-headwear"
+          ? selectedValues[0] || "all-collections"
+          : selectedValues || "all-collections"
         : Array.isArray(selectedValues)
           ? selectedValues
           : [];
