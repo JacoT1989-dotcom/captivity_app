@@ -10,6 +10,7 @@ import {
   UserPlus,
   Package,
   RefreshCw,
+  Clock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
@@ -25,6 +26,8 @@ interface Stats {
   pendingRegistrations: number;
   activeUserSessions: number;
   newlyUpgradedCustomers: number;
+  newlyUpgradedVendors: number;
+  totalVendors: number;
 }
 
 interface StatCardProps {
@@ -66,13 +69,13 @@ const StatCard = memo<StatCardProps>(
   ({ title, value, icon: Icon, gradient }) => (
     <Card className="transform transition-all hover:scale-105 hover:shadow-lg">
       <CardHeader
-        className={`flex flex-row items-center justify-between pb-2 space-y-0 ${gradient} text-white rounded-t-lg`}
+        className={`flex flex-row items-center justify-between pb-2 space-y-0 ${gradient} text-white rounded-t-lg  max-h-20 min-h-20         `}
       >
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Icon className="w-4 h-4 text-white/80" />
       </CardHeader>
       <CardContent className="pt-4">
-        <div className="text-3xl font-bold tracking-tight">
+        <div className=" font-bold tracking-tight  text-2xl">
           {typeof value === "number" ? value.toLocaleString() : value}
         </div>
       </CardContent>
@@ -238,7 +241,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     {
       title: "Pending Registrations",
       value: isLoading ? "Loading..." : (stats?.pendingRegistrations ?? 0),
-      icon: ShoppingCart,
+      icon: Clock,
       gradient: "bg-gradient-to-br from-blue-500 to-blue-700",
     },
     {
@@ -250,8 +253,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     {
       title: "New Customers",
       value: isLoading ? "Loading..." : (stats?.newlyUpgradedCustomers ?? 0),
-      icon: AlertCircle,
+      icon: UserPlus,
       gradient: "bg-gradient-to-br from-orange-500 to-orange-700",
+    },
+    {
+      title: "Total Vendors",
+      value: isLoading ? "Loading..." : (stats?.totalVendors ?? 0),
+      icon: Users,
+      gradient: "bg-gradient-to-br from-yellow-500 to-yellow-700",
     },
   ];
 
@@ -296,7 +305,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-5">
           {statCards.map((card, index) => (
             <StatCard key={index} {...card} />
           ))}
