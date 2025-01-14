@@ -1,10 +1,10 @@
 import React from "react";
-import AfricanCollectionsProductList from "../all-in-collections/_components/AllCollections";
+import AfricanCollection from "./_components/AficanCollection";
 
 const AllCollectionsPage = () => {
   return (
     <div>
-      <AfricanCollectionsProductList />
+      <AfricanCollection />
     </div>
   );
 };

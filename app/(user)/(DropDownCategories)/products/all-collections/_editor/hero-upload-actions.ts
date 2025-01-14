@@ -66,6 +66,21 @@ export async function uploadCollectionBanner(
       create: { userId: user.id },
     });
 
+    // Create or find collection
+    const collection = await prisma.collection.upsert({
+      where: { id: collectionId },
+      update: {},
+      create: {
+        id: collectionId,
+        type: "apparel",
+        title: title,
+        image: "",
+        href: `/products/all-collections/${collectionId}`,
+        position: 0,
+        userSettingsId: userSettings.id,
+      },
+    });
+
     // Check if collection banner already exists
     const existingBanner = await prisma.collectionBanner.findFirst({
       where: {
@@ -76,15 +91,6 @@ export async function uploadCollectionBanner(
 
     if (existingBanner) {
       throw new Error(`Banner for this collection already exists`);
-    }
-
-    // Verify collection exists
-    const collection = await prisma.collection.findUnique({
-      where: { id: collectionId },
-    });
-
-    if (!collection) {
-      throw new Error("Collection not found");
     }
 
     const fileExt = file.name.split(".").pop() || "jpg";
@@ -269,14 +275,20 @@ export async function updateCollectionBanner(
       throw new Error("Collection banner not found");
     }
 
-    // Verify collection exists
-    const collection = await prisma.collection.findUnique({
+    // Create or update collection
+    const collection = await prisma.collection.upsert({
       where: { id: data.collectionId },
+      update: {},
+      create: {
+        id: data.collectionId,
+        type: "apparel",
+        title: data.title,
+        image: "",
+        href: `/products/all-collections/${data.collectionId}`,
+        position: 0,
+        userSettingsId: banner.userSettingsId,
+      },
     });
-
-    if (!collection) {
-      throw new Error("Collection not found");
-    }
 
     const { CollectionBanner } = await prisma.userSettings.update({
       where: { userId: user.id },
@@ -383,14 +395,20 @@ export async function updateCollectionBannerWithImage(
       ? parseFloat(formData.get("opacity") as string)
       : banner.opacity;
 
-    // Verify collection exists
-    const collection = await prisma.collection.findUnique({
+    // Create or update collection
+    const collection = await prisma.collection.upsert({
       where: { id: collectionId },
+      update: {},
+      create: {
+        id: collectionId,
+        type: "apparel",
+        title: title,
+        image: "",
+        href: `/products/all-collections/${collectionId}`,
+        position: 0,
+        userSettingsId: banner.userSettingsId,
+      },
     });
-
-    if (!collection) {
-      throw new Error("Collection not found");
-    }
 
     // Always ensure backgroundColor has a value
     const backgroundColor =

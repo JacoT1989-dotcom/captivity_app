@@ -1,12 +1,7 @@
-// store/collection-banner-store.ts
 "use client";
 
 import { create } from "zustand";
 import { useEffect } from "react";
-import {
-  CollectionBannerState,
-  CollectionBannerStore,
-} from "./collection-banner-types";
 import {
   getCollectionBanners,
   removeCollectionBanner,
@@ -14,12 +9,25 @@ import {
   updateCollectionBannerWithImage,
   uploadCollectionBanner,
 } from "./hero-upload-actions";
+import {
+  CollectionBannerItem,
+  CollectionBannerState,
+  CollectionBannerStore,
+} from "./collection-banner-types";
 
 const initialState: CollectionBannerState = {
   banners: [],
   isLoading: false,
   error: null,
   initialized: false,
+};
+
+// Helper function to transform server data to match our types
+const transformBannerData = (banners: any[]): CollectionBannerItem[] => {
+  return banners.map(banner => ({
+    ...banner,
+    type: "collection" as const,
+  }));
 };
 
 export const useCollectionBannerStore = create<CollectionBannerStore>()(
@@ -44,7 +52,7 @@ export const useCollectionBannerStore = create<CollectionBannerStore>()(
         if (!result.success) throw new Error(result.error || "Upload failed");
 
         set({
-          banners: result.banners || [],
+          banners: transformBannerData(result.banners || []),
           isLoading: false,
           error: null,
         });
@@ -67,7 +75,7 @@ export const useCollectionBannerStore = create<CollectionBannerStore>()(
         if (!result.success) throw new Error(result.error || "Remove failed");
 
         set({
-          banners: result.banners || [],
+          banners: transformBannerData(result.banners || []),
           isLoading: false,
           error: null,
         });
@@ -98,7 +106,7 @@ export const useCollectionBannerStore = create<CollectionBannerStore>()(
         if (!result.success) throw new Error(result.error || "Update failed");
 
         set({
-          banners: result.banners || [],
+          banners: transformBannerData(result.banners || []),
           isLoading: false,
           error: null,
         });
@@ -121,7 +129,7 @@ export const useCollectionBannerStore = create<CollectionBannerStore>()(
         if (!result.success) throw new Error(result.error || "Update failed");
 
         set({
-          banners: result.banners || [],
+          banners: transformBannerData(result.banners || []),
           isLoading: false,
           error: null,
         });
@@ -144,7 +152,7 @@ export const useCollectionBannerStore = create<CollectionBannerStore>()(
         if (!result.success) throw new Error(result.error || "Fetch failed");
 
         set({
-          banners: result.banners || [],
+          banners: transformBannerData(result.banners || []),
           isLoading: false,
           error: null,
           initialized: true,
