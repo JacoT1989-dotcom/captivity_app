@@ -1,7 +1,12 @@
 import React from "react";
+import LeisureCollection from "./_components/LeisureBanner";
 
-const AllCollectionsPage = () => {
-  return <div></div>;
+const LeisureCollectionsPage = () => {
+  return (
+    <div>
+      <LeisureCollection />
+    </div>
+  );
 };
 
-export default AllCollectionsPage;
+export default LeisureCollectionsPage;
