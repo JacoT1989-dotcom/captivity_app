@@ -1,7 +1,12 @@
 import React from "react";
+import CamoCollection from "./_components/CamoCollectionBanner";
 
 const AllCollectionsPage = () => {
-  return <div></div>;
+  return (
+    <div>
+      <CamoCollection />
+    </div>
+  );
 };
 
 export default AllCollectionsPage;
