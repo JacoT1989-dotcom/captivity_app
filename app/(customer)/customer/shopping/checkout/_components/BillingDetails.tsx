@@ -23,8 +23,8 @@ interface BillingDetailsProps {
 
 // Pre-render select options components
 const BRANCH_OPTIONS = [
-  { value: "branch1", label: "Branch 1" },
-  { value: "branch2", label: "Branch 2" },
+  { value: "Cape Town", label: "Branch 1" },
+  { value: "Johannesburg", label: "Branch 2" },
 ] as const;
 
 const COLLECTION_OPTIONS = [
