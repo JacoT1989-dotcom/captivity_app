@@ -1,5 +1,6 @@
 "use client";
 
+// all collections store
 import { create } from "zustand";
 import { CategoryStore, CategoryState, FilterState, Product } from "./types";
 import { getAllCategories } from "../all-collections-actions";
