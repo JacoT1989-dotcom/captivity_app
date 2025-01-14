@@ -6,6 +6,7 @@ interface UserStats {
   pendingRegistrations: number;
   activeUserSessions: number;
   newlyUpgradedCustomers: number;
+  totalVendors: number;
 }
 
 interface UserStatsState {

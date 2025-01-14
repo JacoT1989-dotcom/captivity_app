@@ -9,6 +9,7 @@ type UserStats = {
   pendingRegistrations: number;
   activeUserSessions: number;
   newlyUpgradedCustomers: number;
+  totalVendors: number;
 };
 
 export type FetchUserStatsResult =
@@ -40,6 +41,7 @@ export async function fetchUserStatistics(): Promise<FetchUserStatsResult> {
       pendingRegistrations,
       activeUserSessions,
       newlyUpgradedCustomers,
+      totalVendors,
     ] = await Promise.all([
       // Count total customers
       prisma.user.count({
@@ -73,6 +75,11 @@ export async function fetchUserStatistics(): Promise<FetchUserStatsResult> {
           },
         },
       }),
+      prisma.user.count({
+        where: {
+          role: UserRole.VENDOR,
+        },
+      }),
     ]);
 
     return {
@@ -82,6 +89,7 @@ export async function fetchUserStatistics(): Promise<FetchUserStatsResult> {
         pendingRegistrations,
         activeUserSessions,
         newlyUpgradedCustomers,
+        totalVendors,
       },
     };
   } catch (error) {
