@@ -1,7 +1,7 @@
 import React from "react";
 
 const AficanCollection = () => {
-  return <div>banner</div>;
+  return <div></div>;
 };
 
 export default AficanCollection;
