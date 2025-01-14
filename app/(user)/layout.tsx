@@ -1,4 +1,4 @@
-//latout.tsx user
+//app/(user)/layout.tsx
 "use client";
 
 import Navbar from "@/components/Navbar/Navbar";

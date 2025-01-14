@@ -3,44 +3,10 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import ColorDialog from "./ColorDialog";
 import ProductDetailsDialog from "./ProductDetailsDialog";
-
-interface Variation {
-  id: string;
-  name: string;
-  color: string;
-  size: string;
-  sku: string;
-  sku2: string;
-  variationImageURL: string;
-  quantity: number;
-  productId: string;
-}
+import { Product, Variation } from "./_store/types";
 
 interface ColorVariation {
   color: string;
-  variations: Variation[];
-}
-
-interface DynamicPricing {
-  id: string;
-  from: string;
-  to: string;
-  type: string;
-  amount: string;
-  productId: string;
-}
-
-interface FeaturedImage {
-  large: string;
-}
-
-interface Product {
-  id: string;
-  productName: string;
-  sellingPrice: number;
-  dynamicPricing: DynamicPricing[];
-  featuredImage: FeaturedImage | null;
-  category: string[];
   variations: Variation[];
 }
 
@@ -52,7 +18,7 @@ interface ProductVariations {
 }
 
 interface ProductGridProps {
-  products: Array<Product>;
+  products: Product[];
 }
 
 const ProductGrid = ({ products }: ProductGridProps) => {
@@ -62,12 +28,9 @@ const ProductGrid = ({ products }: ProductGridProps) => {
     string | null
   >(null);
 
-  // Create grouped variations structure
   const groupedVariations = useMemo(() => {
     const grouped: ProductVariations = {};
-
     products.forEach(product => {
-      // Group variations by color
       const colorGroups = product.variations.reduce(
         (acc: { [color: string]: Variation[] }, variation) => {
           if (!acc[variation.color]) {
@@ -79,7 +42,6 @@ const ProductGrid = ({ products }: ProductGridProps) => {
         {}
       );
 
-      // Convert to ColorVariation[] format
       const colorVariations: ColorVariation[] = Object.entries(colorGroups).map(
         ([color, variations]) => ({
           color,
@@ -92,7 +54,6 @@ const ProductGrid = ({ products }: ProductGridProps) => {
         product: product,
       };
     });
-
     return grouped;
   }, [products]);
 
@@ -121,20 +82,20 @@ const ProductGrid = ({ products }: ProductGridProps) => {
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-8">
         {products.map(product => (
           <div
             key={product.id}
             className="group relative bg-background rounded-lg hover:shadow-lg transition-shadow shadow-lg border border-border"
           >
-            <div className="aspect-square relative overflow-hidden rounded-t-lg">
+            <div className="relative w-full pb-[100%] overflow-hidden rounded-t-lg">
               {product.featuredImage ? (
                 <Image
                   src={product.featuredImage.large}
                   alt={product.productName}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  className="absolute inset-0 object-cover group-hover:scale-105 transition-transform duration-300"
+                  sizes="(max-width: 640px) 45vw, (max-width: 768px) 33vw, 25vw"
                   priority
                 />
               ) : (
@@ -149,9 +110,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                   </div>
                 </div>
               )}
-              <div className="absolute inset-0 bg-foreground opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
 
-              {/* Stock badge */}
               <div className="absolute top-2 right-2">
                 <span
                   className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -167,7 +126,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
               </div>
             </div>
 
-            <div className="p-4">
+            <div className="p-2 sm:p-4">
               <h3 className="text-lg font-semibold text-foreground group-hover:text-foreground/90 transition-colors line-clamp-1 hover:line-clamp-none">
                 {product.productName}
               </h3>
@@ -189,7 +148,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                   .length > 2 && (
                   <Button
                     onClick={e => handleColorDialogOpen(product.id, e)}
-                    variant="ghost"
+                    variant="default"
                     className="h-6 px-2 text-xs"
                   >
                     +
@@ -217,13 +176,11 @@ const ProductGrid = ({ products }: ProductGridProps) => {
         )}
       </div>
 
-      {/* Product Details Dialog */}
       <ProductDetailsDialog
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
       />
 
-      {/* Color Selection Dialog */}
       <ColorDialog
         isOpen={isColorDialogOpen}
         onClose={() => {

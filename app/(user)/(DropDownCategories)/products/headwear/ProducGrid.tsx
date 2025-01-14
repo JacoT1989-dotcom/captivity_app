@@ -1,24 +1,35 @@
 import React, { useState } from "react";
 import Image from "next/image";
-import { Product } from "./_store/types";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import ProductDetailsDialog from "./ProductDetailsDialog";
+import ProductLookupModal from "./ProductLookupModal";
+import { Product as StoreProduct } from "./_store/types";
+
+interface Product {
+  id: string;
+  productName: string;
+  sellingPrice: number;
+  featuredImage: { large: string } | null;
+  variations: Array<{
+    id: string;
+    color: string;
+    quantity: number;
+  }>;
+  category: string[];
+}
 
 interface ProductGridProps {
-  products: Array<
-    Product & {
-      featuredImage: Product["featuredImage"] | null;
-    }
-  >;
+  products: StoreProduct[];
 }
 
 const ProductGrid = ({ products }: ProductGridProps) => {
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<StoreProduct | null>(
+    null
+  );
+  const [isColorDialogOpen, setIsColorDialogOpen] = useState(false);
+  const [colorDialogProductId, setColorDialogProductId] = useState<
+    string | null
+  >(null);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-ZA", {
@@ -27,35 +38,45 @@ const ProductGrid = ({ products }: ProductGridProps) => {
     }).format(price);
   };
 
-  const getTotalStock = (variations: Product["variations"]) => {
+  const getTotalStock = (variations: StoreProduct["variations"]) => {
     return variations.reduce(
       (total, variation) => total + variation.quantity,
       0
     );
   };
 
+  const handleColorDialogOpen = (
+    product: StoreProduct,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation();
+    setSelectedProduct(product);
+    setColorDialogProductId(product.id);
+    setIsColorDialogOpen(true);
+  };
+
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
         {products.map(product => (
           <div
             key={product.id}
-            className="group relative bg-background rounded-lg hover:shadow-lg transition-shadow shadow-lg border border-border"
+            className="group relative bg-background rounded-lg hover:shadow-lg transition-shadow shadow-lg border border-border overflow-hidden"
           >
-            <div className="aspect-square relative overflow-hidden rounded-t-lg">
+            <div className="aspect-square relative">
               {product.featuredImage ? (
                 <Image
                   src={product.featuredImage.large}
                   alt={product.productName}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                   priority
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
                   <div className="flex flex-col items-center justify-center">
-                    <span className="text-5xl font-bold text-muted-foreground/50">
+                    <span className="text-4xl sm:text-5xl font-bold text-muted-foreground/50">
                       {product.productName.charAt(0).toUpperCase()}
                     </span>
                     <span className="mt-2 text-xs text-muted-foreground font-medium">
@@ -66,7 +87,6 @@ const ProductGrid = ({ products }: ProductGridProps) => {
               )}
               <div className="absolute inset-0 bg-foreground opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
 
-              {/* Stock badge */}
               <div className="absolute top-2 right-2">
                 <span
                   className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -82,37 +102,43 @@ const ProductGrid = ({ products }: ProductGridProps) => {
               </div>
             </div>
 
-            <div className="p-4">
-              <h3 className="text-lg font-semibold text-foreground group-hover:text-foreground/90 transition-colors line-clamp-1 hover:line-clamp-none">
+            <div className="p-3 sm:p-4">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground group-hover:text-foreground/90 transition-colors line-clamp-2">
                 {product.productName}
               </h3>
-              <p className="mt-2 text-lg font-bold text-foreground">
+              <p className="mt-2 text-base sm:text-lg font-bold text-foreground">
                 {formatPrice(product.sellingPrice)}
               </p>
-              <div className="mt-2 flex items-center gap-2">
+
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 {Array.from(new Set(product.variations.map(v => v.color)))
                   .slice(0, 2)
                   .map(color => (
                     <div
                       key={color}
-                      className="w-6 h-6 rounded-full border border-border"
+                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-md border border-border"
                       style={{ backgroundColor: color.toLowerCase() }}
                       title={color}
                     />
                   ))}
-                {product.variations.length > 2 && (
+                {Array.from(new Set(product.variations.map(v => v.color)))
+                  .length > 2 && (
                   <Button
-                    onClick={() => setSelectedProduct(product)}
-                    variant="ghost"
-                    className="h-6 px-2 text-xs"
+                    onClick={e => handleColorDialogOpen(product, e)}
+                    variant="default"
+                    className="h-5 sm:h-6 px-2 text-xs"
                   >
-                    +{product.variations.length - 2} more
+                    +
+                    {Array.from(new Set(product.variations.map(v => v.color)))
+                      .length - 2}{" "}
+                    more
                   </Button>
                 )}
               </div>
+
               <Button
                 onClick={() => setSelectedProduct(product)}
-                className="w-full mt-4"
+                className="w-full mt-3 sm:mt-4"
                 variant="secondary"
               >
                 View More
@@ -120,91 +146,44 @@ const ProductGrid = ({ products }: ProductGridProps) => {
             </div>
           </div>
         ))}
-
-        {products.length === 0 && (
-          <div className="col-span-full text-center py-8 text-muted-foreground">
-            No products found in this category
-          </div>
-        )}
       </div>
 
-      <Dialog
-        open={!!selectedProduct}
-        onOpenChange={() => setSelectedProduct(null)}
-      >
-        <DialogContent className="sm:max-w-2xl">
-          {selectedProduct && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selectedProduct.productName}</DialogTitle>
-              </DialogHeader>
+      {/* Product Details Dialog */}
+      <ProductDetailsDialog
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="aspect-square relative rounded-lg overflow-hidden">
-                  {selectedProduct.featuredImage ? (
-                    <Image
-                      src={selectedProduct.featuredImage.large}
-                      alt={selectedProduct.productName}
-                      fill
-                      className="object-cover"
-                      priority
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                      <span className="text-6xl font-bold text-muted-foreground/50">
-                        {selectedProduct.productName.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-4">
-                  <p className="text-2xl font-bold">
-                    {formatPrice(selectedProduct.sellingPrice)}
-                  </p>
-
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Available Colors:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {Array.from(
-                        new Set(selectedProduct.variations.map(v => v.color))
-                      ).map(color => (
-                        <span
-                          key={color}
-                          className="px-3 py-1 text-sm font-medium bg-muted text-muted-foreground rounded-full"
-                        >
-                          {color}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">Stock Status:</h4>
-                    <span
-                      className={`px-3 py-1 text-sm font-medium rounded-full ${
-                        getTotalStock(selectedProduct.variations) > 0
-                          ? "bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-100"
-                          : "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-100"
-                      }`}
-                    >
-                      {getTotalStock(selectedProduct.variations) > 0
-                        ? `In Stock (${getTotalStock(selectedProduct.variations)} units)`
-                        : "Out of Stock"}
-                    </span>
-                  </div>
-
-                  <Button className="w-full" asChild>
-                    <a href={`/products/${selectedProduct.id}`}>
-                      View Full Details
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Color Selection Dialog */}
+      {selectedProduct && (
+        <ProductLookupModal
+          isOpen={isColorDialogOpen}
+          onClose={() => {
+            setIsColorDialogOpen(false);
+            setColorDialogProductId(null);
+            setSelectedProduct(null);
+          }}
+          productId={colorDialogProductId}
+          product={selectedProduct}
+          productVariations={{
+            variations: selectedProduct.variations.reduce(
+              (acc, curr) => {
+                const existing = acc.find(v => v.color === curr.color);
+                if (existing) {
+                  existing.variations.push(curr);
+                } else {
+                  acc.push({ color: curr.color, variations: [curr] });
+                }
+                return acc;
+              },
+              [] as Array<{
+                color: string;
+                variations: typeof selectedProduct.variations;
+              }>
+            ),
+          }}
+        />
+      )}
     </>
   );
 };

@@ -46,6 +46,7 @@ interface ProductLookupModalProps {
   productVariations: ProductVariations | undefined;
 }
 
+// Pricing Ranges Component
 const PricingRanges: React.FC<{
   dynamicPricing: ProductLookup["dynamicPricing"];
   sellingPrice: number;
@@ -76,7 +77,7 @@ const PricingRanges: React.FC<{
   };
 
   return (
-    <div className="grid grid-cols-2 gap-y-5 text-sm gap-x-2">
+    <div className="grid grid-cols-2 gap-y-5 gap-x-2 text-sm">
       <div className="font-medium text-gray-700">Quantity</div>
       <div className="font-medium text-gray-700">Price</div>
       {desiredRanges.map(range => (
@@ -108,7 +109,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
   useEffect(() => {
     if (isOpen && productId && productVariations) {
       const firstAvailableVariation =
-        productVariations.variations[0].variations.find(v => v.quantity > 0);
+        productVariations.variations[0]?.variations.find(v => v.quantity > 0);
       if (firstAvailableVariation) {
         setSelectedColor(productVariations.variations[0].color);
         setSelectedSize(firstAvailableVariation.size);
@@ -148,7 +149,6 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
       ?.variations || [];
 
   const getCurrentImage = () => {
-    // If both color and size are selected
     if (selectedColor && selectedSize) {
       const colorVariation = productVariations.variations.find(
         v => v.color === selectedColor
@@ -160,7 +160,6 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
         return sizeVariation.variationImageURL;
     }
 
-    // If only size is selected
     if (selectedSize) {
       const variationWithSize = productVariations.variations.find(colorVar =>
         colorVar.variations.some(v => v.size === selectedSize)
@@ -172,7 +171,6 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
         return sizeVariation.variationImageURL;
     }
 
-    // If only color is selected
     if (selectedColor) {
       const colorVariation = productVariations.variations.find(
         v => v.color === selectedColor
@@ -182,7 +180,6 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
       }
     }
 
-    // Default image
     return (
       productVariations.variations[0]?.variations[0]?.variationImageURL || ""
     );
@@ -234,9 +231,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                     {allColors.map(color => (
                       <button
                         key={color}
-                        onClick={() => {
-                          setSelectedColor(color);
-                        }}
+                        onClick={() => setSelectedColor(color)}
                         className={`w-8 h-8 rounded-md border transition-all ${
                           selectedColor === color
                             ? "ring-2 ring-red-600 ring-offset-1"
@@ -305,66 +300,48 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                         value={quantity}
                         onChange={e => {
                           const val = parseInt(e.target.value);
-                          if (!isNaN(val)) {
-                            setQuantity(Math.max(1, val));
+                          if (!isNaN(val) && currentVariation) {
+                            setQuantity(
+                              Math.min(
+                                currentVariation.quantity,
+                                Math.max(1, val)
+                              )
+                            );
                           }
                         }}
                         className="w-14 text-center"
                       />
                       <button
-                        onClick={() => setQuantity(quantity + 1)}
+                        onClick={() => {
+                          if (currentVariation) {
+                            setQuantity(
+                              Math.min(currentVariation.quantity, quantity + 1)
+                            );
+                          }
+                        }}
                         className="px-3 py-1.5 hover:bg-gray-50 transition-colors border-l"
                       >
                         +
                       </button>
                     </div>
                     <div className="text-sm text-yellow-600">
-                      {(() => {
-                        // If both color and size are selected
-                        if (selectedColor && selectedSize) {
-                          return productVariations.variations
-                            .find(v => v.color === selectedColor)
-                            ?.variations.find(v => v.size === selectedSize)
-                            ?.quantity;
-                        }
-                        // If only color is selected
-                        if (selectedColor) {
-                          const colorVariation =
-                            productVariations.variations.find(
-                              v => v.color === selectedColor
-                            );
-                          return colorVariation?.variations[0]?.quantity;
-                        }
-                        // If only size is selected
-                        if (selectedSize) {
-                          const firstVariationWithSize =
-                            productVariations.variations
-                              .find(colorVar =>
-                                colorVar.variations.some(
-                                  v => v.size === selectedSize
-                                )
-                              )
-                              ?.variations.find(v => v.size === selectedSize);
-                          return firstVariationWithSize?.quantity;
-                        }
-                        // Default to first variation
-                        return productVariations.variations[0].variations[0]
-                          .quantity;
-                      })()}{" "}
-                      in stock
+                      {currentVariation
+                        ? `${currentVariation.quantity} in stock`
+                        : ""}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Login Link */}
-              <a
-                href="/login"
-                className="block w-full py-2.5 bg-red-600 text-white rounded-md
-                hover:bg-red-700 transition-colors shadow-sm text-center"
+              {/* Login Button */}
+              <button
+                className="w-full py-2.5 bg-red-600 text-white rounded-md
+                hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 
+                disabled:cursor-not-allowed"
+                disabled={!currentVariation || currentVariation.quantity === 0}
               >
-                Login to Add to Cart
-              </a>
+                Login & Add to Cart
+              </button>
             </div>
 
             {/* Right Column - Pricing */}

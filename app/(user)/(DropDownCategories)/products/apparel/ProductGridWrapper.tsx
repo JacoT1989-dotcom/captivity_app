@@ -29,17 +29,26 @@ interface ProductLookup {
   };
 }
 
-const transformProducts = (
-  products: Product[]
-): Array<Product & { featuredImage: Product["featuredImage"] | null }> => {
-  return products.map(p => ({
-    ...p,
-    featuredImage: p.featuredImage || null,
-    variations: p.variations || [],
-    reviews: p.reviews || [],
-    category: p.category || [],
-    dynamicPricing: p.dynamicPricing || [],
-  }));
+const transformProducts = (products: Product[]): Product[] => {
+  return products.map(product => {
+    const transformed: Product = {
+      ...product,
+      id: product.id,
+      userId: product.userId,
+      productName: product.productName,
+      category: product.category || [],
+      description: product.description,
+      sellingPrice: product.sellingPrice,
+      isPublished: product.isPublished,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+      reviews: product.reviews || [],
+      dynamicPricing: product.dynamicPricing || [],
+      featuredImage: product.featuredImage ?? null,
+      variations: product.variations || [],
+    };
+    return transformed;
+  });
 };
 
 export default function ProductGridWrapper() {
@@ -64,7 +73,6 @@ export default function ProductGridWrapper() {
     types: [],
   });
 
-  // Check for either color or size filters
   const shouldShowVariations =
     filters.colors.length > 0 || filters.sizes.length > 0;
 
@@ -244,7 +252,7 @@ export default function ProductGridWrapper() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
         {[...Array(12)].map((_, i) => (
           <div
             key={i}
@@ -274,7 +282,6 @@ export default function ProductGridWrapper() {
   const startIndex = (currentPage - 1) * itemsPerPage;
 
   if (shouldShowVariations) {
-    // Get all variations that match either color or size filters
     const variations = filteredProducts.flatMap(product => {
       return product.variations.filter(variation => {
         const matchesColor =
@@ -307,7 +314,7 @@ export default function ProductGridWrapper() {
     );
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {renderControls(startIndex, totalItems, itemsPerPage, true)}
         <VariationsGrid
           variations={paginatedVariations}
@@ -326,7 +333,7 @@ export default function ProductGridWrapper() {
     );
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {renderControls(startIndex, totalItems, itemsPerPage, false)}
         <ProductGrid products={paginatedProducts} />
         {renderPagination(currentPage, totalPages, setCurrentPage)}

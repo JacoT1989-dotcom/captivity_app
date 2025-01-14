@@ -1,4 +1,4 @@
-// Layout.tsx
+// app/(user)/products/headwear/layout.tsx
 "use client";
 
 import React, { useEffect } from "react";
@@ -41,7 +41,7 @@ export default function Layout({ children }: LayoutProps) {
       <div className="w-full relative z-30">{children}</div>
 
       {/* Content area with sidebar - positioned below banner */}
-      <div className="flex w-full px-4 lg:px-8 mt-6">
+      <div className="flex w-full px-2 sm:px-4 lg:px-8 mt-6">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block w-64 flex-shrink-0">
           <div className="sticky top-[76px] shadow-lg">
