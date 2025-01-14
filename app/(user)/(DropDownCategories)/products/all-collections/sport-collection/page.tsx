@@ -1,7 +1,12 @@
 import React from "react";
+import SportCollection from "./_components/SportBanner";
 
-const AllCollectionsPage = () => {
-  return <div></div>;
+const SportCollectionsPage = () => {
+  return (
+    <div>
+      <SportCollection />
+    </div>
+  );
 };
 
-export default AllCollectionsPage;
+export default SportCollectionsPage;
