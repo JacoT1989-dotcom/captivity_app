@@ -1,7 +1,12 @@
 import React from "react";
+import BaseballCollection from "./_components/BaseballCollection";
 
 const BaseballCollectionsPage = () => {
-  return <div></div>;
+  return (
+    <div>
+      <BaseballCollection />
+    </div>
+  );
 };
 
 export default BaseballCollectionsPage;
