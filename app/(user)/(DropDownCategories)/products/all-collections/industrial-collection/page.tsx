@@ -1,7 +1,12 @@
 import React from "react";
+import IndustrialCollection from "./_components/IndustrialBanner";
 
-const AllCollectionsPage = () => {
-  return <div></div>;
+const IndustrialCollectionsPage = () => {
+  return (
+    <div>
+      <IndustrialCollection />
+    </div>
+  );
 };
 
-export default AllCollectionsPage;
+export default IndustrialCollectionsPage;
