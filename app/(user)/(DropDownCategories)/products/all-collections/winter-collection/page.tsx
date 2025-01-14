@@ -1,7 +1,12 @@
 import React from "react";
+import WinterCollection from "./_components/WinterBanner";
 
-const AllCollectionsPage = () => {
-  return <div></div>;
+const WinterCollectionsPage = () => {
+  return (
+    <div>
+      <WinterCollection />
+    </div>
+  );
 };
 
-export default AllCollectionsPage;
+export default WinterCollectionsPage;
