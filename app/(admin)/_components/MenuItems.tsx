@@ -3,14 +3,20 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { fetchAllRoleCounts } from "../admin/users/actions";
 import { useCollectionsStore } from "../admin/products/_store/useCollectionsStore";
-import {
-  CollectionCounts,
-  MenuItem,
-  MenuLink,
-  UserCounts,
-} from "../admin/products/types";
 
-const INITIAL_USER_COUNTS: UserCounts = {
+interface MenuLink {
+  name: string;
+  href: string;
+  count?: number;
+}
+
+interface MenuItem {
+  title: string;
+  links: (MenuLink | MenuItem)[];
+  isSubmenu?: boolean;
+}
+
+const INITIAL_USER_COUNTS = {
   pendingApproval: 0,
   customers: 0,
   subscribers: 0,
@@ -21,7 +27,7 @@ const INITIAL_USER_COUNTS: UserCounts = {
   vendors: 0,
 };
 
-const INITIAL_COLLECTION_COUNTS: CollectionCounts = {
+const INITIAL_COLLECTION_COUNTS = {
   winter: 0,
   summer: 0,
   camo: 0,
@@ -34,17 +40,15 @@ const INITIAL_COLLECTION_COUNTS: CollectionCounts = {
   industrial: 0,
 };
 
-// Constants outside component to prevent recreation
 const TWO_HOURS = 2 * 60 * 60 * 1000;
 const MINIMUM_FETCH_INTERVAL = 10000;
 
 export function useMenuItems() {
-  const [userCounts, setUserCounts] = useState<UserCounts>(INITIAL_USER_COUNTS);
+  const [userCounts, setUserCounts] = useState(INITIAL_USER_COUNTS);
   const lastFetchTime = useRef<number>(0);
   const isMounted = useRef(true);
   const fetchPromiseRef = useRef<Promise<void> | null>(null);
 
-  // Get collections state from Zustand store
   const { counts: collectionCounts, fetchCollections } = useCollectionsStore();
 
   const loadCounts = useCallback(
@@ -150,6 +154,42 @@ export function useMenuItems() {
         ],
       },
       {
+        title: "E-commerce",
+        links: [
+          {
+            title: "Orders",
+            isSubmenu: true,
+            links: [
+              { name: "All Orders", href: "/admin/orders/orders" },
+              { name: "Pending Orders", href: "/admin/pendingOrders" },
+              { name: "Processing Orders", href: "/admin/orders/processing" },
+              { name: "Completed Orders", href: "/admin/orders/completed" },
+              { name: "Cancelled Orders", href: "/admin/orders/cancelled" },
+              { name: "Returns", href: "/admin/orders/returns" },
+            ],
+          },
+          {
+            title: "Products",
+            isSubmenu: true,
+            links: [
+              { name: "Add Product", href: "/admin/products/create" },
+              { name: "Categories", href: "/admin/products/categories" },
+              { name: "Inventory", href: "/admin/products/inventory" },
+            ],
+          },
+          {
+            title: "Customers",
+            isSubmenu: true,
+            links: [
+              { name: "All Customers", href: "/admin/customers" },
+              { name: "Customer Groups", href: "/admin/customers/groups" },
+              { name: "Customer Reviews", href: "/admin/customers/reviews" },
+              { name: "Loyalty Program", href: "/admin/customers/loyalty" },
+            ],
+          },
+        ],
+      },
+      {
         title: "Collections",
         links: [
           {
@@ -205,11 +245,106 @@ export function useMenuItems() {
         ],
       },
       {
-        title: "Products",
+        title: "Warehouse",
         links: [
-          { name: "Add Product", href: "/admin/products/create" },
-          { name: "Categories", href: "/admin/products/categories" },
-          { name: "Inventory", href: "/admin/products/inventory" },
+          {
+            title: "Inventory",
+            isSubmenu: true,
+            links: [
+              {
+                name: "Stock Levels",
+                href: "/admin/warehouse/inventory/levels",
+              },
+              {
+                name: "Stock History",
+                href: "/admin/warehouse/inventory/history",
+              },
+              {
+                name: "Adjustments",
+                href: "/admin/warehouse/inventory/adjustments",
+              },
+            ],
+          },
+          {
+            title: "Stock Management",
+            isSubmenu: true,
+            links: [
+              { name: "Receiving", href: "/admin/warehouse/stock/receiving" },
+              {
+                name: "Transfer Orders",
+                href: "/admin/warehouse/stock/transfers",
+              },
+              { name: "Pick Lists", href: "/admin/warehouse/stock/picklists" },
+            ],
+          },
+          {
+            title: "Supplies",
+            isSubmenu: true,
+            links: [
+              {
+                name: "Purchase Orders",
+                href: "/admin/warehouse/supplies/orders",
+              },
+              {
+                name: "Suppliers",
+                href: "/admin/warehouse/supplies/suppliers",
+              },
+              { name: "Supply Chain", href: "/admin/warehouse/supplies/chain" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Representative",
+        links: [
+          {
+            title: "Meetings",
+            isSubmenu: true,
+            links: [
+              {
+                name: "Schedule",
+                href: "/admin/representative/meetings/schedule",
+              },
+              {
+                name: "Minutes",
+                href: "/admin/representative/meetings/minutes",
+              },
+              {
+                name: "Follow-ups",
+                href: "/admin/representative/meetings/followups",
+              },
+            ],
+          },
+          {
+            title: "Kanban Board",
+            isSubmenu: true,
+            links: [
+              { name: "Tasks", href: "/admin/representative/kanban/tasks" },
+              { name: "Sprints", href: "/admin/representative/kanban/sprints" },
+              {
+                name: "Analytics",
+                href: "/admin/representative/kanban/analytics",
+              },
+            ],
+          },
+          {
+            title: "Client Management",
+            isSubmenu: true,
+            links: [
+              {
+                name: "Contacts",
+                href: "/admin/representative/clients/contacts",
+              },
+              {
+                name: "Opportunities",
+                href: "/admin/representative/clients/opportunities",
+              },
+              {
+                name: "History",
+                href: "/admin/representative/clients/history",
+              },
+            ],
+          },
         ],
       },
       {
@@ -217,34 +352,8 @@ export function useMenuItems() {
         links: [
           { name: "Vendor Urls", href: "/admin/vendor/url" },
           { name: "Vendor ratings", href: "/admin/vendor/ratings" },
-          {
-            name: "Vendor Applications",
-            href: "/admin/vendor/applications",
-          },
-          {
-            name: "Total Income",
-            href: "/admin/vendor/total_income",
-          },
-        ],
-      },
-      {
-        title: "Orders",
-        links: [
-          { name: "All Orders", href: "/admin/orders/orders" },
-          { name: "Pending Orders", href: "/admin/pendingOrders" },
-          { name: "Processing Orders", href: "/admin/orders/processing" },
-          { name: "Completed Orders", href: "/admin/orders/completed" },
-          { name: "Cancelled Orders", href: "/admin/orders/cancelled" },
-          { name: "Returns", href: "/admin/orders/returns" },
-        ],
-      },
-      {
-        title: "Customers",
-        links: [
-          { name: "All Customers", href: "/admin/customers" },
-          { name: "Customer Groups", href: "/admin/customers/groups" },
-          { name: "Customer Reviews", href: "/admin/customers/reviews" },
-          { name: "Loyalty Program", href: "/admin/customers/loyalty" },
+          { name: "Vendor Applications", href: "/admin/vendor/applications" },
+          { name: "Total Income", href: "/admin/vendor/total_income" },
         ],
       },
       {
