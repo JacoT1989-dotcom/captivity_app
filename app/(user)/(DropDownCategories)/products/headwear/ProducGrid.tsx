@@ -46,12 +46,12 @@ const ProductGrid = ({ products }: ProductGridProps) => {
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 w-full">
         {products.map(product => (
           <div
             key={product.id}
-            className="relative bg-background rounded-lg border border-border overflow-hidden"
-            style={{ width: "100%" }}
+            className="relative bg-background rounded-lg border border-border overflow-hidden max-w-full"
+            style={{ minHeight: "0" }}
           >
             <div className="aspect-square relative w-full">
               {product.featuredImage ? (

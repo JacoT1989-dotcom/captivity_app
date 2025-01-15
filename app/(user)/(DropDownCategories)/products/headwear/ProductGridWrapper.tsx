@@ -293,8 +293,8 @@ export default function ProductGridWrapper() {
   return (
     <div className="w-full space-y-6">
       {renderControls(startIndex, totalItems, itemsPerPage, false)}
-      <div className="w-full">
-        <ProductGrid products={paginatedProducts} />
+      <div className="w-full relative">
+        <ProductGrid products={paginatedProducts} key={currentPage} />
       </div>
       {renderPagination(currentPage, totalPages, setCurrentPage)}
     </div>
