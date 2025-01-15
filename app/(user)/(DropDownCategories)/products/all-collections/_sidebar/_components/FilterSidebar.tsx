@@ -30,8 +30,22 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [openFilter, setOpenFilter] = useState<string | null>(null);
+
+  // Initialize filters from URL
+  const getInitialFilters = () => {
+    const pathParts = pathname?.split("/").filter(Boolean);
+    const specificCollection = pathParts?.[2]; // e.g., "camo-collection"
+
+    return {
+      stockLevel: "all",
+      sizes: [],
+      colors: [],
+      types: specificCollection ? [specificCollection] : [],
+    };
+  };
+
   const [selectedFilters, setSelectedFilters] = useState<FilterState>(
-    initialFilters || defaultFilters
+    initialFilters || getInitialFilters()
   );
 
   const { products } = useCategoryStore();
@@ -41,6 +55,25 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
     setAvailableSizes,
     setAvailableColors,
   } = useDynamicFilterStore();
+
+  // Update filters when URL changes
+  useEffect(() => {
+    const pathParts = pathname?.split("/").filter(Boolean);
+    const specificCollection = pathParts?.[2];
+
+    if (
+      specificCollection &&
+      (!selectedFilters.types.length ||
+        selectedFilters.types[0] !== specificCollection)
+    ) {
+      const newFilters = {
+        ...selectedFilters,
+        types: [specificCollection],
+      };
+      setSelectedFilters(newFilters);
+      onFilterChange?.(newFilters);
+    }
+  }, [pathname, selectedFilters, onFilterChange]);
 
   // Update available sizes and colors when products or pathname changes
   useEffect(() => {
