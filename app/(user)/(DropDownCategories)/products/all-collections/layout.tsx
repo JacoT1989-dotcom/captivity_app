@@ -1,4 +1,3 @@
-// app/(user)/products/headwear/layout.tsx
 "use client";
 
 import React, { useEffect } from "react";
@@ -14,22 +13,25 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const pathname = usePathname();
-  const { applyFilters, filterProductsByPath, fetchCategories, initialized } =
-    useCategoryStore();
+  const {
+    applyFilters,
+    filterProductsByPath,
+    fetchCategories,
+    initialized,
+    products,
+  } = useCategoryStore();
 
   // Initialize products when component mounts
   useEffect(() => {
-    const initializeProducts = async () => {
-      if (!initialized) {
-        await fetchCategories();
-      }
-      if (pathname) {
-        filterProductsByPath(pathname);
-      }
-    };
+    fetchCategories();
+  }, [fetchCategories]);
 
-    initializeProducts();
-  }, [initialized, fetchCategories, filterProductsByPath, pathname]);
+  // Separate effect for filtering after products are loaded
+  useEffect(() => {
+    if (initialized && pathname && products.length > 0) {
+      filterProductsByPath(pathname);
+    }
+  }, [initialized, pathname, products, filterProductsByPath]);
 
   const handleFilterChange = (filters: FilterState) => {
     applyFilters(filters);
