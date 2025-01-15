@@ -103,7 +103,8 @@ const VariationsGrid = ({
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {/* Change the grid gap from gap-6 to match ProductGrid */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 w-full">
         {Object.entries(groupedByProduct).map(
           ([productId, colorVariations]) => {
             const product = products[productId];
@@ -112,7 +113,7 @@ const VariationsGrid = ({
                 ? Object.values(colorVariations).filter(variation =>
                     filters.colors.includes(variation.color)
                   )
-                : [Object.values(colorVariations)[0]]; // Show only first color if no filter
+                : [Object.values(colorVariations)[0]];
 
             if (displayVariations.length === 0) return null;
 
@@ -123,25 +124,28 @@ const VariationsGrid = ({
             return (
               <div
                 key={`${productId}-${variation.color}`}
-                className="group relative bg-background rounded-lg hover:shadow-lg transition-shadow shadow-lg border border-border"
+                className="relative bg-background rounded-lg border border-border overflow-hidden max-w-full"
+                style={{ minHeight: "0" }}
               >
-                <div className="aspect-square relative overflow-hidden rounded-t-lg">
+                <div className="aspect-square relative w-full">
                   {variation.variationImageURL ? (
                     <Image
                       src={variation.variationImageURL}
                       alt={variation.name}
                       fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover"
+                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                       priority
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                      <div className="text-center">
-                        <span className="block text-lg font-medium text-muted-foreground">
-                          {product?.productName || variation.name}
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-4xl sm:text-5xl font-bold text-muted-foreground/50">
+                          {(product?.productName || variation.name)
+                            .charAt(0)
+                            .toUpperCase()}
                         </span>
-                        <span className="block text-sm text-muted-foreground/70 mt-1">
+                        <span className="mt-2 text-xs text-muted-foreground font-medium">
                           {variation.color} - {variation.size}
                         </span>
                       </div>
@@ -167,17 +171,17 @@ const VariationsGrid = ({
                   </div>
                 </div>
 
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-foreground line-clamp-1">
+                <div className="p-3 sm:p-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-foreground line-clamp-1 hover:line-clamp-none">
                     {product?.productName || variation.name}
                   </h3>
 
                   {!filters.colors.length && availableColors.length > 0 && (
-                    <div className="mt-4 flex items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                       {availableColors.map(variation => (
                         <div
                           key={variation.color}
-                          className={`w-6 h-6 rounded-full border border-border`}
+                          className="w-5 h-5 sm:w-6 sm:h-6 rounded-md border border-border"
                           style={{
                             backgroundColor: variation.color.toLowerCase(),
                           }}
@@ -187,8 +191,8 @@ const VariationsGrid = ({
                       {remainingCount > 0 && (
                         <Button
                           onClick={() => setSelectedProduct(productId)}
-                          variant="ghost"
-                          className="h-6 px-2 text-xs"
+                          variant="default"
+                          className="h-5 sm:h-6 px-2 text-xs"
                         >
                           +{remainingCount} more
                         </Button>
@@ -197,14 +201,14 @@ const VariationsGrid = ({
                   )}
 
                   {product && (
-                    <p className="mt-3 text-lg font-bold text-foreground">
+                    <p className="mt-2 text-base sm:text-lg font-bold text-foreground">
                       {formatPrice(product.sellingPrice)}
                     </p>
                   )}
 
                   <Button
                     onClick={() => setSelectedProduct(productId)}
-                    className="w-full mt-4"
+                    className="w-full mt-3 sm:mt-4"
                     variant="secondary"
                   >
                     View More
