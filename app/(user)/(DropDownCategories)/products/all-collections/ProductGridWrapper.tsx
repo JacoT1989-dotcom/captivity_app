@@ -55,6 +55,7 @@ export default function ProductGridWrapper() {
     sortProducts,
     filters,
     initialized,
+    products,
   } = useCategoryStore();
   const filteredProducts = useFilteredProducts();
   const isLoading = useCategoryLoading();
@@ -65,16 +66,20 @@ export default function ProductGridWrapper() {
 
   const hasColorSelected = filters.colors.length > 0;
 
+  // First effect to fetch categories
   useEffect(() => {
-    if (initialized && pathname) {
+    if (!initialized) {
+      fetchCategories();
+    }
+  }, [initialized, fetchCategories]);
+
+  // Second effect to handle URL-based filtering
+  useEffect(() => {
+    if (initialized && products.length > 0 && pathname) {
       filterProductsByPath(pathname);
       setCurrentPage(1);
     }
-  }, [pathname, filterProductsByPath, initialized]);
-
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+  }, [pathname, filterProductsByPath, initialized, products]);
 
   const handleSortChange = (value: string) => {
     sortProducts(value);
@@ -226,6 +231,10 @@ export default function ProductGridWrapper() {
     );
   }
 
+  if (!products || products.length === 0) {
+    return <div className="text-center py-8">Loading products...</div>;
+  }
+
   if (!filteredProducts || filteredProducts.length === 0) {
     return (
       <div className="text-center py-8">
@@ -237,15 +246,23 @@ export default function ProductGridWrapper() {
   const startIndex = (currentPage - 1) * itemsPerPage;
 
   if (hasColorSelected) {
+    // For color-selected view, filter variations first by stock level
     const variations = filteredProducts.flatMap(product => {
-      return product.variations.filter(variation => {
+      const matchingVariations = product.variations.filter(variation => {
         const matchesColor =
           filters.colors.length === 0 ||
           filters.colors.includes(variation.color);
         const matchesSize =
           filters.sizes.length === 0 || filters.sizes.includes(variation.size);
-        return matchesColor && matchesSize;
+        const matchesStock =
+          filters.stockLevel === "all" ||
+          (filters.stockLevel === "in" && variation.quantity > 0) ||
+          (filters.stockLevel === "out" && variation.quantity <= 0);
+
+        return matchesColor && matchesSize && matchesStock;
       });
+
+      return matchingVariations;
     });
 
     const productsLookup = filteredProducts.reduce<ProductLookup>(
@@ -282,7 +299,30 @@ export default function ProductGridWrapper() {
     );
   }
 
-  const transformedProducts = transformProducts(filteredProducts);
+  // For regular product view
+  const transformedProducts = transformProducts(filteredProducts).filter(
+    product => {
+      const hasMatchingVariations = product.variations.some(variation => {
+        const matchesSize =
+          filters.sizes.length === 0 || filters.sizes.includes(variation.size);
+        const matchesColor =
+          filters.colors.length === 0 ||
+          filters.colors.includes(variation.color);
+        const stockStatus = variation.quantity > 0;
+
+        // Apply stock level filtering
+        const matchesStock =
+          filters.stockLevel === "all" ||
+          (filters.stockLevel === "in" && stockStatus) ||
+          (filters.stockLevel === "out" && !stockStatus);
+
+        return matchesSize && matchesColor && matchesStock;
+      });
+
+      return hasMatchingVariations;
+    }
+  );
+
   const totalItems = transformedProducts.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const paginatedProducts = transformedProducts.slice(

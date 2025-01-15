@@ -19,43 +19,38 @@ export const StockLevelFilter: React.FC<StockLevelFilterProps> = ({
   const pathname = usePathname() || "";
   const { filters, products } = useCategoryStore();
 
-  // Get products that match the current pathname category
   const getPathMatchedProducts = () => {
     const pathParts = pathname.split("/").filter(Boolean);
-    const categoryType = pathParts[1] || ""; // e.g., "headwear"
-    const specificCategory = pathParts[2] || ""; // e.g., "beanies"
+    const isCollectionPath = pathParts[1] === "all-collections";
+    const specificCollection = pathParts[2];
+
+    if (!isCollectionPath) return products;
 
     return products.filter(product => {
       if (!product.category || product.category.length === 0) {
         return false;
       }
 
-      // For all-in-headwear or no specific category, show all headwear products
       if (
-        categoryType === "headwear" &&
-        (!specificCategory || specificCategory === "all-in-headwear")
+        !specificCollection ||
+        specificCollection === "all-collections" ||
+        specificCollection === "all-in-collections"
       ) {
-        return product.category.some(cat => {
-          const normalizedCat = normalizeString(cat);
-          return (
-            normalizedCat.includes("hat") ||
-            normalizedCat.includes("cap") ||
-            normalizedCat.includes("beanie") ||
-            normalizedCat.includes("headwear")
-          );
-        });
+        return true;
       }
 
-      // For specific categories (e.g., beanies)
       return product.category.some(cat => {
         const normalizedCat = normalizeString(cat);
-        const normalizedSpecific = normalizeString(specificCategory);
-        return normalizedCat.includes(normalizedSpecific);
+        const normalizedType = normalizeString(specificCollection);
+        return (
+          normalizedCat === normalizedType ||
+          normalizedCat === normalizedType.replace("-collection", "") ||
+          normalizedCat.includes(normalizedType.replace("-collection", ""))
+        );
       });
     });
   };
 
-  // Calculate stock counts for pathname-matched and filtered variations
   const getStockCounts = () => {
     let inStock = 0;
     let outOfStock = 0;
@@ -63,25 +58,45 @@ export const StockLevelFilter: React.FC<StockLevelFilterProps> = ({
     const pathMatchedProducts = getPathMatchedProducts();
 
     pathMatchedProducts.forEach(product => {
-      product.variations.forEach(variation => {
-        // Only count variations that match current color filter
-        if (
+      const matchesType =
+        !filters.types.length ||
+        filters.types[0] === "all-in-collections" ||
+        filters.types[0] === "all-collections" ||
+        product.category.some(cat => {
+          const normalizedCat = normalizeString(cat);
+          return filters.types.some(type => {
+            const normalizedType = normalizeString(type);
+            return normalizedCat.includes(
+              normalizedType.replace("-collection", "")
+            );
+          });
+        });
+
+      if (!matchesType) return;
+
+      // Check if any variation matches current size and color filters
+      const hasMatchingVariations = product.variations.some(variation => {
+        const matchesColor =
           filters.colors.length === 0 ||
-          filters.colors.includes(variation.color)
-        ) {
-          // Only count variations that match current size filter
-          if (
-            filters.sizes.length === 0 ||
-            filters.sizes.includes(variation.size)
-          ) {
-            if (variation.quantity > 0) {
-              inStock++;
-            } else {
-              outOfStock++;
-            }
-          }
-        }
+          filters.colors.includes(variation.color);
+        const matchesSize =
+          filters.sizes.length === 0 || filters.sizes.includes(variation.size);
+        return matchesColor && matchesSize;
       });
+
+      if (!hasMatchingVariations) return;
+
+      // Count stock status
+      const totalStock = product.variations.reduce(
+        (sum, variation) => sum + variation.quantity,
+        0
+      );
+
+      if (totalStock > 0) {
+        inStock++;
+      } else {
+        outOfStock++;
+      }
     });
 
     return { inStock, outOfStock };
@@ -95,6 +110,7 @@ export const StockLevelFilter: React.FC<StockLevelFilterProps> = ({
         let count = 0;
         if (option.value === "in") count = inStock;
         if (option.value === "out") count = outOfStock;
+        if (option.value === "all") count = inStock + outOfStock;
 
         return (
           <label key={option.value} className="inline-flex items-center">
@@ -108,9 +124,7 @@ export const StockLevelFilter: React.FC<StockLevelFilterProps> = ({
             />
             <span className="ml-2 text-sm text-gray-600">
               {option.label}
-              {option.value !== "all" && (
-                <span className="ml-1 text-xs text-gray-400">({count})</span>
-              )}
+              <span className="ml-1 text-xs text-gray-400">({count})</span>
             </span>
           </label>
         );

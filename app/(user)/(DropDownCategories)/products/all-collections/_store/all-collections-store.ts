@@ -1,4 +1,3 @@
-// all-collections-store.ts
 import { create } from "zustand";
 import { CategoryStore, CategoryState, FilterState, Product } from "./types";
 import { getAllCategories } from "../all-collections-actions";
@@ -40,77 +39,93 @@ function applyProductFilters(
   filters: FilterState,
   pathname?: string
 ): Product[] {
-  // First, filter by pathname/category
   const pathParts = (pathname || "").split("/").filter(Boolean);
   const isCollectionPath = pathParts[1] === "all-collections";
-  const specificCollection = pathParts[2]; // e.g., "camo-collection"
+  const specificCollection = pathParts[2];
 
-  let categoryFilteredProducts = products;
+  // Step 1: Filter by collection first
+  let filteredProducts = products.filter(product => {
+    if (!product.category || product.category.length === 0) return false;
 
-  // Handle collections route and specific collection type
-  if (isCollectionPath) {
-    categoryFilteredProducts = products.filter(product => {
-      if (!product.category || product.category.length === 0) {
-        return false;
-      }
-
-      // If we're at /products/all-collections with no specific collection
-      // and no specific type filter is selected
+    if (isCollectionPath) {
       if (
-        !specificCollection &&
-        (!filters.types.length || filters.types[0] === "all-in-collections")
+        !specificCollection ||
+        specificCollection === "all-collections" ||
+        specificCollection === "all-in-collections" ||
+        !filters.types.length ||
+        filters.types[0] === "all-collections" ||
+        filters.types[0] === "all-in-collections"
       ) {
         return true;
       }
 
-      // Check against both URL path and selected type filter
       const typeToCheck =
         filters.types.length > 0 ? filters.types[0] : specificCollection;
-
-      if (typeToCheck && typeToCheck !== "all-in-collections") {
+      if (
+        typeToCheck &&
+        typeToCheck !== "all-collections" &&
+        typeToCheck !== "all-in-collections"
+      ) {
         return product.category.some(cat => {
           const normalizedCat = normalizeString(cat);
-          const normalizedType = normalizeString(typeToCheck);
-          // Match exactly or match the collection name without the '-collection' suffix
+          const normalizedType = normalizeString(
+            typeToCheck.replace("-collection", "")
+          );
           return (
             normalizedCat === normalizedType ||
-            normalizedCat.includes(normalizedType.replace("-collection", ""))
+            normalizedCat === normalizedType + "collection" ||
+            normalizedCat.includes(normalizedType)
           );
         });
       }
+    }
+    return true;
+  });
 
+  // Step 2: Filter by stock level
+  if (filters.stockLevel !== "all") {
+    filteredProducts = filteredProducts.filter(product => {
+      // For stock level filtering, check all variations
+      const hasVariationsInStock = product.variations.some(v => v.quantity > 0);
+      const hasVariationsOutOfStock = product.variations.every(
+        v => v.quantity <= 0
+      );
+
+      if (filters.stockLevel === "in") {
+        return hasVariationsInStock;
+      } else if (filters.stockLevel === "out") {
+        return hasVariationsOutOfStock;
+      }
       return true;
     });
   }
 
-  // Then apply the rest of the filters
-  return categoryFilteredProducts.filter(product => {
-    // Stock Level Filter
-    if (filters.stockLevel !== "all") {
-      const totalStock = product.variations.reduce(
-        (sum, variation) => sum + variation.quantity,
-        0
-      );
-      if (filters.stockLevel === "in" && totalStock <= 0) return false;
-      if (filters.stockLevel === "out" && totalStock > 0) return false;
-    }
+  // Step 3: Apply size and color filters
+  if (filters.sizes.length > 0 || filters.colors.length > 0) {
+    filteredProducts = filteredProducts.filter(product => {
+      return product.variations.some(variation => {
+        const matchesSize =
+          filters.sizes.length === 0 || filters.sizes.includes(variation.size);
+        const matchesColor =
+          filters.colors.length === 0 ||
+          filters.colors.includes(variation.color);
 
-    // Variation Filters (Size and Color)
-    const hasMatchingVariation = product.variations.some(variation => {
-      if (filters.sizes.length > 0 && !filters.sizes.includes(variation.size)) {
-        return false;
-      }
-      if (
-        filters.colors.length > 0 &&
-        !filters.colors.includes(variation.color)
-      ) {
-        return false;
-      }
-      return true;
+        // Check stock level with size/color combination
+        let matchesStock = true;
+        if (filters.stockLevel !== "all") {
+          const isVariationInStock = variation.quantity > 0;
+          matchesStock =
+            filters.stockLevel === "in"
+              ? isVariationInStock
+              : !isVariationInStock;
+        }
+
+        return matchesSize && matchesColor && matchesStock;
+      });
     });
+  }
 
-    return hasMatchingVariation;
-  });
+  return filteredProducts;
 }
 
 const initialState: CategoryState = {
@@ -181,14 +196,22 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
     const { products, filters } = get();
 
     const pathParts = pathname.split("/").filter(Boolean);
-    const specificCollection = pathParts[2]; // Will be "camo-collection" in your example
+    const specificCollection = pathParts[2];
 
-    // If we have a specific collection in the URL but no type filter set,
-    // update the filters to match the URL
-    if (specificCollection && filters.types.length === 0) {
+    // Update filters based on URL
+    if (specificCollection) {
+      let newType = specificCollection;
+
+      if (
+        specificCollection === "all-collections" ||
+        specificCollection === "all-in-collections"
+      ) {
+        newType = "all-in-collections";
+      }
+
       const newFilters = {
         ...filters,
-        types: [specificCollection],
+        types: [newType],
       };
       set({ filters: newFilters });
     }
