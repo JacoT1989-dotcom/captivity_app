@@ -3,7 +3,7 @@
 
 import React, { useEffect } from "react";
 import FilterSidebar from "./_sidebar/_components/FilterSidebar";
-// import ProductGridWrapper from "./ProductGridWrapper";
+import ProductGridWrapper from "./ProductGridWrapper";
 import { usePathname } from "next/navigation";
 import { FilterState } from "./_store/types";
 import { useCategoryStore } from "./_store/all-collections-store";
@@ -53,7 +53,9 @@ export default function Layout({ children }: LayoutProps) {
         </div>
 
         {/* Main content area */}
-        <div className="flex-1 lg:ml-6">{/* <ProductGridWrapper /> */}</div>
+        <div className="flex-1 lg:ml-6">
+          <ProductGridWrapper />
+        </div>
       </div>
 
       {/* Mobile FilterSidebar */}

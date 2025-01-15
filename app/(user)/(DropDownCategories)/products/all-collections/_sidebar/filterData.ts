@@ -1,5 +1,4 @@
 // filterData.ts
-
 import { Filter, FilterType } from "../_store/types";
 
 export const filters: Filter[] = [

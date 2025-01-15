@@ -1,6 +1,4 @@
-"use client";
-
-// all collections store
+// all-collections-store.ts
 import { create } from "zustand";
 import { CategoryStore, CategoryState, FilterState, Product } from "./types";
 import { getAllCategories } from "../all-collections-actions";
@@ -42,98 +40,77 @@ function applyProductFilters(
   filters: FilterState,
   pathname?: string
 ): Product[] {
+  // First, filter by pathname/category
   const pathParts = (pathname || "").split("/").filter(Boolean);
-  const categoryType = pathParts[1] || "";
-  const specificCategory = pathParts[2] || "";
+  const isCollectionPath = pathParts[1] === "all-collections";
+  const specificCollection = pathParts[2]; // e.g., "camo-collection"
 
   let categoryFilteredProducts = products;
 
-  if (categoryType === "collections") {
+  // Handle collections route and specific collection type
+  if (isCollectionPath) {
     categoryFilteredProducts = products.filter(product => {
       if (!product.category || product.category.length === 0) {
         return false;
       }
 
-      if (!specificCategory || specificCategory === "all-collections") {
-        // Return all products when viewing all collections
+      // If we're at /products/all-collections with no specific collection
+      // and no specific type filter is selected
+      if (
+        !specificCollection &&
+        (!filters.types.length || filters.types[0] === "all-in-collections")
+      ) {
         return true;
       }
 
-      // Filter by specific collection category
-      return product.category.some(cat => {
-        const normalizedCat = normalizeString(cat);
-        const normalizedSpecific = normalizeString(specificCategory);
-        return normalizedCat.includes(normalizedSpecific);
-      });
+      // Check against both URL path and selected type filter
+      const typeToCheck =
+        filters.types.length > 0 ? filters.types[0] : specificCollection;
+
+      if (typeToCheck && typeToCheck !== "all-in-collections") {
+        return product.category.some(cat => {
+          const normalizedCat = normalizeString(cat);
+          const normalizedType = normalizeString(typeToCheck);
+          // Match exactly or match the collection name without the '-collection' suffix
+          return (
+            normalizedCat === normalizedType ||
+            normalizedCat.includes(normalizedType.replace("-collection", ""))
+          );
+        });
+      }
+
+      return true;
     });
   }
 
-  const filteredProducts = categoryFilteredProducts
-    .filter(product => {
-      // Filter by pricing type if specified
-      if (filters.pricingType) {
-        const currentPricing = getCurrentPricing(product);
-        if (!currentPricing || currentPricing.type !== filters.pricingType) {
-          return false;
-        }
+  // Then apply the rest of the filters
+  return categoryFilteredProducts.filter(product => {
+    // Stock Level Filter
+    if (filters.stockLevel !== "all") {
+      const totalStock = product.variations.reduce(
+        (sum, variation) => sum + variation.quantity,
+        0
+      );
+      if (filters.stockLevel === "in" && totalStock <= 0) return false;
+      if (filters.stockLevel === "out" && totalStock > 0) return false;
+    }
+
+    // Variation Filters (Size and Color)
+    const hasMatchingVariation = product.variations.some(variation => {
+      if (filters.sizes.length > 0 && !filters.sizes.includes(variation.size)) {
+        return false;
       }
+      if (
+        filters.colors.length > 0 &&
+        !filters.colors.includes(variation.color)
+      ) {
+        return false;
+      }
+      return true;
+    });
 
-      const hasMatchingVariation = product.variations.some(variation => {
-        if (
-          filters.colors.length > 0 &&
-          !filters.colors.includes(variation.color)
-        ) {
-          return false;
-        }
-
-        if (
-          filters.sizes.length > 0 &&
-          !filters.sizes.includes(variation.size)
-        ) {
-          return false;
-        }
-
-        if (filters.stockLevel !== "all") {
-          if (filters.stockLevel === "in" && variation.quantity <= 0)
-            return false;
-          if (filters.stockLevel === "out" && variation.quantity > 0)
-            return false;
-        }
-
-        return true;
-      });
-
-      return hasMatchingVariation;
-    })
-    .map(product => ({
-      ...product,
-      variations: product.variations.filter(variation => {
-        if (
-          filters.colors.length > 0 &&
-          !filters.colors.includes(variation.color)
-        ) {
-          return false;
-        }
-
-        if (
-          filters.sizes.length > 0 &&
-          !filters.sizes.includes(variation.size)
-        ) {
-          return false;
-        }
-
-        if (filters.stockLevel !== "all") {
-          if (filters.stockLevel === "in" && variation.quantity <= 0)
-            return false;
-          if (filters.stockLevel === "out" && variation.quantity > 0)
-            return false;
-        }
-
-        return true;
-      }),
-    }));
-
-  return filteredProducts;
+    return hasMatchingVariation;
+  });
 }
 
 const initialState: CategoryState = {
@@ -202,8 +179,21 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
 
   filterProductsByPath: (pathname: string) => {
     const { products, filters } = get();
-    const filteredProducts = applyProductFilters(products, filters, pathname);
 
+    const pathParts = pathname.split("/").filter(Boolean);
+    const specificCollection = pathParts[2]; // Will be "camo-collection" in your example
+
+    // If we have a specific collection in the URL but no type filter set,
+    // update the filters to match the URL
+    if (specificCollection && filters.types.length === 0) {
+      const newFilters = {
+        ...filters,
+        types: [specificCollection],
+      };
+      set({ filters: newFilters });
+    }
+
+    const filteredProducts = applyProductFilters(products, filters, pathname);
     set({
       filteredProducts,
       currentPath: pathname,
@@ -213,18 +203,12 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
   applyFilters: (newFilters: FilterState) => {
     const { products, currentPath } = get();
     set({ filters: newFilters });
-
-    if (currentPath) {
-      const filteredProducts = applyProductFilters(
-        products,
-        newFilters,
-        currentPath
-      );
-      set({ filteredProducts });
-    } else {
-      const filteredProducts = applyProductFilters(products, newFilters);
-      set({ filteredProducts });
-    }
+    const filteredProducts = applyProductFilters(
+      products,
+      newFilters,
+      currentPath
+    );
+    set({ filteredProducts });
   },
 
   sortProducts: (sortOrder: string) => {
@@ -271,6 +255,7 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
   },
 }));
 
+// Export selectors
 export const useCategories = () => useCategoryStore(state => state.categories);
 export const useFilteredProducts = () =>
   useCategoryStore(state => state.filteredProducts);
