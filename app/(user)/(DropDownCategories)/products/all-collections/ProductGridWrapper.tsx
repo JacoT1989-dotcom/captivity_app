@@ -5,13 +5,13 @@ import { usePathname } from "next/navigation";
 import { SortAsc } from "lucide-react";
 import VariationsGrid from "./VariationsGrid";
 import { Product } from "./_store/types";
-import ProductGrid from "./ProducGrid";
 import {
   useCategoryError,
   useCategoryLoading,
   useCategoryStore,
   useFilteredProducts,
 } from "./_store/all-collections-store";
+import ProductGrid from "./ProducGrid";
 
 interface ProductLookup {
   [key: string]: {
@@ -98,7 +98,7 @@ export default function ProductGridWrapper() {
           <div className="text-sm text-gray-600 whitespace-nowrap">
             Showing {startIndex + 1} -{" "}
             {Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems}{" "}
-            {isVariationView ? "variations" : "products"}
+            {isVariationView ? "products" : "products"}
           </div>
 
           <div className="flex flex-wrap items-center gap-4 sm:gap-6 w-full sm:w-auto">
@@ -246,25 +246,46 @@ export default function ProductGridWrapper() {
   const startIndex = (currentPage - 1) * itemsPerPage;
 
   if (hasColorSelected) {
-    const variations = filteredProducts.flatMap(product => {
-      const matchingVariations = product.variations.filter(variation => {
-        const matchesColor =
-          filters.colors.length === 0 ||
-          filters.colors.includes(variation.color);
-        const matchesSize =
-          filters.sizes.length === 0 || filters.sizes.includes(variation.size);
-        const matchesStock =
-          filters.stockLevel === "all" ||
-          (filters.stockLevel === "in" && variation.quantity > 0) ||
-          (filters.stockLevel === "out" && variation.quantity <= 0);
+    // Group variations by product
+    const productGroups = filteredProducts.reduce<Record<string, Product>>(
+      (acc, product) => {
+        const matchingVariations = product.variations.filter(variation => {
+          const matchesColor =
+            filters.colors.length === 0 ||
+            filters.colors.includes(variation.color);
+          const matchesSize =
+            filters.sizes.length === 0 ||
+            filters.sizes.includes(variation.size);
+          const matchesStock =
+            filters.stockLevel === "all" ||
+            (filters.stockLevel === "in" && variation.quantity > 0) ||
+            (filters.stockLevel === "out" && variation.quantity <= 0);
 
-        return matchesColor && matchesSize && matchesStock;
-      });
+          return matchesColor && matchesSize && matchesStock;
+        });
 
-      return matchingVariations;
-    });
+        if (matchingVariations.length > 0) {
+          acc[product.id] = {
+            ...product,
+            variations: matchingVariations,
+          };
+        }
+        return acc;
+      },
+      {}
+    );
 
-    const productsLookup = filteredProducts.reduce<ProductLookup>(
+    // Convert to array and paginate
+    const productsArray = Object.values(productGroups);
+    const totalItems = productsArray.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const paginatedProducts = productsArray.slice(
+      startIndex,
+      startIndex + itemsPerPage
+    );
+
+    // Create product lookup for VariationsGrid
+    const productsLookup = paginatedProducts.reduce<ProductLookup>(
       (acc, product) => {
         acc[product.id] = {
           id: product.id,
@@ -277,11 +298,9 @@ export default function ProductGridWrapper() {
       {}
     );
 
-    const totalItems = variations.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const paginatedVariations = variations.slice(
-      startIndex,
-      startIndex + itemsPerPage
+    // Get all variations for paginated products
+    const allVariations = paginatedProducts.flatMap(
+      product => product.variations
     );
 
     return (
@@ -289,7 +308,7 @@ export default function ProductGridWrapper() {
         {renderControls(startIndex, totalItems, itemsPerPage, true)}
         <div className="w-full max-w-full">
           <VariationsGrid
-            variations={paginatedVariations}
+            variations={allVariations}
             products={productsLookup}
           />
         </div>

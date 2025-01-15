@@ -123,7 +123,7 @@ export default function ProductGridWrapper() {
         <div className="text-sm text-gray-600">
           Showing {startIndex + 1} -{" "}
           {Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems}{" "}
-          {isVariationView ? "variations" : "products"}
+          products
         </div>
 
         <div className="flex items-center gap-6">
@@ -282,18 +282,51 @@ export default function ProductGridWrapper() {
   const startIndex = (currentPage - 1) * itemsPerPage;
 
   if (shouldShowVariations) {
-    const variations = filteredProducts.flatMap(product => {
-      return product.variations.filter(variation => {
+    // Group products by their base product to avoid duplicates
+    const uniqueProducts = filteredProducts.reduce<Record<string, Product>>(
+      (acc, product) => {
+        const hasMatchingVariations = product.variations.some(variation => {
+          const matchesColor =
+            filters.colors.length === 0 ||
+            filters.colors.includes(variation.color);
+          const matchesSize =
+            filters.sizes.length === 0 ||
+            filters.sizes.includes(variation.size);
+          return matchesColor && matchesSize;
+        });
+
+        if (hasMatchingVariations) {
+          acc[product.id] = product;
+        }
+        return acc;
+      },
+      {}
+    );
+
+    const uniqueProductsList = Object.values(uniqueProducts);
+    const totalItems = uniqueProductsList.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    // Get paginated products
+    const paginatedProducts = uniqueProductsList.slice(
+      startIndex,
+      startIndex + itemsPerPage
+    );
+
+    // Create variations array from paginated products
+    const variations = paginatedProducts.flatMap(product =>
+      product.variations.filter(variation => {
         const matchesColor =
           filters.colors.length === 0 ||
           filters.colors.includes(variation.color);
         const matchesSize =
           filters.sizes.length === 0 || filters.sizes.includes(variation.size);
         return matchesColor && matchesSize;
-      });
-    });
+      })
+    );
 
-    const productsLookup = filteredProducts.reduce<ProductLookup>(
+    // Create products lookup
+    const productsLookup = paginatedProducts.reduce<ProductLookup>(
       (acc, product) => {
         acc[product.id] = {
           id: product.id,
@@ -306,20 +339,10 @@ export default function ProductGridWrapper() {
       {}
     );
 
-    const totalItems = variations.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const paginatedVariations = variations.slice(
-      startIndex,
-      startIndex + itemsPerPage
-    );
-
     return (
       <div className="space-y-4 sm:space-y-6">
-        {renderControls(startIndex, totalItems, itemsPerPage, true)}
-        <VariationsGrid
-          variations={paginatedVariations}
-          products={productsLookup}
-        />
+        {renderControls(startIndex, totalItems, itemsPerPage, false)}
+        <VariationsGrid variations={variations} products={productsLookup} />
         {renderPagination(currentPage, totalPages, setCurrentPage)}
       </div>
     );
