@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, type Dispatch, type SetStateAction } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import ProductDetailsDialog from "./ProductDetailsDialog";
@@ -11,23 +11,29 @@ interface ProductGridProps {
   products: StoreProduct[];
 }
 
-const ProductGrid = ({ products }: ProductGridProps) => {
+interface ProductVariation {
+  color: string;
+  variations: StoreProduct["variations"];
+}
+
+const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
+  // Properly typed state declarations
   const [selectedProduct, setSelectedProduct] = useState<StoreProduct | null>(
     null
   );
-  const [isColorDialogOpen, setIsColorDialogOpen] = useState(false);
+  const [isColorDialogOpen, setIsColorDialogOpen] = useState<boolean>(false);
   const [colorDialogProductId, setColorDialogProductId] = useState<
     string | null
   >(null);
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number): string => {
     return new Intl.NumberFormat("en-ZA", {
       style: "currency",
       currency: "ZAR",
     }).format(price);
   };
 
-  const getTotalStock = (variations: StoreProduct["variations"]) => {
+  const getTotalStock = (variations: StoreProduct["variations"]): number => {
     return variations.reduce(
       (total, variation) => total + variation.quantity,
       0
@@ -36,8 +42,8 @@ const ProductGrid = ({ products }: ProductGridProps) => {
 
   const handleColorDialogOpen = (
     product: StoreProduct,
-    e: React.MouseEvent
-  ) => {
+    e: React.MouseEvent<HTMLButtonElement>
+  ): void => {
     e.stopPropagation();
     setSelectedProduct(product);
     setColorDialogProductId(product.id);
@@ -46,13 +52,14 @@ const ProductGrid = ({ products }: ProductGridProps) => {
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 w-full">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 w-full max-w-full">
         {products.map(product => (
           <div
             key={product.id}
-            className="relative bg-background rounded-lg border border-border overflow-hidden max-w-full"
-            style={{ minHeight: "0" }}
+            className="relative bg-background rounded-lg border border-border overflow-hidden w-full"
+            style={{ maxWidth: "100%" }}
           >
+            {/* Image Container - Fixed aspect ratio */}
             <div className="aspect-square relative w-full">
               {product.featuredImage ? (
                 <Image
@@ -76,6 +83,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                 </div>
               )}
 
+              {/* Stock Badge */}
               <div className="absolute top-2 right-2">
                 <span
                   className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -91,6 +99,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
               </div>
             </div>
 
+            {/* Product Info Container */}
             <div className="p-3 sm:p-4">
               <h3 className="text-base sm:text-lg font-semibold text-foreground line-clamp-1 hover:line-clamp-none">
                 {product.productName}
@@ -99,13 +108,14 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                 {formatPrice(product.sellingPrice)}
               </p>
 
+              {/* Color Variants */}
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 {Array.from(new Set(product.variations.map(v => v.color)))
                   .slice(0, 2)
                   .map(color => (
                     <div
                       key={color}
-                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-md border border-border"
+                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-md border border-border flex-shrink-0"
                       style={{ backgroundColor: color.toLowerCase() }}
                       title={color}
                     />
@@ -115,7 +125,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                   <Button
                     onClick={e => handleColorDialogOpen(product, e)}
                     variant="default"
-                    className="h-5 sm:h-6 px-2 text-xs"
+                    className="h-5 sm:h-6 px-2 text-xs flex-shrink-0"
                   >
                     +
                     {Array.from(new Set(product.variations.map(v => v.color)))
@@ -125,6 +135,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                 )}
               </div>
 
+              {/* View More Button */}
               <Button
                 onClick={() => setSelectedProduct(product)}
                 className="w-full mt-3 sm:mt-4"
@@ -137,13 +148,12 @@ const ProductGrid = ({ products }: ProductGridProps) => {
         ))}
       </div>
 
-      {/* Product Details Dialog */}
+      {/* Modals */}
       <ProductDetailsDialog
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
       />
 
-      {/* Color Selection Dialog */}
       {selectedProduct && (
         <ProductLookupModal
           isOpen={isColorDialogOpen}
@@ -155,7 +165,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
           productId={colorDialogProductId}
           product={selectedProduct}
           productVariations={{
-            variations: selectedProduct.variations.reduce(
+            variations: selectedProduct.variations.reduce<ProductVariation[]>(
               (acc, curr) => {
                 const existing = acc.find(v => v.color === curr.color);
                 if (existing) {
@@ -165,10 +175,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                 }
                 return acc;
               },
-              [] as Array<{
-                color: string;
-                variations: typeof selectedProduct.variations;
-              }>
+              []
             ),
           }}
         />

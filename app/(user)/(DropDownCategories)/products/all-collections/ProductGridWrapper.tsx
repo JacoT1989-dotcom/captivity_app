@@ -93,19 +93,19 @@ export default function ProductGridWrapper() {
     isVariationView: boolean
   ) => {
     return (
-      <div className="w-full bg-white rounded-lg border border-gray-100 shadow-sm">
+      <div className="w-full bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 whitespace-nowrap">
             Showing {startIndex + 1} -{" "}
             {Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems}{" "}
             {isVariationView ? "variations" : "products"}
           </div>
 
           <div className="flex flex-wrap items-center gap-4 sm:gap-6 w-full sm:w-auto">
-            <div className="flex items-center gap-2">
-              <SortAsc className="w-4 h-4 text-gray-500" />
+            <div className="flex items-center gap-2 min-w-[120px]">
+              <SortAsc className="w-4 h-4 text-gray-500 flex-shrink-0" />
               <select
-                className="text-sm border-0 bg-transparent focus:ring-0 text-gray-600 cursor-pointer max-w-[200px]"
+                className="text-sm border-0 bg-transparent focus:ring-0 text-gray-600 cursor-pointer w-full"
                 onChange={e => handleSortChange(e.target.value)}
               >
                 <option value="relevance">Sort by Relevance</option>
@@ -246,7 +246,6 @@ export default function ProductGridWrapper() {
   const startIndex = (currentPage - 1) * itemsPerPage;
 
   if (hasColorSelected) {
-    // For color-selected view, filter variations first by stock level
     const variations = filteredProducts.flatMap(product => {
       const matchingVariations = product.variations.filter(variation => {
         const matchesColor =
@@ -286,9 +285,9 @@ export default function ProductGridWrapper() {
     );
 
     return (
-      <div className="w-full space-y-6">
+      <div className="w-full max-w-full space-y-6">
         {renderControls(startIndex, totalItems, itemsPerPage, true)}
-        <div className="w-full">
+        <div className="w-full max-w-full">
           <VariationsGrid
             variations={paginatedVariations}
             products={productsLookup}
@@ -299,7 +298,6 @@ export default function ProductGridWrapper() {
     );
   }
 
-  // For regular product view
   const transformedProducts = transformProducts(filteredProducts).filter(
     product => {
       const hasMatchingVariations = product.variations.some(variation => {
@@ -309,8 +307,6 @@ export default function ProductGridWrapper() {
           filters.colors.length === 0 ||
           filters.colors.includes(variation.color);
         const stockStatus = variation.quantity > 0;
-
-        // Apply stock level filtering
         const matchesStock =
           filters.stockLevel === "all" ||
           (filters.stockLevel === "in" && stockStatus) ||
@@ -331,9 +327,9 @@ export default function ProductGridWrapper() {
   );
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full max-w-full space-y-6">
       {renderControls(startIndex, totalItems, itemsPerPage, false)}
-      <div className="w-full relative">
+      <div className="w-full max-w-full">
         <ProductGrid products={paginatedProducts} key={currentPage} />
       </div>
       {renderPagination(currentPage, totalPages, setCurrentPage)}
