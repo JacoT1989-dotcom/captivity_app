@@ -96,14 +96,13 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
   const renderFilterContent = () => (
     <>
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
-        <h2 className="text-xl font-semibold text-foreground">Filters</h2>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t border-border z-50">
         <button
-          onClick={handleClearAllFilters}
-          className="flex items-center px-3 py-1.5 text-sm font-medium text-destructive-foreground bg-destructive hover:bg-destructive/90 rounded-md transition-colors"
+          onClick={toggleSidebar}
+          className="w-full flex items-center justify-center bg-background border border-border rounded-full px-6 py-3 shadow-lg"
         >
-          <Trash2 className="w-4 h-4 mr-1.5" />
-          Clear
+          <Filter className="w-5 h-5 mr-2 text-foreground" />
+          <span className="font-medium text-sm text-foreground">Filters</span>
         </button>
       </div>
 
