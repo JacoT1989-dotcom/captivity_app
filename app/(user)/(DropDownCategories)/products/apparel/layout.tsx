@@ -38,9 +38,9 @@ export default function Layout({ children }: LayoutProps) {
     <div className="min-h-screen w-full">
       <div className="w-full relative z-30">{children}</div>
 
-      <div className="flex w-full px-2 sm:px-4 lg:px-8 mt-6">
+      <div className="flex w-full mt-6">
         <aside className="hidden lg:block w-64 flex-shrink-0">
-          <div className="sticky top-[76px] h-[calc(100vh-76px)] overflow-y-auto">
+          <div className="sticky top-[76px] h-[calc(100vh-76px)]">
             <FilterSidebar
               className="border-r border-gray-200"
               onFilterChange={handleFilterChange}
@@ -48,15 +48,14 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </aside>
 
-        <main className="flex-1 lg:ml-6">
+        <main className="flex-1 px-2 sm:px-4 lg:px-8 lg:ml-6">
           <div className="w-full">
             <ProductGridWrapper />
           </div>
         </main>
       </div>
 
-      {/* Mobile Filter Sidebar */}
-      <div className="relative z-[60] lg:hidden">
+      <div className="fixed bottom-6 right-6 z-[60] lg:hidden">
         <FilterSidebar
           className="lg:hidden"
           onFilterChange={handleFilterChange}
