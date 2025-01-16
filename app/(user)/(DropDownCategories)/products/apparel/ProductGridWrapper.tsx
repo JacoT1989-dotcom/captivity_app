@@ -119,18 +119,18 @@ export default function ProductGridWrapper() {
     isVariationView: boolean
   ) => {
     return (
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 bg-white rounded-lg border border-gray-100 shadow-lg">
-        <div className="text-sm text-gray-600">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 bg-white rounded-lg border border-gray-100 shadow-lg max-w-full overflow-hidden">
+        <div className="text-sm text-gray-600 whitespace-nowrap">
           Showing {startIndex + 1} -{" "}
           {Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems}{" "}
           products
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <SortAsc className="w-4 h-4 text-gray-500" />
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-2 min-w-[120px]">
+            <SortAsc className="w-4 h-4 text-gray-500 flex-shrink-0" />
             <select
-              className="text-sm border-0 bg-transparent focus:ring-0 text-gray-600 cursor-pointer"
+              className="text-sm border-0 bg-transparent focus:ring-0 text-gray-600 cursor-pointer w-full"
               onChange={e => handleSortChange(e.target.value)}
             >
               <option value="relevance">Sort by Relevance</option>
@@ -142,7 +142,7 @@ export default function ProductGridWrapper() {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 border-l border-gray-200 pl-6">
+          <div className="flex items-center gap-2 sm:border-l border-gray-200 sm:pl-6">
             <span className="text-sm text-gray-500">Show</span>
             <select
               className="text-sm border-0 bg-transparent focus:ring-0 text-gray-600 cursor-pointer"
