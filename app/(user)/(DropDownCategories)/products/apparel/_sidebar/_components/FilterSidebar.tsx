@@ -141,12 +141,19 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
       {/* Mobile Filter Button */}
       <div
-        className="lg:hidden fixed bottom-0 right-0 p-6 pointer-events-none z-50"
-        style={{ position: "fixed", bottom: "24px" }}
+        className="lg:hidden fixed z-50"
+        style={{
+          position: "fixed",
+          bottom: "24px",
+          right: "24px",
+          width: "auto",
+          transform: "translateZ(0)",
+          willChange: "transform",
+        }}
       >
         <button
           onClick={toggleSidebar}
-          className="pointer-events-auto flex items-center bg-background border border-border rounded-full px-6 py-3 shadow-lg"
+          className="flex items-center bg-background border border-border rounded-full px-6 py-3 shadow-lg"
         >
           <Filter className="w-5 h-5 mr-2 text-foreground" />
           <span className="font-medium text-sm text-foreground">Filters</span>
