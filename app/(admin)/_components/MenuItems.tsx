@@ -124,11 +124,67 @@ export function useMenuItems() {
             ],
           },
           {
+            title: "Categories",
+            isSubmenu: true,
+            links: [
+              {
+                name: "Winter Collection",
+                href: "/admin/products/winter",
+                count: collectionCounts.winter,
+              },
+              {
+                name: "Summer Collection",
+                href: "/admin/products/summer",
+                count: collectionCounts.summer,
+              },
+              {
+                name: "Camo Collection",
+                href: "/admin/products/camo",
+                count: collectionCounts.camo,
+              },
+              {
+                name: "Baseball Collection",
+                href: "/admin/products/baseball",
+                count: collectionCounts.baseball,
+              },
+              {
+                name: "Signature Collection",
+                href: "/admin/products/signature",
+                count: collectionCounts.signature,
+              },
+              {
+                name: "Fashion Collection",
+                href: "/admin/products/fashion",
+                count: collectionCounts.fashion,
+              },
+              {
+                name: "Leisure Collection",
+                href: "/admin/products/leisure",
+                count: collectionCounts.leisure,
+              },
+              {
+                name: "Sport Collection",
+                href: "/admin/products/sport",
+                count: collectionCounts.sport,
+              },
+              {
+                name: "African Collection",
+                href: "/admin/products/african",
+                count: collectionCounts.african,
+              },
+              {
+                name: "Industrial Collection",
+                href: "/admin/products/industrial",
+                count: collectionCounts.industrial,
+              },
+            ],
+          },
+          {
             title: "Products",
             isSubmenu: true,
             links: [
               { name: "Add Product", href: "/admin/products/create" },
-              { name: "Add Categories", href: "/admin/products/categories" },
+
               { name: "Inventory", href: "/admin/products/inventory" },
             ],
           },
@@ -180,61 +236,7 @@ export function useMenuItems() {
           },
         ],
       },
-      {
-        title: "Collections",
-        links: [
-          {
-            name: "Winter Collection",
-            href: "/admin/products/winter",
-            count: collectionCounts.winter,
-          },
-          {
-            name: "Summer Collection",
-            href: "/admin/products/summer",
-            count: collectionCounts.summer,
-          },
-          {
-            name: "Camo Collection",
-            href: "/admin/products/camo",
-            count: collectionCounts.camo,
-          },
-          {
-            name: "Baseball Collection",
-            href: "/admin/products/baseball",
-            count: collectionCounts.baseball,
-          },
-          {
-            name: "Signature Collection",
-            href: "/admin/products/signature",
-            count: collectionCounts.signature,
-          },
-          {
-            name: "Fashion Collection",
-            href: "/admin/products/fashion",
-            count: collectionCounts.fashion,
-          },
-          {
-            name: "Leisure Collection",
-            href: "/admin/products/leisure",
-            count: collectionCounts.leisure,
-          },
-          {
-            name: "Sport Collection",
-            href: "/admin/products/sport",
-            count: collectionCounts.sport,
-          },
-          {
-            name: "African Collection",
-            href: "/admin/products/african",
-            count: collectionCounts.african,
-          },
-          {
-            name: "Industrial Collection",
-            href: "/admin/products/industrial",
-            count: collectionCounts.industrial,
-          },
-        ],
-      },
+
       {
         title: "Warehouse",
         links: [
