@@ -1,7 +1,27 @@
-import React from "react";
+import { getInventoryItems } from "./actions";
+import { DataTable } from "./data-table";
 
-const page = () => {
-  return <div>Inventory Page</div>;
-};
+export default async function InventoryPage({
+  searchParams,
+}: {
+  searchParams: { page?: string; pageSize?: string };
+}) {
+  const currentPage = Number(searchParams.page) || 1;
+  const pageSize = Number(searchParams.pageSize) || 10;
 
-export default page;
+  const { items, totalItems, totalPages } = await getInventoryItems(
+    currentPage,
+    pageSize
+  );
+
+  return (
+    <div className="container mx-auto py-6">
+      <DataTable
+        data={items}
+        pageCount={totalPages}
+        currentPage={currentPage}
+        pageSize={pageSize}
+      />
+    </div>
+  );
+}
