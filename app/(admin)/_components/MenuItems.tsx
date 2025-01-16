@@ -109,53 +109,54 @@ export function useMenuItems() {
   return useMemo<MenuItem[]>(
     () => [
       {
-        title: "Users",
-        links: [
-          {
-            name: "Pending Approval",
-            href: "/admin/users/update/role-user",
-            count: userCounts.pendingApproval,
-          },
-          {
-            name: "Customers",
-            href: "/admin/users/update/role-customer",
-            count: userCounts.customers,
-          },
-          {
-            name: "Subscribers",
-            href: "/admin/users/update/role-subscriber",
-            count: userCounts.subscribers,
-          },
-          {
-            name: "Promo Users",
-            href: "/admin/users/update/role-promo",
-            count: userCounts.promo,
-          },
-          {
-            name: "Distributors",
-            href: "/admin/users/update/role-distributors",
-            count: userCounts.distributors,
-          },
-          {
-            name: "Shop Managers",
-            href: "/admin/users/update/role-shop_manager",
-            count: userCounts.shopManagers,
-          },
-          {
-            name: "Editors",
-            href: "/admin/users/update/role-editor",
-            count: userCounts.editors,
-          },
-          {
-            name: "Vendors",
-            href: "/admin/users/update/role-vendor",
-            count: userCounts.vendors,
-          },
-        ],
-      },
-      {
         title: "E-commerce",
         links: [
+          {
+            title: "Customers",
+            isSubmenu: true,
+            links: [
+              {
+                name: "Pending Approval",
+                href: "/admin/users/update/role-user",
+                count: userCounts.pendingApproval,
+              },
+              {
+                name: "Customers",
+                href: "/admin/users/update/role-customer",
+                count: userCounts.customers,
+              },
+              {
+                name: "Subscribers",
+                href: "/admin/users/update/role-subscriber",
+                count: userCounts.subscribers,
+              },
+              {
+                name: "Promo Users",
+                href: "/admin/users/update/role-promo",
+                count: userCounts.promo,
+              },
+              {
+                name: "Distributors",
+                href: "/admin/users/update/role-distributors",
+                count: userCounts.distributors,
+              },
+              {
+                name: "Shop Managers",
+                href: "/admin/users/update/role-shop_manager",
+                count: userCounts.shopManagers,
+              },
+              {
+                name: "Editors",
+                href: "/admin/users/update/role-editor",
+                count: userCounts.editors,
+              },
+              {
+                name: "Vendors",
+                href: "/admin/users/update/role-vendor",
+                count: userCounts.vendors,
+              },
+            ],
+          },
           {
             title: "Orders",
             isSubmenu: true,
@@ -169,81 +170,73 @@ export function useMenuItems() {
             ],
           },
           {
+            title: "Categories",
+            isSubmenu: true,
+            links: [
+              {
+                name: "Winter Collection",
+                href: "/admin/products/winter",
+                count: collectionCounts.winter,
+              },
+              {
+                name: "Summer Collection",
+                href: "/admin/products/summer",
+                count: collectionCounts.summer,
+              },
+              {
+                name: "Camo Collection",
+                href: "/admin/products/camo",
+                count: collectionCounts.camo,
+              },
+              {
+                name: "Baseball Collection",
+                href: "/admin/products/baseball",
+                count: collectionCounts.baseball,
+              },
+              {
+                name: "Signature Collection",
+                href: "/admin/products/signature",
+                count: collectionCounts.signature,
+              },
+              {
+                name: "Fashion Collection",
+                href: "/admin/products/fashion",
+                count: collectionCounts.fashion,
+              },
+              {
+                name: "Leisure Collection",
+                href: "/admin/products/leisure",
+                count: collectionCounts.leisure,
+              },
+              {
+                name: "Sport Collection",
+                href: "/admin/products/sport",
+                count: collectionCounts.sport,
+              },
+              {
+                name: "African Collection",
+                href: "/admin/products/african",
+                count: collectionCounts.african,
+              },
+              {
+                name: "Industrial Collection",
+                href: "/admin/products/industrial",
+                count: collectionCounts.industrial,
+              },
+            ],
+          },
+          {
             title: "Products",
             isSubmenu: true,
             links: [
               { name: "Add Product", href: "/admin/products/create" },
-              { name: "Categories", href: "/admin/products/categories" },
+
               { name: "Inventory", href: "/admin/products/inventory" },
             ],
           },
-          {
-            title: "Customers",
-            isSubmenu: true,
-            links: [
-              { name: "All Customers", href: "/admin/customers" },
-              { name: "Customer Groups", href: "/admin/customers/groups" },
-              { name: "Customer Reviews", href: "/admin/customers/reviews" },
-              { name: "Loyalty Program", href: "/admin/customers/loyalty" },
-            ],
-          },
         ],
       },
-      {
-        title: "Collections",
-        links: [
-          {
-            name: "Winter Collection",
-            href: "/admin/products/winter",
-            count: collectionCounts.winter,
-          },
-          {
-            name: "Summer Collection",
-            href: "/admin/products/summer",
-            count: collectionCounts.summer,
-          },
-          {
-            name: "Camo Collection",
-            href: "/admin/products/camo",
-            count: collectionCounts.camo,
-          },
-          {
-            name: "Baseball Collection",
-            href: "/admin/products/baseball",
-            count: collectionCounts.baseball,
-          },
-          {
-            name: "Signature Collection",
-            href: "/admin/products/signature",
-            count: collectionCounts.signature,
-          },
-          {
-            name: "Fashion Collection",
-            href: "/admin/products/fashion",
-            count: collectionCounts.fashion,
-          },
-          {
-            name: "Leisure Collection",
-            href: "/admin/products/leisure",
-            count: collectionCounts.leisure,
-          },
-          {
-            name: "Sport Collection",
-            href: "/admin/products/sport",
-            count: collectionCounts.sport,
-          },
-          {
-            name: "African Collection",
-            href: "/admin/products/african",
-            count: collectionCounts.african,
-          },
-          {
-            name: "Industrial Collection",
-            href: "/admin/products/industrial",
-            count: collectionCounts.industrial,
-          },
-        ],
-      },
+
       {
         title: "Warehouse",
         links: [
