@@ -92,16 +92,16 @@ const ProductGrid = ({ products }: ProductGridProps) => {
             </div>
 
             <div className="p-3 sm:p-4">
-              <h3 className="text-base sm:text-lg font-semibold text-foreground line-clamp-1 hover:line-clamp-none">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground line-clamp-1 hover:line-clamp-none text-center">
                 {product.productName}
               </h3>
-              <p className="mt-2 text-base sm:text-lg font-bold text-foreground">
+              <p className="mt-2 text-base sm:text-lg font-bold text-foreground text-center">
                 {formatPrice(product.sellingPrice)}
               </p>
 
-              <div className="mt-2 flex flex-wrap items-center gap-2">
+              <div className="mt-2 flex flex-wrap justify-center items-center gap-2">
                 {Array.from(new Set(product.variations.map(v => v.color)))
-                  .slice(0, 2)
+                  .slice(0, 3)
                   .map(color => (
                     <div
                       key={color}
