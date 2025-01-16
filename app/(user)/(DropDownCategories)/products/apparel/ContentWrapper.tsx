@@ -1,3 +1,4 @@
+// ContentWrapper.tsx
 "use client";
 
 import React, { useEffect, useRef } from "react";
@@ -54,12 +55,12 @@ export default function ContentWrapper() {
         </div>
       </div>
 
-      <div className="w-full -mr-1 sm:mr-0 lg:ml-6">
+      <div className="w-full lg:ml-6">
         <ProductGridWrapper />
       </div>
 
       <FilterSidebar
-        className="lg:hidden"
+        className="lg:hidden fixed right-0 top-0 h-full z-50"
         onFilterChange={handleFilterChange}
       />
     </div>
