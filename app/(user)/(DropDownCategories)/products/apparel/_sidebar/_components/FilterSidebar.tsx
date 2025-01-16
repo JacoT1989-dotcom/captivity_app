@@ -96,15 +96,20 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
   const renderFilterContent = () => (
     <>
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t border-border z-50">
-        <button
-          onClick={toggleSidebar}
-          className="w-full flex items-center justify-center bg-background border border-border rounded-full px-6 py-3 shadow-lg"
-        >
-          <Filter className="w-5 h-5 mr-2 text-foreground" />
-          <span className="font-medium text-sm text-foreground">Filters</span>
-        </button>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-foreground">Filters</h2>
+        {hasActiveFilters && (
+          <button
+            onClick={handleClearAllFilters}
+            className="flex items-center px-3 py-1.5 text-sm font-medium text-destructive-foreground bg-destructive hover:bg-destructive/90 rounded-md transition-colors"
+          >
+            <Trash2 className="w-4 h-4 mr-1.5" />
+            Clear
+          </button>
+        )}
       </div>
+
+      <div className="border-t border-border" />
 
       {filters.map(filter => (
         <FilterSection
@@ -154,15 +159,44 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
             ref={sidebarRef}
             className="lg:hidden fixed right-0 top-0 h-full w-80 bg-background border-l border-border z-50 overflow-y-auto p-4"
           >
-            <div className="flex items-center justify-end mb-4">
-              <button
-                onClick={toggleSidebar}
-                className="p-2 hover:bg-accent rounded-md"
-              >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-foreground">Filters</h2>
+              <button onClick={toggleSidebar} className="p-2">
                 <X className="w-6 h-6 text-foreground" />
               </button>
             </div>
-            {renderFilterContent()}
+
+            {hasActiveFilters && (
+              <div className="mb-6">
+                <button
+                  onClick={handleClearAllFilters}
+                  className="flex items-center px-3 py-1.5 text-sm font-medium text-destructive-foreground bg-destructive hover:bg-destructive/90 rounded-md transition-colors"
+                >
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  Clear all filters
+                </button>
+              </div>
+            )}
+
+            <div className="border-t border-border mb-6" />
+
+            <div className="z-[60]">
+              {filters.map(filter => (
+                <FilterSection
+                  key={filter.name}
+                  filter={filter}
+                  isOpen={openFilter === filter.name}
+                  onToggle={() => handleFilterClick(filter.name)}
+                  selectedValues={
+                    selectedFilters[filter.type as keyof FilterState]
+                  }
+                  onFilterChange={(value: string) =>
+                    handleFilterChange(filter.type as FilterType, value)
+                  }
+                  isProductTypeFilter={filter.type === "types"}
+                />
+              ))}
+            </div>
           </div>
         </>
       )}

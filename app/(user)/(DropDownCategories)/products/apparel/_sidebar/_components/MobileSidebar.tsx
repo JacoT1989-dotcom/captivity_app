@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
 import { FilterSection } from "./FilterSection";
 import { Filter, FilterState, FilterType } from "../../_store/types";
 
@@ -7,13 +7,14 @@ interface MobileSidebarProps {
   onClose: () => void;
   filters: Array<{
     name: string;
-    type: FilterType; // Use the imported FilterType
+    type: FilterType;
     options: Array<{ value: string; label: string }>;
   }>;
   openFilter: string | null;
   selectedFilters: FilterState;
   onFilterClick: (filterName: string) => void;
   onFilterChange: (filterType: FilterType, value: string) => void;
+  onClearFilters: () => void; // Added new prop
 }
 
 export const MobileSidebar: React.FC<MobileSidebarProps> = ({
@@ -24,14 +25,20 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
   selectedFilters,
   onFilterClick,
   onFilterChange,
+  onClearFilters, // Added new prop
 }) => {
   if (!isOpen) return null;
 
-  // Convert incoming filters to match the Filter type from types.ts
   const typeSafeFilters: Filter[] = filters.map(filter => ({
     ...filter,
-    type: filter.type, // No need for type assertion since filter.type is already FilterType
+    type: filter.type,
   }));
+
+  const hasActiveFilters =
+    selectedFilters.sizes?.length > 0 ||
+    selectedFilters.colors?.length > 0 ||
+    selectedFilters.types?.length > 0 ||
+    selectedFilters.stockLevel !== "all";
 
   return (
     <>
@@ -41,12 +48,24 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
       />
       <div className="lg:hidden fixed right-0 top-0 h-full w-80 bg-white z-50 overflow-y-auto">
         <div className="p-4">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Filters</h2>
             <button onClick={onClose} className="p-2">
               <X className="w-6 h-6" />
             </button>
           </div>
+
+          {hasActiveFilters && (
+            <div className="mb-6 pb-4 border-b border-gray-200">
+              <button
+                onClick={onClearFilters}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear all filters
+              </button>
+            </div>
+          )}
 
           <div className="z-[60]">
             {typeSafeFilters.map(filter => (
@@ -65,3 +84,5 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
     </>
   );
 };
+
+export default MobileSidebar;
