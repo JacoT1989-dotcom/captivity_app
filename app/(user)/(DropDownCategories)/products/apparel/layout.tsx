@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import FilterSidebar from "./_sidebar/_components/FilterSidebar";
-// import ProductGridWrapper from "./ProductGridWrapper";
+import ProductGridWrapper from "./ProductGridWrapper";
 import { usePathname } from "next/navigation";
 import { FilterState } from "./_store/types";
 import { useCategoryStore } from "./_store/apparel-store";
@@ -50,7 +50,9 @@ export default function Layout({ children }: LayoutProps) {
         <main className="flex-1 lg:ml-6 w-full lg:max-w-[calc(100%-16rem)]">
           {" "}
           {/* Updated width calculation */}
-          <div className="w-full">{/* <ProductGridWrapper /> */}</div>
+          <div className="w-full">
+            <ProductGridWrapper />
+          </div>
         </main>
       </div>
 

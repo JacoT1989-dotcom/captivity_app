@@ -75,27 +75,33 @@ const ProductGrid = ({ products }: ProductGridProps) => {
   }, [products]);
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 w-full">
       {products.map(product => (
         <div
           key={product.id}
-          className="bg-background rounded-lg hover:shadow-lg transition-shadow border border-border overflow-hidden"
+          className="relative bg-background rounded-lg border border-border overflow-hidden max-w-full"
+          style={{ minHeight: "0" }}
         >
-          <div className="relative pt-[100%]">
+          <div className="aspect-square relative w-full">
             {product.featuredImage ? (
               <Image
                 src={product.featuredImage.large}
                 alt={product.productName}
                 fill
-                className="absolute inset-0 object-cover"
+                className="object-cover"
                 sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                 priority
               />
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-muted">
-                <span className="text-4xl font-bold text-muted-foreground/50">
-                  {product.productName.charAt(0).toUpperCase()}
-                </span>
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+                <div className="flex flex-col items-center justify-center">
+                  <span className="text-4xl sm:text-5xl font-bold text-muted-foreground/50">
+                    {product.productName.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="mt-2 text-xs text-muted-foreground font-medium">
+                    {product.category?.[0]?.replace(/-/g, " ")}
+                  </span>
+                </div>
               </div>
             )}
 
@@ -103,8 +109,8 @@ const ProductGrid = ({ products }: ProductGridProps) => {
               <span
                 className={`px-2 py-1 text-xs font-medium rounded-full ${
                   getTotalStock(product.variations) > 0
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
+                    ? "bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-100"
+                    : "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-100"
                 }`}
               >
                 {getTotalStock(product.variations) > 0
@@ -114,41 +120,43 @@ const ProductGrid = ({ products }: ProductGridProps) => {
             </div>
           </div>
 
-          <div className="p-4">
-            <h3 className="text-lg font-semibold text-foreground text-center line-clamp-1">
+          <div className="p-3 sm:p-4">
+            <h3 className="text-base sm:text-lg font-semibold text-foreground line-clamp-1 hover:line-clamp-none text-center">
               {product.productName}
             </h3>
-            <p className="mt-2 text-lg font-bold text-foreground text-center">
+            <p className="mt-2 text-base sm:text-lg font-bold text-foreground text-center">
               {formatPrice(product.sellingPrice)}
             </p>
-            <div className="mt-2 flex justify-center items-center gap-2">
+
+            <div className="mt-2 flex flex-wrap justify-center items-center gap-2">
               {Array.from(new Set(product.variations.map(v => v.color)))
                 .slice(0, 3)
                 .map(color => (
                   <div
                     key={color}
-                    className="w-6 h-6 rounded-md border border-border"
+                    className="w-5 h-5 sm:w-6 sm:h-6 rounded-md border border-border"
                     style={{ backgroundColor: color.toLowerCase() }}
                     title={color}
                   />
                 ))}
               {Array.from(new Set(product.variations.map(v => v.color)))
-                .length > 3 && (
+                .length > 2 && (
                 <Button
                   onClick={e => handleColorDialogOpen(product.id, e)}
                   variant="default"
-                  className="h-6 px-2 text-xs"
+                  className="h-5 sm:h-6 px-2 text-xs"
                 >
                   +
                   {Array.from(new Set(product.variations.map(v => v.color)))
-                    .length - 3}{" "}
+                    .length - 2}{" "}
                   more
                 </Button>
               )}
             </div>
+
             <Button
               onClick={() => setSelectedProduct(product)}
-              className="w-full mt-4"
+              className="w-full mt-3 sm:mt-4"
               variant="secondary"
             >
               View More
