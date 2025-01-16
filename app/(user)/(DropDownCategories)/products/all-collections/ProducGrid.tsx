@@ -100,18 +100,18 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
             </div>
 
             {/* Product Info Container */}
-            <div className="p-3 sm:p-4">
-              <h3 className="text-base sm:text-lg font-semibold text-foreground line-clamp-1 hover:line-clamp-none">
+            <div className="p-3 sm:p-4 flex flex-col">
+              <h3 className="text-base sm:text-lg font-semibold text-center text-foreground line-clamp-1 hover:line-clamp-none">
                 {product.productName}
               </h3>
-              <p className="mt-2 text-base sm:text-lg font-bold text-foreground">
+              <p className="mt-2 text-base sm:text-lg font-bold text-foreground text-center">
                 {formatPrice(product.sellingPrice)}
               </p>
 
               {/* Color Variants */}
-              <div className="mt-2 flex flex-wrap items-center gap-2">
+              <div className="mt-2 flex flex-wrap justify-center items-center gap-2">
                 {Array.from(new Set(product.variations.map(v => v.color)))
-                  .slice(0, 2)
+                  .slice(0, 3)
                   .map(color => (
                     <div
                       key={color}
