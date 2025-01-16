@@ -109,51 +109,6 @@ export function useMenuItems() {
   return useMemo<MenuItem[]>(
     () => [
       {
-        title: "Users",
-        links: [
-          {
-            name: "Pending Approval",
-            href: "/admin/users/update/role-user",
-            count: userCounts.pendingApproval,
-          },
-          {
-            name: "Customers",
-            href: "/admin/users/update/role-customer",
-            count: userCounts.customers,
-          },
-          {
-            name: "Subscribers",
-            href: "/admin/users/update/role-subscriber",
-            count: userCounts.subscribers,
-          },
-          {
-            name: "Promo Users",
-            href: "/admin/users/update/role-promo",
-            count: userCounts.promo,
-          },
-          {
-            name: "Distributors",
-            href: "/admin/users/update/role-distributors",
-            count: userCounts.distributors,
-          },
-          {
-            name: "Shop Managers",
-            href: "/admin/users/update/role-shop_manager",
-            count: userCounts.shopManagers,
-          },
-          {
-            name: "Editors",
-            href: "/admin/users/update/role-editor",
-            count: userCounts.editors,
-          },
-          {
-            name: "Vendors",
-            href: "/admin/users/update/role-vendor",
-            count: userCounts.vendors,
-          },
-        ],
-      },
-      {
         title: "E-commerce",
         links: [
           {
@@ -181,10 +136,46 @@ export function useMenuItems() {
             title: "Customers",
             isSubmenu: true,
             links: [
-              { name: "All Customers", href: "/admin/customers" },
-              { name: "Customer Groups", href: "/admin/customers/groups" },
-              { name: "Customer Reviews", href: "/admin/customers/reviews" },
-              { name: "Loyalty Program", href: "/admin/customers/loyalty" },
+              {
+                name: "Pending Approval",
+                href: "/admin/users/update/role-user",
+                count: userCounts.pendingApproval,
+              },
+              {
+                name: "Customers",
+                href: "/admin/users/update/role-customer",
+                count: userCounts.customers,
+              },
+              {
+                name: "Subscribers",
+                href: "/admin/users/update/role-subscriber",
+                count: userCounts.subscribers,
+              },
+              {
+                name: "Promo Users",
+                href: "/admin/users/update/role-promo",
+                count: userCounts.promo,
+              },
+              {
+                name: "Distributors",
+                href: "/admin/users/update/role-distributors",
+                count: userCounts.distributors,
+              },
+              {
+                name: "Shop Managers",
+                href: "/admin/users/update/role-shop_manager",
+                count: userCounts.shopManagers,
+              },
+              {
+                name: "Editors",
+                href: "/admin/users/update/role-editor",
+                count: userCounts.editors,
+              },
+              {
+                name: "Vendors",
+                href: "/admin/users/update/role-vendor",
+                count: userCounts.vendors,
+              },
             ],
           },
         ],
