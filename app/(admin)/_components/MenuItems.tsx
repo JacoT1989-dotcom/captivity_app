@@ -128,7 +128,7 @@ export function useMenuItems() {
             isSubmenu: true,
             links: [
               { name: "Add Product", href: "/admin/products/create" },
-              { name: "Categories", href: "/admin/products/categories" },
+              { name: "Add Categories", href: "/admin/products/categories" },
               { name: "Inventory", href: "/admin/products/inventory" },
             ],
           },
