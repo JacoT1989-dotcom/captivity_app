@@ -112,6 +112,52 @@ export function useMenuItems() {
         title: "E-commerce",
         links: [
           {
+            title: "Customers",
+            isSubmenu: true,
+            links: [
+              {
+                name: "Pending Approval",
+                href: "/admin/users/update/role-user",
+                count: userCounts.pendingApproval,
+              },
+              {
+                name: "Customers",
+                href: "/admin/users/update/role-customer",
+                count: userCounts.customers,
+              },
+              {
+                name: "Subscribers",
+                href: "/admin/users/update/role-subscriber",
+                count: userCounts.subscribers,
+              },
+              {
+                name: "Promo Users",
+                href: "/admin/users/update/role-promo",
+                count: userCounts.promo,
+              },
+              {
+                name: "Distributors",
+                href: "/admin/users/update/role-distributors",
+                count: userCounts.distributors,
+              },
+              {
+                name: "Shop Managers",
+                href: "/admin/users/update/role-shop_manager",
+                count: userCounts.shopManagers,
+              },
+              {
+                name: "Editors",
+                href: "/admin/users/update/role-editor",
+                count: userCounts.editors,
+              },
+              {
+                name: "Vendors",
+                href: "/admin/users/update/role-vendor",
+                count: userCounts.vendors,
+              },
+            ],
+          },
+          {
             title: "Orders",
             isSubmenu: true,
             links: [
@@ -186,52 +232,6 @@ export function useMenuItems() {
               { name: "Add Product", href: "/admin/products/create" },
 
               { name: "Inventory", href: "/admin/products/inventory" },
-            ],
-          },
-          {
-            title: "Customers",
-            isSubmenu: true,
-            links: [
-              {
-                name: "Pending Approval",
-                href: "/admin/users/update/role-user",
-                count: userCounts.pendingApproval,
-              },
-              {
-                name: "Customers",
-                href: "/admin/users/update/role-customer",
-                count: userCounts.customers,
-              },
-              {
-                name: "Subscribers",
-                href: "/admin/users/update/role-subscriber",
-                count: userCounts.subscribers,
-              },
-              {
-                name: "Promo Users",
-                href: "/admin/users/update/role-promo",
-                count: userCounts.promo,
-              },
-              {
-                name: "Distributors",
-                href: "/admin/users/update/role-distributors",
-                count: userCounts.distributors,
-              },
-              {
-                name: "Shop Managers",
-                href: "/admin/users/update/role-shop_manager",
-                count: userCounts.shopManagers,
-              },
-              {
-                name: "Editors",
-                href: "/admin/users/update/role-editor",
-                count: userCounts.editors,
-              },
-              {
-                name: "Vendors",
-                href: "/admin/users/update/role-vendor",
-                count: userCounts.vendors,
-              },
             ],
           },
         ],
