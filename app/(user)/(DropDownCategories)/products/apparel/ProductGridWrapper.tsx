@@ -252,13 +252,15 @@ export default function ProductGridWrapper() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
-        {[...Array(12)].map((_, i) => (
-          <div
-            key={i}
-            className="bg-gray-200 animate-pulse rounded-lg aspect-square"
-          />
-        ))}
+      <div className="px-2 sm:px-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={i}
+              className="bg-gray-200 animate-pulse rounded-lg aspect-square"
+            />
+          ))}
+        </div>
       </div>
     );
   }
@@ -356,9 +358,11 @@ export default function ProductGridWrapper() {
     );
 
     return (
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-4 sm:space-y-6 px-2 sm:px-4">
         {renderControls(startIndex, totalItems, itemsPerPage, false)}
-        <ProductGrid products={paginatedProducts} />
+        <div className="w-full">
+          <ProductGrid products={paginatedProducts} />
+        </div>
         {renderPagination(currentPage, totalPages, setCurrentPage)}
       </div>
     );
