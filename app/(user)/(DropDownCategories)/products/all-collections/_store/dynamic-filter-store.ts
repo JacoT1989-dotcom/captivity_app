@@ -23,55 +23,81 @@ const filterProductsByPathname = (
   if (!pathname) return products;
 
   const pathParts = pathname.split("/").filter(Boolean);
-  const categoryType = pathParts[1] || "";
-  const specificCategory = pathParts[2] || "";
+  const specificCollection = pathParts[2];
 
-  if (categoryType === "collections") {
-    return products.filter(product => {
-      if (!product.category || product.category.length === 0) {
-        return false;
-      }
-
-      if (!specificCategory || specificCategory === "all-collections") {
-        // Return all products when viewing all collections
-        return true;
-      }
-
-      // Filter by specific collection category
-      return product.category.some(cat => {
-        const normalizedCat = normalizeString(cat);
-        const normalizedSpecific = normalizeString(specificCategory);
-        return normalizedCat.includes(normalizedSpecific);
-      });
-    });
+  if (
+    !specificCollection ||
+    specificCollection === "all-collections" ||
+    specificCollection === "all-in-collections"
+  ) {
+    return products;
   }
 
-  return products;
+  return products.filter(product => {
+    if (!product.category || product.category.length === 0) return false;
+
+    return product.category.some(cat => {
+      const normalizedCat = normalizeString(cat);
+      const normalizedCollection = normalizeString(
+        specificCollection.replace("-collection", "")
+      );
+      return (
+        normalizedCat === normalizedCollection ||
+        normalizedCat === normalizedCollection + "collection" ||
+        normalizedCat.includes(normalizedCollection)
+      );
+    });
+  });
 };
+
+interface ColorInfo {
+  color: string;
+  count: number;
+  productIds: Set<string>;
+}
 
 const countVariationsByColor = (
   products: Product[],
   selectedSizes?: string[]
-): Map<string, number> => {
-  const colorCounts = new Map<string, number>();
+): Map<string, ColorInfo> => {
+  const colorInfo = new Map<string, ColorInfo>();
 
   products.forEach(product => {
+    // Get unique colors for this product considering size filters
+    const productColors = new Set<string>();
+
     product.variations.forEach(variation => {
-      // Only count colors for variations that match the selected sizes
+      if (!variation.color) return;
+
+      // Check if this variation matches the size filter
       if (selectedSizes && selectedSizes.length > 0) {
         if (!selectedSizes.includes(variation.size)) {
           return;
         }
       }
 
-      if (variation.color) {
-        const currentCount = colorCounts.get(variation.color) || 0;
-        colorCounts.set(variation.color, currentCount + 1);
+      productColors.add(variation.color);
+    });
+
+    // Update global color counts
+    productColors.forEach(color => {
+      if (!colorInfo.has(color)) {
+        colorInfo.set(color, {
+          color,
+          count: 0,
+          productIds: new Set(),
+        });
+      }
+
+      const info = colorInfo.get(color)!;
+      if (!info.productIds.has(product.id)) {
+        info.count += 1;
+        info.productIds.add(product.id);
       }
     });
   });
 
-  return colorCounts;
+  return colorInfo;
 };
 
 export const useDynamicFilterStore = create<DynamicFilterState>(set => ({
@@ -106,13 +132,20 @@ export const useDynamicFilterStore = create<DynamicFilterState>(set => ({
     selectedSizes?: string[]
   ) => {
     const filteredProducts = filterProductsByPathname(products, pathname);
-    const colorCounts = countVariationsByColor(filteredProducts, selectedSizes);
+    const colorInfo = countVariationsByColor(filteredProducts, selectedSizes);
 
-    const availableColors: FilterOption[] = Array.from(colorCounts.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([color, count]) => ({
-        value: color,
-        label: `${color} (${count})`,
+    const availableColors: FilterOption[] = Array.from(colorInfo.values())
+      .sort((a, b) => {
+        // First sort by count (descending)
+        if (b.count !== a.count) {
+          return b.count - a.count;
+        }
+        // Then alphabetically by color name
+        return a.color.localeCompare(b.color);
+      })
+      .map(info => ({
+        value: info.color,
+        label: `${info.color} (${info.count})`,
       }));
 
     set({ availableColors });
