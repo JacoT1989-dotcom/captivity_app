@@ -141,52 +141,21 @@ export default function ProductGridWrapper() {
   ) => {
     if (totalPages <= 1) return null;
 
-    const getPageNumbers = () => {
-      const delta = 2;
-      const range: (number | string)[] = [];
-      range.push(1);
-      let start = Math.max(2, currentPage - delta);
-      let end = Math.min(totalPages - 1, currentPage + delta);
-
-      if (start > 2) range.push("...");
-      for (let i = start; i <= end; i++) range.push(i);
-      if (end < totalPages - 1) range.push("...");
-      if (totalPages > 1) range.push(totalPages);
-
-      return range;
-    };
-
     return (
       <div className="flex justify-center items-center gap-2 py-8">
-        <div className="inline-flex items-center gap-2 rounded-lg bg-white p-1 shadow-sm border border-gray-200">
+        <div className="inline-flex items-center rounded-lg bg-white p-1 shadow-sm border border-gray-200">
           <button
             onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
             disabled={currentPage === 1}
-            className="px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-20 px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
 
-          <div className="flex items-center gap-1">
-            {getPageNumbers().map((page, index) =>
-              typeof page === "number" ? (
-                <button
-                  key={index}
-                  onClick={() => setCurrentPage(page)}
-                  className={`min-w-[2rem] px-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                    currentPage === page
-                      ? "bg-gray-900 text-white hover:bg-gray-800"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  {page}
-                </button>
-              ) : (
-                <span key={index} className="px-1 text-gray-400">
-                  {page}
-                </span>
-              )
-            )}
+          <div className="w-12 flex justify-center">
+            <span className="px-3 py-2 text-sm font-medium rounded-md bg-gray-900 text-white">
+              {currentPage}
+            </span>
           </div>
 
           <button
@@ -194,7 +163,7 @@ export default function ProductGridWrapper() {
               setCurrentPage(Math.min(currentPage + 1, totalPages))
             }
             disabled={currentPage === totalPages}
-            className="px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-20 px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
           </button>
