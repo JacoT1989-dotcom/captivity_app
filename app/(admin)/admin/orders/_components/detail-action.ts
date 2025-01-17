@@ -1,4 +1,3 @@
-// app/(admin)/admin/orders/_components/detail-action.ts
 "use server";
 
 import { notFound } from "next/navigation";

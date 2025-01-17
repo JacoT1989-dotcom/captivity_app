@@ -79,6 +79,7 @@ export function DataTable({
 
   return (
     <div className="space-y-4">
+      <h1 className="text-4xl font-bold mt-5">Inventory</h1>
       <div className="flex justify-end">
         <Select
           value={pageSize.toString()}

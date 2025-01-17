@@ -1,4 +1,3 @@
-// app/(admin)/admin/orders/_components/types.ts
 import { OrderStatus } from "@prisma/client";
 
 export interface OrderVariation {

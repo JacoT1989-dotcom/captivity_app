@@ -4,8 +4,6 @@ import prisma from "@/lib/prisma";
 
 export async function getProductDetails(id: string) {
   try {
-    console.log("Fetching product with ID:", id); // Debug log
-
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
@@ -21,8 +19,6 @@ export async function getProductDetails(id: string) {
         },
       },
     });
-
-    console.log("Found product:", product); // Debug log
 
     if (!product) {
       throw new Error(`Product with ID ${id} not found`);

@@ -35,9 +35,9 @@ export default async function ProductDetailsPage({
         <Card>
           <CardHeader>
             <CardTitle>{product.productName}</CardTitle>
-            <CardDescription>
+            {/* <CardDescription>
               {product.variations.map(v => v.sku).join(", ")}
-            </CardDescription>
+            </CardDescription> */}
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
@@ -53,12 +53,12 @@ export default async function ProductDetailsPage({
                 </h3>
                 <p>R{product.sellingPrice.toFixed(2)}</p>
               </div>
-              <div>
+              {/* <div>
                 <h3 className="text-sm font-medium text-muted-foreground">
                   Description
                 </h3>
                 <p>{product.description}</p>
-              </div>
+              </div> */}
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">
                   Status
