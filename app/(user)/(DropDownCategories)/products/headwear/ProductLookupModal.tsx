@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface ProductLookup {
   id: string;
@@ -334,14 +336,15 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
               </div>
 
               {/* Login Button */}
-              <button
+              <Button
                 className="w-full py-2.5 bg-red-600 text-white rounded-md
                 hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 
                 disabled:cursor-not-allowed"
                 disabled={!currentVariation || currentVariation.quantity === 0}
+                asChild
               >
-                Login & Add to Cart
-              </button>
+                <Link href={"/login"}>Login & Add to Cart</Link>
+              </Button>
             </div>
 
             {/* Right Column - Pricing */}
