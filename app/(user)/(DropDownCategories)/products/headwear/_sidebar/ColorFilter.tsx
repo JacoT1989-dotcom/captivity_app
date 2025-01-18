@@ -3,8 +3,8 @@ import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { FilterOption } from "../_store/types";
-import { SOLID_COLORS } from "./_components/solidColors";
-import { PATTERN_COLORS } from "./_components/patternColors";
+import { SOLID_COLORS } from "../../headwear/_sidebar/_components/solidColors";
+import { PATTERN_COLORS } from "../../headwear/_sidebar/_components/patternColors";
 
 interface ColorFilterProps {
   options: FilterOption[];
@@ -51,10 +51,10 @@ const createColorBackground = (
       return `linear-gradient(to bottom,
         ${colorValue[2]} 0%, ${colorValue[2]} 16.66%,
         ${colorValue[0]} 16.66%, ${colorValue[0]} 33.32%,
-        ${colorValue[4]} 33.32%, ${colorValue[4]} 49.98%,
-        ${colorValue[1]} 49.98%, ${colorValue[1]} 66.64%,
-        ${colorValue[5]} 66.64%, ${colorValue[5]} 83.3%,
-        ${colorValue[3]} 83.3%, ${colorValue[3]} 100%
+        ${colorValue[1]} 33.32%, ${colorValue[1]} 49.98%,
+        ${colorValue[4]} 49.98%, ${colorValue[4]} 66.64%,
+        ${colorValue[3]} 66.64%, ${colorValue[3]} 83.3%,
+        ${colorValue[5]} 83.3%, ${colorValue[5]} 100%
       )`;
     } else if (colorValue.length === 2) {
       return `linear-gradient(45deg, ${colorValue[0]} 50%, ${colorValue[1]} 50%)`;
@@ -147,7 +147,7 @@ export const ColorFilter: React.FC<ColorFilterProps> = ({
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Show first 3 available colors in sidebar, regardless of selection
+  // Show first 3 colors in sidebar
   const initialColors = options.slice(0, 3);
   const remainingCount = Math.max(0, options.length - 3);
 
@@ -160,7 +160,7 @@ export const ColorFilter: React.FC<ColorFilterProps> = ({
   };
 
   return (
-    <div className="w-full">
+    <>
       <div className="flex items-center gap-4">
         {initialColors.map(option => (
           <ColorButton
@@ -246,7 +246,7 @@ export const ColorFilter: React.FC<ColorFilterProps> = ({
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };
 

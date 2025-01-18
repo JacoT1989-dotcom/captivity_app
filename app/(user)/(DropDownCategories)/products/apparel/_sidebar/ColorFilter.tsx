@@ -55,10 +55,10 @@ const createColorBackground = (
       return `linear-gradient(to bottom,
         ${colorValue[2]} 0%, ${colorValue[2]} 16.66%,
         ${colorValue[0]} 16.66%, ${colorValue[0]} 33.32%,
-        ${colorValue[4]} 33.32%, ${colorValue[4]} 49.98%,
-        ${colorValue[1]} 49.98%, ${colorValue[1]} 66.64%,
-        ${colorValue[5]} 66.64%, ${colorValue[5]} 83.3%,
-        ${colorValue[3]} 83.3%, ${colorValue[3]} 100%
+        ${colorValue[1]} 33.32%, ${colorValue[1]} 49.98%,
+        ${colorValue[4]} 49.98%, ${colorValue[4]} 66.64%,
+        ${colorValue[3]} 66.64%, ${colorValue[3]} 83.3%,
+        ${colorValue[5]} 83.3%, ${colorValue[5]} 100%
       )`;
     } else if (colorValue.length === 2) {
       return `linear-gradient(45deg, ${colorValue[0]} 50%, ${colorValue[1]} 50%)`;
@@ -184,6 +184,7 @@ const DynamicColorFilter: React.FC<DynamicColorFilterProps> = ({
     setColorCounts(sortedColors);
   }, [products, pathname]);
 
+  // Show first 3 colors in sidebar
   const initialColors = colorCounts.slice(0, 3);
   const remainingCount = Math.max(0, colorCounts.length - 3);
 
@@ -212,6 +213,39 @@ const DynamicColorFilter: React.FC<DynamicColorFilterProps> = ({
         <DialogContent className="w-11/12 max-w-lg mx-auto h-auto max-h-[85vh] p-0">
           <div className="relative border-b px-4 sm:px-6 py-4">
             <h2 className="text-base sm:text-lg font-semibold">Select Color</h2>
+            {selectedValue.length > 0 && (
+              <div className="mt-2 max-w-full overflow-hidden">
+                <div className="flex flex-wrap gap-2 max-w-full">
+                  {selectedValue.map(color => {
+                    const option = colorCounts.find(c => c.color === color);
+                    if (!option) return null;
+                    return (
+                      <div
+                        key={color}
+                        className="inline-flex items-center gap-1 bg-gray-100 rounded-md px-2 py-1 text-xs"
+                      >
+                        <div
+                          className="w-3 h-3 rounded"
+                          style={{
+                            background: createColorBackground(
+                              getColorValue(color),
+                              color
+                            ),
+                          }}
+                        />
+                        <span className="max-w-[120px] truncate">{color}</span>
+                        <button
+                          onClick={() => onChange(color)}
+                          className="ml-1 text-gray-500 hover:text-gray-700 flex-shrink-0"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <button
               onClick={() => setIsModalOpen(false)}
               className="absolute top-4 right-4 hover:text-muted-foreground transition-colors"

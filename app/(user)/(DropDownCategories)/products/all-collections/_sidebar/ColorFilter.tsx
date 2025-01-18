@@ -51,10 +51,10 @@ const createColorBackground = (
       return `linear-gradient(to bottom,
         ${colorValue[2]} 0%, ${colorValue[2]} 16.66%,
         ${colorValue[0]} 16.66%, ${colorValue[0]} 33.32%,
-        ${colorValue[4]} 33.32%, ${colorValue[4]} 49.98%,
-        ${colorValue[1]} 49.98%, ${colorValue[1]} 66.64%,
-        ${colorValue[5]} 66.64%, ${colorValue[5]} 83.3%,
-        ${colorValue[3]} 83.3%, ${colorValue[3]} 100%
+        ${colorValue[1]} 33.32%, ${colorValue[1]} 49.98%,
+        ${colorValue[4]} 49.98%, ${colorValue[4]} 66.64%,
+        ${colorValue[3]} 66.64%, ${colorValue[3]} 83.3%,
+        ${colorValue[5]} 83.3%, ${colorValue[5]} 100%
       )`;
     } else if (colorValue.length === 2) {
       return `linear-gradient(45deg, ${colorValue[0]} 50%, ${colorValue[1]} 50%)`;
