@@ -4,6 +4,8 @@ import { Check, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Product, ColorFilterProps } from "../_store/types";
+import { SOLID_COLORS } from "../../headwear/_sidebar/_components/solidColors";
+import { PATTERN_COLORS } from "../../headwear/_sidebar/_components/patternColors";
 
 interface DynamicColorFilterProps extends ColorFilterProps {
   products: Product[];
@@ -14,20 +16,92 @@ interface ColorCount {
   count: number;
 }
 
+const normalizeColorName = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/[\s_-]/g, "")
+    .replace(/\//g, "")
+    .replace(/[()0-9]/g, "")
+    .replace(/flag/i, "")
+    .trim();
+};
+
+const getColorValue = (colorName: string): string | string[] => {
+  const normalizedSearchName = normalizeColorName(colorName);
+
+  const solidColor = SOLID_COLORS.find(
+    color => normalizeColorName(color.name) === normalizedSearchName
+  );
+  if (solidColor) return solidColor.hex;
+
+  const patternColor = PATTERN_COLORS.find(
+    color => normalizeColorName(color.name) === normalizedSearchName
+  );
+  if (patternColor) return patternColor.colors;
+
+  return colorName; // Return the original color name if no mapping found
+};
+
+const createColorBackground = (
+  colorValue: string | string[],
+  optionLabel?: string
+): string => {
+  if (Array.isArray(colorValue)) {
+    if (
+      colorValue.length === 6 &&
+      optionLabel &&
+      normalizeColorName(optionLabel).includes("southafrica")
+    ) {
+      return `linear-gradient(to bottom,
+        ${colorValue[2]} 0%, ${colorValue[2]} 16.66%,
+        ${colorValue[0]} 16.66%, ${colorValue[0]} 33.32%,
+        ${colorValue[1]} 33.32%, ${colorValue[1]} 49.98%,
+        ${colorValue[4]} 49.98%, ${colorValue[4]} 66.64%,
+        ${colorValue[3]} 66.64%, ${colorValue[3]} 83.3%,
+        ${colorValue[5]} 83.3%, ${colorValue[5]} 100%
+      )`;
+    } else if (colorValue.length === 2) {
+      return `linear-gradient(45deg, ${colorValue[0]} 50%, ${colorValue[1]} 50%)`;
+    } else if (colorValue.length === 3) {
+      return `linear-gradient(45deg, 
+        ${colorValue[0]} 0%, ${colorValue[0]} 33%,
+        ${colorValue[1]} 33%, ${colorValue[1]} 66%,
+        ${colorValue[2]} 66%, ${colorValue[2]} 100%
+      )`;
+    } else {
+      const stripeWidth = 100 / colorValue.length;
+      return `linear-gradient(45deg, ${colorValue
+        .map(
+          (color, index) =>
+            `${color} ${index * stripeWidth}%, ${color} ${
+              (index + 1) * stripeWidth
+            }%`
+        )
+        .join(", ")})`;
+    }
+  }
+  return colorValue;
+};
+
 const ColorButton: React.FC<{
   colorData: ColorCount;
   isSelected: boolean;
   onChange: () => void;
   showCount?: boolean;
 }> = ({ colorData, isSelected, onChange, showCount }) => {
-  const isWhite = colorData.color.toLowerCase() === "white";
+  const colorValue = getColorValue(colorData.color);
+  const isWhite =
+    typeof colorValue === "string" &&
+    (colorValue.toLowerCase() === "#ffffff" ||
+      colorValue.toLowerCase() === "#fcfcfc");
+  const backgroundValue = createColorBackground(colorValue, colorData.color);
 
   return (
     <div className="relative group">
       <button
         onClick={onChange}
         className={cn(
-          "relative w-6 h-6 sm:w-5 sm:h-5 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1",
+          "relative w-8 h-8 sm:w-7 sm:h-7 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1",
           isSelected && "ring-1 ring-blue-500 ring-offset-1"
         )}
         aria-label={`Select ${colorData.color} color`}
@@ -35,16 +109,16 @@ const ColorButton: React.FC<{
       >
         <div
           className={cn(
-            "absolute inset-0 rounded-full",
+            "absolute inset-0 rounded",
             isWhite && "border border-gray-200"
           )}
-          style={{ backgroundColor: isWhite ? "#FFFFFF" : colorData.color }}
+          style={{ background: backgroundValue }}
         />
         {isSelected && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Check
               className={cn(
-                "w-4 h-4 sm:w-3 sm:h-3",
+                "w-5 h-5 sm:w-4 sm:h-4",
                 isWhite ? "text-black" : "text-white"
               )}
             />
@@ -77,7 +151,6 @@ const DynamicColorFilter: React.FC<DynamicColorFilterProps> = ({
     const colorMap = new Map<string, number>();
 
     products.forEach(product => {
-      // Check if product belongs to current collection
       const pathParts = pathname.split("/");
       const currentCollection = pathParts[pathParts.length - 1];
       const isInCurrentCollection =
@@ -91,14 +164,16 @@ const DynamicColorFilter: React.FC<DynamicColorFilterProps> = ({
       if (isInCurrentCollection) {
         product.variations.forEach(variation => {
           if (variation.color) {
-            const color = variation.color;
-            colorMap.set(color, (colorMap.get(color) || 0) + 1);
+            const normalizedColor = normalizeColorName(variation.color);
+            colorMap.set(
+              variation.color,
+              (colorMap.get(variation.color) || 0) + 1
+            );
           }
         });
       }
     });
 
-    // Convert map to array and sort by count descending, then alphabetically
     const sortedColors = Array.from(colorMap.entries())
       .map(([color, count]) => ({ color, count }))
       .sort((a, b) => {
@@ -109,6 +184,7 @@ const DynamicColorFilter: React.FC<DynamicColorFilterProps> = ({
     setColorCounts(sortedColors);
   }, [products, pathname]);
 
+  // Show first 3 colors in sidebar
   const initialColors = colorCounts.slice(0, 3);
   const remainingCount = Math.max(0, colorCounts.length - 3);
 
@@ -137,6 +213,39 @@ const DynamicColorFilter: React.FC<DynamicColorFilterProps> = ({
         <DialogContent className="w-11/12 max-w-lg mx-auto h-auto max-h-[85vh] p-0">
           <div className="relative border-b px-4 sm:px-6 py-4">
             <h2 className="text-base sm:text-lg font-semibold">Select Color</h2>
+            {selectedValue.length > 0 && (
+              <div className="mt-2 max-w-full overflow-hidden">
+                <div className="flex flex-wrap gap-2 max-w-full">
+                  {selectedValue.map(color => {
+                    const option = colorCounts.find(c => c.color === color);
+                    if (!option) return null;
+                    return (
+                      <div
+                        key={color}
+                        className="inline-flex items-center gap-1 bg-gray-100 rounded-md px-2 py-1 text-xs"
+                      >
+                        <div
+                          className="w-3 h-3 rounded"
+                          style={{
+                            background: createColorBackground(
+                              getColorValue(color),
+                              color
+                            ),
+                          }}
+                        />
+                        <span className="max-w-[120px] truncate">{color}</span>
+                        <button
+                          onClick={() => onChange(color)}
+                          className="ml-1 text-gray-500 hover:text-gray-700 flex-shrink-0"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <button
               onClick={() => setIsModalOpen(false)}
               className="absolute top-4 right-4 hover:text-muted-foreground transition-colors"
