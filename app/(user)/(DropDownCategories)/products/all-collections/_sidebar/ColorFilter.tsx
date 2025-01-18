@@ -48,7 +48,6 @@ const createColorBackground = (
       optionLabel &&
       normalizeColorName(optionLabel).includes("southafrica")
     ) {
-      // Special case for South African flag - horizontal stripes for better visibility
       return `linear-gradient(to bottom,
         ${colorValue[2]} 0%, ${colorValue[2]} 16.66%,
         ${colorValue[0]} 16.66%, ${colorValue[0]} 33.32%,
@@ -106,7 +105,7 @@ const ColorButton: React.FC<{
       >
         <div
           className={cn(
-            "absolute inset-0 rounded-full",
+            "absolute inset-0 rounded",
             isWhite && "border border-gray-200"
           )}
           style={{ background: backgroundValue }}
@@ -147,17 +146,9 @@ export const ColorFilter: React.FC<ColorFilterProps> = ({
   onChange,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const displayColors = options.filter(opt =>
-    selectedValue.includes(opt.value)
-  );
-  const remainingSlots = Math.max(0, 3 - displayColors.length);
-  const nonSelectedColors = options.filter(
-    opt => !selectedValue.includes(opt.value)
-  );
-  const initialColors = [
-    ...displayColors,
-    ...nonSelectedColors.slice(0, remainingSlots),
-  ];
+
+  // Show first 3 colors in sidebar
+  const initialColors = options.slice(0, 3);
   const remainingCount = Math.max(0, options.length - 3);
 
   const handleColorChange = (value: string) => {
@@ -196,34 +187,38 @@ export const ColorFilter: React.FC<ColorFilterProps> = ({
               Select Colors
             </DialogTitle>
             {selectedValue.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {selectedValue.map(color => {
-                  const option = options.find(opt => opt.value === color);
-                  if (!option) return null;
-                  return (
-                    <div
-                      key={color}
-                      className="inline-flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1 text-sm"
-                    >
+              <div className="mt-2 max-w-full overflow-hidden">
+                <div className="flex flex-wrap gap-2 max-w-full">
+                  {selectedValue.map(color => {
+                    const option = options.find(opt => opt.value === color);
+                    if (!option) return null;
+                    return (
                       <div
-                        className="w-3 h-3 rounded-full"
-                        style={{
-                          background: createColorBackground(
-                            getColorValue(color),
-                            option.label
-                          ),
-                        }}
-                      />
-                      <span>{option.label}</span>
-                      <button
-                        onClick={() => handleColorChange(color)}
-                        className="ml-1 text-gray-500 hover:text-gray-700"
+                        key={color}
+                        className="inline-flex items-center gap-1 bg-gray-100 rounded-md px-2 py-1 text-xs"
                       >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  );
-                })}
+                        <div
+                          className="w-3 h-3 rounded"
+                          style={{
+                            background: createColorBackground(
+                              getColorValue(color),
+                              option.label
+                            ),
+                          }}
+                        />
+                        <span className="max-w-[120px] truncate">
+                          {option.label}
+                        </span>
+                        <button
+                          onClick={() => handleColorChange(color)}
+                          className="ml-1 text-gray-500 hover:text-gray-700 flex-shrink-0"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
             <button
