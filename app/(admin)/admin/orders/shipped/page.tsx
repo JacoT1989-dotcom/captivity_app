@@ -2,7 +2,7 @@ import { getOrdersByStatus } from "../_components/actions";
 import OrderTable from "../_components/OrderTable";
 import { OrderStatus } from "@prisma/client";
 
-export default async function CanceledOrdersPage({
+export default async function CompletedOrdersPage({
   searchParams,
 }: {
   searchParams?: { page?: string; search?: string };
@@ -11,7 +11,7 @@ export default async function CanceledOrdersPage({
   const searchQuery = searchParams?.search;
 
   const initialData = await getOrdersByStatus(
-    OrderStatus.CANCELLED,
+    OrderStatus.SHIPPED,
     page,
     10,
     searchQuery
@@ -20,8 +20,8 @@ export default async function CanceledOrdersPage({
   return (
     <OrderTable
       initialData={initialData}
-      status={OrderStatus.CANCELLED}
-      title="Cancelled Orders"
+      status={OrderStatus.SHIPPED}
+      title="Shipped Orders"
     />
   );
 }

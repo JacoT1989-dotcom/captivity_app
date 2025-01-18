@@ -18,8 +18,9 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { updateInventoryQuantity } from "./actions";
+import { Search } from "lucide-react"; // Import the search icon
 
 type Product = {
   id: string;
@@ -53,6 +54,31 @@ export function DataTable({
   const searchParams = useSearchParams();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<number>(0);
+  const [searchValue, setSearchValue] = useState(
+    searchParams?.get("search") || ""
+  );
+  const [debouncedSearchValue, setDebouncedSearchValue] = useState(searchValue);
+
+  // Handle search debouncing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchValue(searchValue);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchValue]);
+
+  // Update URL when debounced search value changes
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    if (debouncedSearchValue) {
+      params.set("search", debouncedSearchValue);
+    } else {
+      params.delete("search");
+    }
+    params.set("page", "1"); // Reset to first page on search
+    router.push(`?${params.toString()}`);
+  }, [debouncedSearchValue, router, searchParams]);
 
   const handlePageSizeChange = (newSize: string) => {
     const params = new URLSearchParams(searchParams?.toString() || "");
@@ -80,7 +106,21 @@ export function DataTable({
   return (
     <div className="space-y-4">
       <h1 className="text-4xl font-bold mt-5">Inventory</h1>
-      <div className="flex justify-end">
+
+      <div className="flex justify-between items-center gap-4">
+        {/* Search Input */}
+        <div className="flex-1 max-w-sm relative">
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
+          <Input
+            type="text"
+            placeholder="Search by product name or SKU..."
+            value={searchValue}
+            onChange={e => setSearchValue(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+
+        {/* Items per page select */}
         <Select
           value={pageSize.toString()}
           onValueChange={handlePageSizeChange}

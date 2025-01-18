@@ -3,7 +3,7 @@
 import { validateRequest } from "@/auth";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { UserRole } from "@prisma/client";
+import { OrderStatus, UserRole } from "@prisma/client";
 
 type User = {
   id: string;
@@ -146,7 +146,12 @@ export async function fetchAllRoleCounts(): Promise<
       prisma.user.count({ where: { role: UserRole.EDITOR } }),
       prisma.user.count({ where: { role: UserRole.ADMIN } }),
       prisma.user.count({ where: { role: UserRole.SUPERADMIN } }),
-      prisma.user.count({ where: { role: UserRole.VENDOR } }),
+
+      prisma.user.count({
+        where: {
+          role: UserRole.VENDOR,
+        },
+      }),
     ]);
 
     return {
@@ -217,4 +222,140 @@ export async function updateUserRole(
         error instanceof Error ? error.message : "An unexpected error occurred",
     };
   }
+}
+
+interface OrderCounts {
+  all: number;
+  pending: number;
+  processing: number;
+  shipped: number;
+  delivered: number;
+  cancelled: number;
+  refunded: number;
+}
+
+type FetchOrderCountsResult =
+  | { success: true; counts: OrderCounts }
+  | { success: false; error: string };
+
+export async function fetchAllOrderCounts(): Promise<FetchOrderCountsResult> {
+  try {
+    const { user } = await validateRequest();
+    if (!user || !hasAdminPrivileges(user.role)) {
+      throw new Error("Unauthorized. Only admins can fetch order counts.");
+    }
+
+    // Fetch counts for all statuses in parallel
+    const [all, pending, processing, shipped, delivered, cancelled, refunded] =
+      await Promise.all([
+        prisma.order.count(),
+        prisma.order.count({
+          where: { status: OrderStatus.PENDING },
+        }),
+        prisma.order.count({
+          where: { status: OrderStatus.PROCESSING },
+        }),
+        prisma.order.count({
+          where: { status: OrderStatus.SHIPPED },
+        }),
+        prisma.order.count({
+          where: { status: OrderStatus.DELIVERED },
+        }),
+        prisma.order.count({
+          where: { status: OrderStatus.CANCELLED },
+        }),
+        prisma.order.count({
+          where: { status: OrderStatus.REFUNDED },
+        }),
+      ]);
+
+    revalidatePath("/admin/orders");
+
+    return {
+      success: true,
+      counts: {
+        all,
+        pending,
+        processing,
+        shipped,
+        delivered,
+        cancelled,
+        refunded,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching order counts:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
+// Function to fetch orders by status
+export async function fetchOrdersByStatus(status: OrderStatus) {
+  try {
+    const { user } = await validateRequest();
+    if (!user || !hasAdminPrivileges(user.role)) {
+      throw new Error("Unauthorized. Only admins can fetch orders.");
+    }
+
+    const orders = await prisma.order.findMany({
+      where: { status },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            displayName: true,
+            companyName: true,
+          },
+        },
+        orderItems: {
+          include: {
+            variation: true,
+          },
+        },
+      },
+    });
+
+    return {
+      success: true,
+      data: orders,
+      count: orders.length,
+    };
+  } catch (error) {
+    console.error(`Error fetching ${status} orders:`, error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
+// Status-specific fetch functions
+export async function fetchPendingOrders() {
+  return fetchOrdersByStatus(OrderStatus.PENDING);
+}
+
+export async function fetchProcessingOrders() {
+  return fetchOrdersByStatus(OrderStatus.PROCESSING);
+}
+
+export async function fetchShippedOrders() {
+  return fetchOrdersByStatus(OrderStatus.SHIPPED);
+}
+
+export async function fetchDeliveredOrders() {
+  return fetchOrdersByStatus(OrderStatus.DELIVERED);
+}
+
+export async function fetchCancelledOrders() {
+  return fetchOrdersByStatus(OrderStatus.CANCELLED);
+}
+
+export async function fetchRefundedOrders() {
+  return fetchOrdersByStatus(OrderStatus.REFUNDED);
 }

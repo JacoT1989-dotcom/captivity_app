@@ -1,14 +1,20 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { fetchAllRoleCounts } from "../admin/users/actions";
+import {
+  fetchAllOrderCounts,
+  fetchAllRoleCounts,
+} from "../admin/users/actions";
 import { useCollectionsStore } from "../admin/products/_store/useCollectionsStore";
+import { useUserStatsStore } from "../admin/useUserStatsStore";
 
 interface MenuLink {
   name: string;
   href: string;
   count?: number;
 }
+
+interface stats {}
 
 interface MenuItem {
   title: string;
@@ -25,6 +31,16 @@ const INITIAL_USER_COUNTS = {
   shopManagers: 0,
   editors: 0,
   vendors: 0,
+};
+
+const INITIAL_ORDER_COUNTS = {
+  all: 0,
+  pending: 0,
+  processing: 0,
+  shipped: 0,
+  delivered: 0,
+  cancelled: 0,
+  refunded: 0,
 };
 
 const INITIAL_COLLECTION_COUNTS = {
@@ -49,6 +65,8 @@ export function useMenuItems() {
   const isMounted = useRef(true);
   const fetchPromiseRef = useRef<Promise<void> | null>(null);
 
+  const [orderCounts, setOrderCounts] = useState(INITIAL_ORDER_COUNTS);
+
   const { counts: collectionCounts, fetchCollections } = useCollectionsStore();
 
   const loadCounts = useCallback(
@@ -67,8 +85,9 @@ export function useMenuItems() {
       lastFetchTime.current = now;
 
       try {
-        const [userResult] = await Promise.all([
+        const [userResult, orderResult] = await Promise.all([
           fetchAllRoleCounts(),
+          fetchAllOrderCounts(),
           fetchCollections(),
         ]);
 
@@ -78,6 +97,13 @@ export function useMenuItems() {
           setUserCounts(prev =>
             JSON.stringify(prev) !== JSON.stringify(userResult.counts)
               ? userResult.counts
+              : prev
+          );
+        }
+        if (orderResult.success) {
+          setOrderCounts(prev =>
+            JSON.stringify(prev) !== JSON.stringify(orderResult.counts)
+              ? orderResult.counts
               : prev
           );
         }
@@ -161,12 +187,41 @@ export function useMenuItems() {
             title: "Orders",
             isSubmenu: true,
             links: [
-              { name: "All Orders", href: "/admin/orders/orders" },
-              { name: "Pending Orders", href: "/admin/pendingOrders" },
-              { name: "Processing Orders", href: "/admin/orders/processing" },
-              { name: "Completed Orders", href: "/admin/orders/completed" },
-              { name: "Cancelled Orders", href: "/admin/orders/cancelled" },
-              { name: "Returns", href: "/admin/orders/returns" },
+              {
+                name: "All Orders",
+                href: "/admin/orders/orders",
+                count: orderCounts.all,
+              },
+              {
+                name: "Pending Orders",
+                href: "/admin/pendingOrders",
+                count: orderCounts.pending,
+              },
+              {
+                name: "Processing Orders",
+                href: "/admin/orders/processing",
+                count: orderCounts.processing,
+              },
+              {
+                name: "Shipped Orders",
+                href: "/admin/orders/shipped",
+                count: orderCounts.shipped,
+              },
+              {
+                name: "Delivered Orders",
+                href: "/admin/orders/completed",
+                count: orderCounts.delivered,
+              },
+              {
+                name: "Cancelled Orders",
+                href: "/admin/orders/cancelled",
+                count: orderCounts.cancelled,
+              },
+              {
+                name: "Refunded Orders",
+                href: "/admin/orders/refunded",
+                count: orderCounts.refunded,
+              },
             ],
           },
           {
@@ -393,7 +448,7 @@ export function useMenuItems() {
         ],
       },
     ],
-    [userCounts, collectionCounts]
+    [userCounts, collectionCounts, orderCounts]
   );
 }
 

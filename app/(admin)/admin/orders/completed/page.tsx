@@ -21,7 +21,7 @@ export default async function CompletedOrdersPage({
     <OrderTable
       initialData={initialData}
       status={OrderStatus.DELIVERED}
-      title="Completed Orders"
+      title="Delivered Orders"
     />
   );
 }

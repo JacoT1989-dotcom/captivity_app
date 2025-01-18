@@ -1,5 +1,4 @@
 "use server";
-
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
@@ -32,11 +31,41 @@ export async function getInventoryItems(
     const where: Prisma.ProductWhereInput = search
       ? {
           OR: [
-            { productName: { contains: search, mode: "insensitive" as const } },
+            {
+              productName: {
+                contains: search.trim(),
+                mode: "insensitive" as const,
+              },
+            },
             {
               variations: {
                 some: {
-                  sku: { contains: search, mode: "insensitive" as const },
+                  OR: [
+                    {
+                      sku: {
+                        contains: search.trim(),
+                        mode: "insensitive" as const,
+                      },
+                    },
+                    {
+                      name: {
+                        contains: search.trim(),
+                        mode: "insensitive" as const,
+                      },
+                    },
+                    {
+                      color: {
+                        contains: search.trim(),
+                        mode: "insensitive" as const,
+                      },
+                    },
+                    {
+                      size: {
+                        contains: search.trim(),
+                        mode: "insensitive" as const,
+                      },
+                    },
+                  ],
                 },
               },
             },
@@ -69,8 +98,17 @@ export async function getInventoryItems(
       },
     });
 
+    // Calculate total stock for each product
+    const itemsWithTotalStock = products.map(product => ({
+      ...product,
+      totalStock: product.variations.reduce(
+        (sum, var_) => sum + var_.quantity,
+        0
+      ),
+    }));
+
     return {
-      items: products,
+      items: itemsWithTotalStock,
       totalItems,
       totalPages: Math.ceil(totalItems / pageSize),
     };
@@ -85,6 +123,10 @@ export async function updateInventoryQuantity(
   quantity: number
 ) {
   try {
+    if (quantity < 0) {
+      throw new Error("Quantity cannot be negative");
+    }
+
     await prisma.variation.update({
       where: { id: variationId },
       data: { quantity },
@@ -94,6 +136,10 @@ export async function updateInventoryQuantity(
     return { success: true };
   } catch (error) {
     console.error("Error updating quantity:", error);
-    throw new Error("Failed to update inventory quantity");
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Failed to update inventory quantity"
+    );
   }
 }
