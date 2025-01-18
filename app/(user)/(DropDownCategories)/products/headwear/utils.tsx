@@ -2,14 +2,22 @@ import { cn } from "@/lib/utils";
 import { PATTERN_COLORS } from "./_sidebar/_components/patternColors";
 import { SOLID_COLORS } from "./_sidebar/_components/solidColors";
 
-export const normalizeColorName = (name: string): string => {
+type ColorNameNormalizer = (name: string) => string;
+
+// Create an interface if you need to use this as part of a larger type system
+interface ColorNormalization {
+  normalizeColorName: ColorNameNormalizer;
+}
+
+// The function implementation with the type
+export const normalizeColorName: ColorNameNormalizer = name => {
   return name
-    .toLowerCase()
-    .replace(/[\s_-]/g, "")
-    .replace(/\//g, "")
-    .replace(/[()0-9]/g, "")
-    .replace(/flag/i, "")
-    .trim();
+    .toLowerCase() //Converts the entire string to lowercase using
+    .replace(/[\s_-]/g, "") // Removes all spaces, underscores, and hyphens using
+    .replace(/\//g, "") // Removes any forward slashes using
+    .replace(/[()0-9]/g, "") // Removes any parentheses and numbers using
+    .replace(/flag/i, "") // Removes the word "flag" (case insensitive) using
+    .trim(); // Removes any leading or trailing whitespace using
 };
 
 export const getColorValue = (colorName: string): string | string[] => {
