@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { FilterOption } from "../_store/types";
 import { SOLID_COLORS } from "../../headwear/_sidebar/_components/solidColors";
 import { PATTERN_COLORS } from "../../headwear/_sidebar/_components/patternColors";
+
 interface ColorFilterProps {
   options: FilterOption[];
   selectedValue: string[];
@@ -15,7 +16,10 @@ const normalizeColorName = (name: string): string => {
   return name
     .toLowerCase()
     .replace(/[\s_-]/g, "")
-    .replace(/\//g, "");
+    .replace(/\//g, "")
+    .replace(/[()0-9]/g, "")
+    .replace(/flag/i, "")
+    .trim();
 };
 
 const getColorValue = (colorName: string): string | string[] => {
@@ -34,9 +38,26 @@ const getColorValue = (colorName: string): string | string[] => {
   return "#808080";
 };
 
-const createColorBackground = (colorValue: string | string[]): string => {
+const createColorBackground = (
+  colorValue: string | string[],
+  optionLabel?: string
+): string => {
   if (Array.isArray(colorValue)) {
-    if (colorValue.length === 2) {
+    if (
+      colorValue.length === 6 &&
+      optionLabel &&
+      normalizeColorName(optionLabel).includes("southafrica")
+    ) {
+      // Special case for South African flag - horizontal stripes for better visibility
+      return `linear-gradient(to bottom,
+        ${colorValue[2]} 0%, ${colorValue[2]} 16.66%,
+        ${colorValue[0]} 16.66%, ${colorValue[0]} 33.32%,
+        ${colorValue[4]} 33.32%, ${colorValue[4]} 49.98%,
+        ${colorValue[1]} 49.98%, ${colorValue[1]} 66.64%,
+        ${colorValue[5]} 66.64%, ${colorValue[5]} 83.3%,
+        ${colorValue[3]} 83.3%, ${colorValue[3]} 100%
+      )`;
+    } else if (colorValue.length === 2) {
       return `linear-gradient(45deg, ${colorValue[0]} 50%, ${colorValue[1]} 50%)`;
     } else if (colorValue.length === 3) {
       return `linear-gradient(45deg, 
@@ -44,7 +65,7 @@ const createColorBackground = (colorValue: string | string[]): string => {
         ${colorValue[1]} 33%, ${colorValue[1]} 66%,
         ${colorValue[2]} 66%, ${colorValue[2]} 100%
       )`;
-    } else if (colorValue.length > 3) {
+    } else {
       const stripeWidth = 100 / colorValue.length;
       return `linear-gradient(45deg, ${colorValue
         .map(
@@ -55,7 +76,6 @@ const createColorBackground = (colorValue: string | string[]): string => {
         )
         .join(", ")})`;
     }
-    return colorValue[0];
   }
   return colorValue;
 };
@@ -71,14 +91,14 @@ const ColorButton: React.FC<{
     typeof colorValue === "string" &&
     (colorValue.toLowerCase() === "#ffffff" ||
       colorValue.toLowerCase() === "#fcfcfc");
-  const backgroundValue = createColorBackground(colorValue);
+  const backgroundValue = createColorBackground(colorValue, option.label);
 
   return (
     <div className={cn("relative group", showLabel && "mb-2")}>
       <button
         onClick={onChange}
         className={cn(
-          "relative w-6 h-6 sm:w-5 sm:h-5 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1",
+          "relative w-8 h-8 sm:w-7 sm:h-7 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1",
           isSelected && "ring-1 ring-blue-500 ring-offset-1"
         )}
         aria-label={`Select ${option.label} color`}
@@ -95,7 +115,7 @@ const ColorButton: React.FC<{
           <div className="absolute inset-0 flex items-center justify-center">
             <Check
               className={cn(
-                "w-4 h-4 sm:w-3 sm:h-3",
+                "w-5 h-5 sm:w-4 sm:h-4",
                 isWhite ? "text-black" : "text-white"
               )}
             />
@@ -189,7 +209,8 @@ export const ColorFilter: React.FC<ColorFilterProps> = ({
                         className="w-3 h-3 rounded-full"
                         style={{
                           background: createColorBackground(
-                            getColorValue(color)
+                            getColorValue(color),
+                            option.label
                           ),
                         }}
                       />
