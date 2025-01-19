@@ -12,12 +12,12 @@ interface ColorNormalization {
 // The function implementation with the type
 export const normalizeColorName: ColorNameNormalizer = name => {
   return name
-    .toLowerCase() //Converts the entire string to lowercase using
-    .replace(/[\s_-]/g, "") // Removes all spaces, underscores, and hyphens using
-    .replace(/\//g, "") // Removes any forward slashes using
-    .replace(/[()0-9]/g, "") // Removes any parentheses and numbers using
-    .replace(/flag/i, "") // Removes the word "flag" (case insensitive) using
-    .trim(); // Removes any leading or trailing whitespace using
+    .toLowerCase() //Converts the entire string to lowercase
+    .replace(/[\s_-]/g, "") // Removes all spaces, underscores, and hyphens
+    .replace(/\//g, "") // Removes any forward slashes
+    .replace(/[()0-9]/g, "") // Removes any parentheses and numbers
+    .replace(/flag/i, "") // Removes the word "flag" (case insensitive)
+    .trim(); // Removes any leading or trailing whitespace
 };
 
 export const getColorValue = (colorName: string): string | string[] => {
