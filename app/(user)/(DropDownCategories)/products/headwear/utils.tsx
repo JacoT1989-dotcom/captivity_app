@@ -4,7 +4,7 @@ import { SOLID_COLORS } from "./_sidebar/_components/solidColors";
 
 type ColorNameNormalizer = (name: string) => string;
 
-// Create an interface if you need to use this as part of a larger type system
+// Create an interface if you need to use this as part of a larger type system.
 interface ColorNormalization {
   normalizeColorName: ColorNameNormalizer;
 }
