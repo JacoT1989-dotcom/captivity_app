@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import ProductDetailsDialog from "./ProductDetailsDialog";
 import ProductLookupModal from "./(lookupmodal)/ProductLookupModal";
+import ColorSwatch from "./(lookupmodal)/ColorSwatch";
 import { Product as StoreProduct } from "./_store/types";
 
 interface ProductGridProps {
@@ -103,23 +104,25 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                 {Array.from(new Set(product.variations.map(v => v.color)))
                   .slice(0, 3)
                   .map(color => (
-                    <div
-                      key={color}
-                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-md border border-border"
-                      style={{ backgroundColor: color.toLowerCase() }}
-                      title={color}
-                    />
+                    <div key={color} className="transform scale-90">
+                      <ColorSwatch
+                        color={color}
+                        isSelected={false}
+                        onClick={() => {}}
+                        showCheckmark={false}
+                      />
+                    </div>
                   ))}
                 {Array.from(new Set(product.variations.map(v => v.color)))
-                  .length > 2 && (
+                  .length > 3 && (
                   <Button
                     onClick={e => handleColorDialogOpen(product, e)}
                     variant="default"
-                    className="h-5 sm:h-6 px-2 text-xs"
+                    className="h-6 px-2 text-xs"
                   >
                     +
                     {Array.from(new Set(product.variations.map(v => v.color)))
-                      .length - 2}{" "}
+                      .length - 3}{" "}
                     more
                   </Button>
                 )}
