@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import ColorDialog from "./ColorDialog";
+import ColorDialog from "./(lookupmodal)/ColorDialog";
 
 interface ProductLookup {
   [key: string]: {

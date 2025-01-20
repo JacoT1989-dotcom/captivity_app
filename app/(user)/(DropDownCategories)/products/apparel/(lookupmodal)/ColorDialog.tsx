@@ -1,102 +1,13 @@
+// ColorDialog.tsx
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-
-interface Variation {
-  id: string;
-  name: string;
-  color: string;
-  size: string;
-  sku: string;
-  sku2: string;
-  variationImageURL: string;
-  quantity: number;
-  productId: string;
-}
-
-interface ColorVariation {
-  color: string;
-  variations: Variation[];
-}
-
-interface DynamicPricing {
-  id: string;
-  from: string;
-  to: string;
-  type: string;
-  amount: string;
-  productId: string;
-}
-
-interface Product {
-  id: string;
-  productName: string;
-  sellingPrice: number;
-  dynamicPricing: DynamicPricing[];
-}
-
-interface ProductVariations {
-  [productId: string]: {
-    variations: ColorVariation[];
-    product?: Product;
-  };
-}
-
-interface ColorDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  selectedProduct: string | null;
-  groupedVariations: ProductVariations;
-}
-
-// Pricing Ranges Component
-const PricingRanges: React.FC<{
-  dynamicPricing: DynamicPricing[] | undefined;
-  sellingPrice: number;
-}> = ({ dynamicPricing, sellingPrice }) => {
-  // Define our desired ranges
-  const desiredRanges = [
-    { from: "1", to: "24" },
-    { from: "25", to: "100" },
-    { from: "101", to: "600" },
-    { from: "601", to: "2000" },
-  ];
-
-  // Function to find the price for a given range
-  const getPriceForRange = (from: string, to: string) => {
-    if (!dynamicPricing?.length) {
-      return sellingPrice;
-    }
-
-    const pricing = dynamicPricing.find(
-      p => parseInt(p.from) <= parseInt(from) && parseInt(p.to) >= parseInt(to)
-    );
-
-    return pricing ? parseFloat(pricing.amount) : sellingPrice;
-  };
-
-  const formatPrice = (price: number) => {
-    return `R${price.toFixed(2)}`;
-  };
-
-  return (
-    <div className="grid grid-cols-2 gap-y-5 gap-x-2 text-sm">
-      <div className="font-medium text-gray-700">Quantity</div>
-      <div className="font-medium text-gray-700">Price</div>
-      {desiredRanges.map(range => (
-        <React.Fragment key={`${range.from}-${range.to}`}>
-          <div className="text-gray-600">{`${range.from} - ${range.to}`}</div>
-          <div className="text-gray-600">
-            {formatPrice(getPriceForRange(range.from, range.to))}
-          </div>
-        </React.Fragment>
-      ))}
-    </div>
-  );
-};
+import PricingRanges from "./PricingRanges";
+import type { ColorDialogProps, Variation } from "./types";
+import ColorSwatch from "./ColorSwatch";
 
 const ColorDialog: React.FC<ColorDialogProps> = ({
   isOpen,
@@ -240,16 +151,15 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {allColors.map(color => (
-                      <button
+                      <ColorSwatch
                         key={color}
-                        onClick={() => setSelectedColor(color)}
-                        className={`w-8 h-8 rounded-md border transition-all ${
-                          selectedColor === color
-                            ? "ring-2 ring-red-600 ring-offset-1"
-                            : "hover:opacity-80"
-                        }`}
-                        style={{ backgroundColor: color.toLowerCase() }}
-                        title={color}
+                        color={color}
+                        isSelected={selectedColor === color}
+                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                          e.stopPropagation();
+                          setSelectedColor(color);
+                        }}
+                        showCheckmark={true}
                       />
                     ))}
                   </div>

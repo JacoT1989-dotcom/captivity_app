@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import ColorDialog from "./ColorDialog";
+import ColorDialog from "./(lookupmodal)/ColorDialog";
 import ProductDetailsDialog from "./ProductDetailsDialog";
 import { Product, Variation } from "./_store/types";
 
