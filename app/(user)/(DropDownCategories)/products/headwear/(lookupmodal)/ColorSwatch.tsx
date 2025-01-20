@@ -7,7 +7,7 @@ import { PATTERN_COLORS } from "../_sidebar/_components/patternColors";
 interface ColorSwatchProps {
   color: string;
   isSelected: boolean;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   showCheckmark?: boolean;
 }
 

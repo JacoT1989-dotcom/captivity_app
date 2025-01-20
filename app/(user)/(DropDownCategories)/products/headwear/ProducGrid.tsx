@@ -104,11 +104,17 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                 {Array.from(new Set(product.variations.map(v => v.color)))
                   .slice(0, 3)
                   .map(color => (
-                    <div key={color} className="transform scale-90">
+                    <div
+                      key={color}
+                      className="transform scale-90 cursor-pointer"
+                    >
                       <ColorSwatch
                         color={color}
                         isSelected={false}
-                        onClick={() => {}}
+                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                          e.stopPropagation();
+                          handleColorDialogOpen(product, e);
+                        }}
                         showCheckmark={false}
                       />
                     </div>
