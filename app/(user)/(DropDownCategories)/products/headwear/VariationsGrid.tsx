@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useCategoryStore } from "./_store/headwear-store";
-import ProductLookupModal from "./ProductLookupModal";
+import ProductLookupModal from "./(lookupmodal)/ProductLookupModal";
 
 interface ProductLookup {
   [key: string]: {

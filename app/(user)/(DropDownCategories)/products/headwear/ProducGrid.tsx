@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import ProductDetailsDialog from "./ProductDetailsDialog";
-import ProductLookupModal from "./ProductLookupModal";
+import ProductLookupModal from "./(lookupmodal)/ProductLookupModal";
 import { Product as StoreProduct } from "./_store/types";
 
 interface ProductGridProps {
