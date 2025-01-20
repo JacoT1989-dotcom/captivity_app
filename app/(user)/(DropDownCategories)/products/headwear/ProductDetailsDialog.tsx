@@ -98,7 +98,7 @@ const ColorSwatch: React.FC<{
   return (
     <button
       onClick={onClick}
-      className={`relative w-8 h-8 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-transform ${
+      className={`relative w-8 h-8 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-transform ${
         isSelected
           ? "ring-2 ring-blue-500 ring-offset-2 scale-110"
           : "hover:scale-105"
@@ -106,7 +106,7 @@ const ColorSwatch: React.FC<{
       title={color}
     >
       <div
-        className={`absolute inset-0 rounded-full ${
+        className={`absolute inset-0 rounded-md ${
           isWhite ? "border border-gray-200" : ""
         }`}
         style={{ background: backgroundValue }}
