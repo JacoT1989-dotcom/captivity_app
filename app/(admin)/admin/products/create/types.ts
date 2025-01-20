@@ -179,3 +179,44 @@ export const DEFAULT_FEATURED_IMAGE: FeaturedImage = {
   medium: "",
   large: "",
 };
+
+// Add these types to your types.ts file
+export interface SearchProduct {
+  id: string;
+  productName: string;
+  category: string[];
+  description: string;
+  sellingPrice: number;
+  isPublished: boolean;
+  dynamicPricing: {
+    id: string;
+    type: string;
+    from: string;
+    to: string;
+    amount: string;
+    productId: string;
+  }[];
+  featuredImage: {
+    id: string;
+    productId: string;
+    thumbnail: string;
+    medium: string;
+    large: string;
+  } | null;
+  variations: {
+    id: string;
+    name: string;
+    color: string;
+    size: string;
+    sku: string;
+    sku2: string;
+    variationImageURL: string;
+    quantity: number;
+    productId: string;
+  }[];
+}
+
+export interface ProductSearchFieldProps {
+  control: Control<ProductFormData>;
+  onProductSelect: (product: SearchProduct) => void;
+}

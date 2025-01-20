@@ -72,9 +72,16 @@ const ProductForm = () => {
       formData.append("isPublished", data.isPublished.toString());
       data.category.forEach(cat => formData.append("category[]", cat));
 
-      // Add featured image if exists
+      // Add featured image
       if (data.featuredImage.file) {
         formData.append("featuredImage", data.featuredImage.file);
+      } else if (data.featuredImage.thumbnail) {
+        formData.append(
+          "featuredImage.thumbnail",
+          data.featuredImage.thumbnail
+        );
+        formData.append("featuredImage.medium", data.featuredImage.medium);
+        formData.append("featuredImage.large", data.featuredImage.large);
       }
 
       // Add dynamic pricing
@@ -85,18 +92,23 @@ const ProductForm = () => {
         formData.append(`dynamicPricing.${index}.amount`, price.amount);
       });
 
-      // Add variations with all sizes
+      // Add variations
       data.variations.forEach((variation, vIndex) => {
         formData.append(`variations.${vIndex}.name`, variation.name);
         formData.append(`variations.${vIndex}.color`, variation.color || "");
+
         if (variation.variationImage) {
           formData.append(
             `variations.${vIndex}.image`,
             variation.variationImage
           );
+        } else if (variation.variationImageURL) {
+          formData.append(
+            `variations.${vIndex}.variationImageURL`,
+            variation.variationImageURL
+          );
         }
 
-        // Add all sizes for this variation
         variation.sizes.forEach((size, sIndex) => {
           formData.append(
             `variations.${vIndex}.sizes.${sIndex}.size`,
@@ -132,13 +144,9 @@ const ProductForm = () => {
         });
       }
     } catch (error) {
-      console.error("Form submission error:", error);
       toast({
         title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred",
+        description: "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -146,7 +154,6 @@ const ProductForm = () => {
     }
   };
 
-  // Cleanup object URLs when component unmounts
   React.useEffect(() => {
     return () => {
       const formData = form.getValues();
@@ -215,21 +222,7 @@ const ProductForm = () => {
                 type="button"
                 variant="outline"
                 disabled={isSubmitting}
-                onClick={() => {
-                  // Clean up any existing object URLs before reset
-                  const formData = form.getValues();
-                  formData.variations.forEach(variation => {
-                    if (variation.variationImageURL?.startsWith("blob:")) {
-                      URL.revokeObjectURL(variation.variationImageURL);
-                    }
-                  });
-                  if (formData.featuredImage.thumbnail.startsWith("blob:")) {
-                    URL.revokeObjectURL(formData.featuredImage.thumbnail);
-                    URL.revokeObjectURL(formData.featuredImage.medium);
-                    URL.revokeObjectURL(formData.featuredImage.large);
-                  }
-                  form.reset();
-                }}
+                onClick={() => form.reset()}
               >
                 Reset Form
               </Button>

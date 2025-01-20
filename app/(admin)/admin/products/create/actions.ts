@@ -5,6 +5,7 @@ import { validateRequest } from "@/auth";
 import { put } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
+import { SearchProduct } from "./types";
 
 interface CreateProductResult {
   success: boolean;
@@ -94,88 +95,89 @@ export async function createProduct(
       throw new Error("Unauthorized access");
     }
 
-    let featuredImageUrls: ImageUrls = {
-      thumbnail: "",
-      medium: "",
-      large: "",
-    };
+    // Log incoming data for debugging
+    console.log("Received form data:", {
+      productName: formData.get("productName"),
+      category: formData.getAll("category[]"),
+      sellingPrice: formData.get("sellingPrice"),
+      isPublished: formData.get("isPublished"),
+      description: formData.get("description"),
+    });
 
-    const featuredImageFile = formData.get("featuredImage");
+    let featuredImageUrls: ImageUrls;
+    const featuredImageFile = formData.get("featuredImage") as File;
+
+    // Handle featured image - either upload new file or use existing URLs
     if (featuredImageFile instanceof File && featuredImageFile.size > 0) {
       featuredImageUrls = await uploadFeaturedImages(featuredImageFile);
+    } else {
+      // Use existing URLs if provided
+      const thumbnailUrl = formData.get("featuredImage.thumbnail") as string;
+      const mediumUrl = formData.get("featuredImage.medium") as string;
+      const largeUrl = formData.get("featuredImage.large") as string;
+
+      featuredImageUrls = {
+        thumbnail: thumbnailUrl || "",
+        medium: mediumUrl || "",
+        large: largeUrl || "",
+      };
     }
 
-    // Get all variation entries
-    const variationEntries = Array.from(formData.entries()).filter(([key]) =>
-      key.startsWith("variations")
-    );
-
-    // Get the maximum variation index
-    const variationCount = variationEntries.reduce((max, [key]) => {
-      const match = key.match(/variations\.(\d+)\./);
-      return match ? Math.max(max, parseInt(match[1]) + 1) : max;
-    }, 0);
-
-    // Upload variation images
-    const variationImages: string[] = [];
-    for (let i = 0; i < variationCount; i++) {
-      const variationImageFile = formData.get(`variations.${i}.image`);
-      if (variationImageFile instanceof File && variationImageFile.size > 0) {
-        try {
-          const fileExt = variationImageFile.name.split(".").pop() || "jpg";
-          const url = await uploadImage(
-            variationImageFile,
-            `products/variations/variation_${i}_${Date.now()}.${fileExt}`
-          );
-          variationImages[i] = url;
-        } catch (error) {
-          throw error;
-        }
-      }
-    }
-
-    // Create variations array matching Prisma schema
-    const variations: Prisma.VariationCreateInput[] = [];
-    for (let i = 0; i < variationCount; i++) {
-      const sizesEntries = Array.from(formData.entries()).filter(([key]) =>
-        key.startsWith(`variations.${i}.sizes.`)
+    // Process variations
+    const variations: Array<Omit<Prisma.VariationCreateInput, "product">> = [];
+    const variationEntries = Array.from(formData.entries())
+      .filter(([key]) => key.startsWith("variations"))
+      .reduce(
+        (acc, [key, value]) => {
+          const [base, index, ...rest] = key.split(".");
+          if (!acc[index]) acc[index] = {};
+          if (rest.length === 1) {
+            acc[index][rest[0]] = value;
+          } else if (rest.length === 3 && rest[0] === "sizes") {
+            if (!acc[index].sizes) acc[index].sizes = {};
+            if (!acc[index].sizes[rest[1]]) acc[index].sizes[rest[1]] = {};
+            acc[index].sizes[rest[1]][rest[2]] = value;
+          }
+          return acc;
+        },
+        {} as Record<string, any>
       );
 
-      const sizeIndices = new Set(
-        sizesEntries
-          .map(([key]) => {
-            const match = key.match(/variations\.\d+\.sizes\.(\d+)\./);
-            return match ? parseInt(match[1]) : null;
-          })
-          .filter((index): index is number => index !== null)
-      );
-
-      // Create a variation for each size
-      for (const sizeIndex of sizeIndices) {
-        variations.push({
-          name: formData.get(`variations.${i}.name`) as string,
-          color: (formData.get(`variations.${i}.color`) as string) || "",
-          variationImageURL: variationImages[i] || "",
-          size:
-            (
-              formData.get(`variations.${i}.sizes.${sizeIndex}.size`) as string
-            )?.trim() || "",
-          quantity:
-            Number(
-              formData.get(`variations.${i}.sizes.${sizeIndex}.quantity`)
-            ) || 0,
-          sku:
-            (
-              formData.get(`variations.${i}.sizes.${sizeIndex}.sku`) as string
-            )?.trim() || "",
-          sku2:
-            (
-              formData.get(`variations.${i}.sizes.${sizeIndex}.sku2`) as string
-            )?.trim() || "",
-          product: {}, // Will be connected in the create
+    // Process each variation
+    Object.values(variationEntries).forEach((variation: any) => {
+      if (variation.sizes) {
+        Object.values(variation.sizes).forEach((size: any) => {
+          variations.push({
+            name: variation.name,
+            color: variation.color || "",
+            // Use existing URL if it's a URL string
+            variationImageURL: variation.variationImageURL?.startsWith("http")
+              ? variation.variationImageURL
+              : "",
+            size: size.size?.trim() || "",
+            quantity: Number(size.quantity) || 0,
+            sku: size.sku?.trim() || "",
+            sku2: size.sku2?.trim() || "",
+          });
         });
       }
-    }
+    });
+
+    // Process dynamic pricing
+    const dynamicPricingEntries = Array.from(formData.entries())
+      .filter(([key]) => key.startsWith("dynamicPricing"))
+      .reduce(
+        (acc, [key, value]) => {
+          const [, index, field] =
+            key.match(/dynamicPricing\.(\d+)\.(.+)/) || [];
+          if (index && field) {
+            if (!acc[index]) acc[index] = {};
+            acc[index][field] = value;
+          }
+          return acc;
+        },
+        {} as Record<string, any>
+      );
 
     // Create the product with all its relations
     const createData: Prisma.ProductCreateInput = {
@@ -202,17 +204,19 @@ export async function createProduct(
         create: variations,
       },
       dynamicPricing: {
-        create: Array.from(
-          { length: formData.getAll("dynamicPricing.0.from").length },
-          (_, i) => ({
-            from: formData.get(`dynamicPricing.${i}.from`) as string,
-            to: formData.get(`dynamicPricing.${i}.to`) as string,
-            type: formData.get(`dynamicPricing.${i}.type`) as string,
-            amount: formData.get(`dynamicPricing.${i}.amount`) as string,
-          })
-        ),
+        create: Object.values(dynamicPricingEntries).map((pricing: any) => ({
+          from: pricing.from,
+          to: pricing.to,
+          type: pricing.type as "fixed_price" | "percentage",
+          amount: pricing.amount,
+        })),
       },
     };
+
+    console.log(
+      "Creating product with data:",
+      JSON.stringify(createData, null, 2)
+    );
 
     const product = await prisma.product.create({
       data: createData,
@@ -232,7 +236,56 @@ export async function createProduct(
       message: "Product created successfully",
     };
   } catch (error) {
-    console.error("Error creating product:", error);
+    console.error("Full error details:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      error,
+    });
+
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred while creating the product",
+    };
+  }
+}
+
+interface SearchProductsResult {
+  success: boolean;
+  data?: SearchProduct[];
+  error?: string;
+}
+
+export async function searchProducts(query: string) {
+  try {
+    const { user } = await validateRequest();
+    if (!user) {
+      throw new Error("Unauthorized access");
+    }
+
+    const products = await prisma.product.findMany({
+      where: {
+        userId: user.id,
+        productName: {
+          contains: query,
+          mode: "insensitive",
+        },
+      },
+      include: {
+        featuredImage: true,
+        variations: true,
+        dynamicPricing: true,
+      },
+      take: 5,
+    });
+
+    return {
+      success: true,
+      data: products,
+    };
+  } catch (error) {
+    console.error("Error searching products:", error);
     return {
       success: false,
       error:
