@@ -38,7 +38,7 @@ const CollapsibleSidebar = () => {
   }, []);
 
   const getDropdownClasses = useCallback((isOpen: boolean) => {
-    return `transition-all duration-200 ease-in-out bg-gray-800 ${
+    return `transition-all duration-200 ease-in-out bg-background  ${
       isOpen ? "" : "h-0"
     } overflow-hidden`;
   }, []);
@@ -51,14 +51,14 @@ const CollapsibleSidebar = () => {
           href={link.href}
           className={`block ${isSubItem ? "px-8" : "px-6"} py-2 text-sm transition-colors duration-200 relative ${
             isActive
-              ? "bg-gray-700 text-white border-l-4 border-blue-500"
-              : "text-gray-400 hover:text-white hover:bg-gray-700"
+              ? "bg-background text-foreground  border-l-4 border-blue-500"
+              : "text-foreground hover:text-white hover:bg-foreground"
           }`}
         >
           <div className="flex items-center justify-between">
             <span>{link.name}</span>
             {typeof link.count !== "undefined" && (
-              <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center">
+              <span className="ml-2 bg-red-500 text-foreground text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center">
                 {link.count}
               </span>
             )}
@@ -79,8 +79,8 @@ const CollapsibleSidebar = () => {
             onClick={() => toggleSubMenu(subMenu.title)}
             className={`w-full px-6 py-2 flex items-center justify-between text-sm transition-colors duration-200 ${
               isSubMenuOpen
-                ? "bg-gray-700 text-white"
-                : "text-gray-400 hover:text-white hover:bg-gray-700"
+                ? "bg-background text-foreground "
+                : "bg-background text-foreground  hover:text-white hover:bg-foreground"
             }`}
           >
             <span>{subMenu.title}</span>
@@ -119,10 +119,10 @@ const CollapsibleSidebar = () => {
   if (!isOpen) {
     return (
       <div className="relative h-full flex">
-        <div className="w-0 overflow-hidden flex flex-col bg-gray-900" />
+        <div className="w-0 overflow-hidden flex flex-col bg-background" />
         <button
           onClick={toggleSidebar}
-          className="absolute top-4 -right-10 bg-gray-900 text-white p-2 rounded-r hover:bg-gray-800 transition-colors duration-200 focus:outline-none"
+          className="absolute top-4 -right-10 bg-background text-foreground p-2 rounded-r hover:bg-background transition-colors duration-200 focus:outline-none"
           aria-label="Open sidebar"
         >
           <ChevronRight size={20} />
@@ -133,19 +133,19 @@ const CollapsibleSidebar = () => {
 
   return (
     <div className="relative h-full flex">
-      <div className="w-[300px] bg-gray-900 text-white flex flex-col overflow-hidden">
+      <div className="w-[300px] bg-background text-foreground  flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto">
           <div className="p-4">
             {/* User Welcome Section */}
             <div className="mb-6 px-2">
-              <h2 className="text-xl font-bold text-gray-200">
-                Welcome, {user.username}
+              <h2 className="text-xl font-bold text-foreground ">
+                Welcome, {user.displayName}
               </h2>
-              <p className="text-sm text-gray-400 mt-1">Administrator</p>
+              <p className="text-sm  text-foreground  mt-1">Administrator</p>
             </div>
 
             {/* Divider */}
-            <div className="h-px bg-gray-700 my-4" />
+            <div className="h-px bg-background my-4" />
 
             <nav className="space-y-1">
               {menuItems.map((item, index) => {
@@ -156,14 +156,14 @@ const CollapsibleSidebar = () => {
                     <div className="rounded-md">
                       <button
                         onClick={() => toggleDropdown(index)}
-                        className={`w-full p-3 flex items-center justify-between hover:bg-gray-800 transition-colors duration-200 ${
+                        className={`w-full p-3 flex items-center justify-between bg-background transition-colors duration-200 ${
                           isDropdownOpen ? "bg-gray-800" : ""
                         }`}
                       >
-                        <span className="font-medium text-gray-200">
+                        <span className="font-medium  text-foreground ">
                           {item.title}
                         </span>
-                        <div className="text-gray-400">
+                        <div className="text-foreground ">
                           {isDropdownOpen ? (
                             <ChevronUp size={18} />
                           ) : (
@@ -183,7 +183,7 @@ const CollapsibleSidebar = () => {
                       </div>
                     </div>
                     {index < menuItems.length - 1 && (
-                      <div className="h-px bg-gray-700 my-1" />
+                      <div className="h-px bg-background my-1" />
                     )}
                   </div>
                 );
@@ -195,7 +195,7 @@ const CollapsibleSidebar = () => {
 
       <button
         onClick={toggleSidebar}
-        className="absolute top-4 -right-10 bg-gray-900 text-white p-2 rounded-r hover:bg-gray-800 transition-colors duration-200 focus:outline-none"
+        className="absolute top-4 -right-10 bg-background text-foreground  p-2 rounded-r hover:bg-gray-800 transition-colors duration-200 focus:outline-none"
         aria-label="Close sidebar"
       >
         <ChevronLeft size={20} />
