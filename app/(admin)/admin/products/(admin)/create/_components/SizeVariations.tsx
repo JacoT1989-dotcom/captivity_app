@@ -1,6 +1,6 @@
 import React from "react";
 import { Control } from "react-hook-form";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
 import {
   FormControl,
   FormField,
@@ -10,12 +10,54 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { ProductFormData } from "../types";
+
+const SIZES = [
+  // Standard sizes
+  "XS",
+  "S/M",
+  "M/L",
+  "L/XL",
+  "XL",
+  "2XL",
+  "3XL",
+  "4XL",
+  "5XL",
+  // Specific sizes
+  "Small",
+  "Medium",
+  "Large",
+  "XSmall",
+  "OSFM",
+  "osfm",
+  // Kids sizes
+  "1/2 yrs",
+  "3/4 yrs",
+  "5/6 yrs",
+  "7/8 yrs",
+  "9/10 yrs",
+  "11/12 yrs",
+  "13/14 yrs",
+  "120cm",
+];
 
 interface SizeVariationsProps {
   control: Control<ProductFormData>;
   variationIndex: number;
-  field: any; // You might want to type this properly based on your field structure
+  field: any;
   updateColor: (index: number, value: any) => void;
 }
 
@@ -80,9 +122,52 @@ export const SizeVariations: React.FC<SizeVariationsProps> = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Size</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          "w-full justify-between",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value || "Select size..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search size..." />
+                      <CommandEmpty>No size found.</CommandEmpty>
+                      <div className="max-h-[300px] overflow-y-auto">
+                        <CommandGroup>
+                          {SIZES.map(size => (
+                            <CommandItem
+                              key={size}
+                              value={size}
+                              onSelect={() => {
+                                field.onChange(size);
+                              }}
+                            >
+                              {size}
+                              <Check
+                                className={cn(
+                                  "ml-auto h-4 w-4",
+                                  field.value === size
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </div>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
