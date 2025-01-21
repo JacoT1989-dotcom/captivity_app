@@ -14,13 +14,6 @@ interface DynamicPricingTabProps {
   control: Control<ProductFormData>;
 }
 
-const PRESET_RANGES = [
-  { from: "1", to: "24" },
-  { from: "25", to: "100" },
-  { from: "101", to: "600" },
-  { from: "601", to: "2000" },
-];
-
 const DynamicPricingTab: React.FC<DynamicPricingTabProps> = ({ control }) => {
   return (
     <div className="space-y-4">
@@ -28,7 +21,7 @@ const DynamicPricingTab: React.FC<DynamicPricingTabProps> = ({ control }) => {
         <h3 className="text-lg font-medium">Dynamic Pricing</h3>
       </div>
 
-      {PRESET_RANGES.map((range, index) => (
+      {Array.from({ length: 4 }).map((_, index) => (
         <div key={index} className="flex gap-4 items-start">
           <FormField
             control={control}
@@ -37,13 +30,7 @@ const DynamicPricingTab: React.FC<DynamicPricingTabProps> = ({ control }) => {
               <FormItem className="flex-1">
                 <FormLabel>From</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    type="number"
-                    min="0"
-                    value={range.from}
-                    readOnly
-                  />
+                  <Input {...field} type="number" min="0" readOnly />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -57,13 +44,7 @@ const DynamicPricingTab: React.FC<DynamicPricingTabProps> = ({ control }) => {
               <FormItem className="flex-1">
                 <FormLabel>To</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    type="number"
-                    min="0"
-                    value={range.to}
-                    readOnly
-                  />
+                  <Input {...field} type="number" min="0" readOnly />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -75,7 +56,7 @@ const DynamicPricingTab: React.FC<DynamicPricingTabProps> = ({ control }) => {
             name={`dynamicPricing.${index}.amount`}
             render={({ field }) => (
               <FormItem className="flex-1">
-                <FormLabel>Amount</FormLabel>
+                <FormLabel>Price</FormLabel>
                 <FormControl>
                   <Input {...field} type="number" step="0.01" min="0" />
                 </FormControl>
@@ -84,7 +65,6 @@ const DynamicPricingTab: React.FC<DynamicPricingTabProps> = ({ control }) => {
             )}
           />
 
-          {/* Hidden field for type */}
           <FormField
             control={control}
             name={`dynamicPricing.${index}.type`}

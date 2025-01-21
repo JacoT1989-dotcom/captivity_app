@@ -1,5 +1,5 @@
 import React from "react";
-import { Control } from "react-hook-form";
+import { Control, useFormContext } from "react-hook-form";
 import { Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
 import {
   FormControl,
@@ -58,17 +58,20 @@ interface SizeVariationsProps {
   control: Control<ProductFormData>;
   variationIndex: number;
   field: any;
-  updateColor: (index: number, value: any) => void;
 }
 
 export const SizeVariations: React.FC<SizeVariationsProps> = ({
   control,
   variationIndex,
   field,
-  updateColor,
 }) => {
+  const { setValue, getValues } = useFormContext<ProductFormData>();
+
   const addSizeToVariation = (variationIndex: number) => {
-    const currentSizes = field.sizes || [];
+    // Get current variation data
+    const currentVariation = getValues(`variations.${variationIndex}`);
+    const currentSizes = currentVariation.sizes || [];
+
     const newSize = {
       size: "",
       quantity: 0,
@@ -76,24 +79,40 @@ export const SizeVariations: React.FC<SizeVariationsProps> = ({
       sku2: "",
     };
 
-    updateColor(variationIndex, {
-      ...field,
-      sizes: [...currentSizes, newSize],
-    });
+    // Update while preserving all existing data
+    setValue(
+      `variations.${variationIndex}`,
+      {
+        ...currentVariation,
+        sizes: [...currentSizes, newSize],
+      },
+      {
+        shouldValidate: true,
+      }
+    );
   };
 
   const removeSizeFromVariation = (
     variationIndex: number,
     sizeIndex: number
   ) => {
-    const newSizes = field.sizes.filter(
-      (_: any, idx: number) => idx !== sizeIndex
+    // Get current variation data
+    const currentVariation = getValues(`variations.${variationIndex}`);
+    const newSizes = currentVariation.sizes.filter(
+      (_, idx) => idx !== sizeIndex
     );
 
-    updateColor(variationIndex, {
-      ...field,
-      sizes: newSizes,
-    });
+    // Update while preserving all existing data
+    setValue(
+      `variations.${variationIndex}`,
+      {
+        ...currentVariation,
+        sizes: newSizes,
+      },
+      {
+        shouldValidate: true,
+      }
+    );
   };
 
   return (
@@ -240,3 +259,5 @@ export const SizeVariations: React.FC<SizeVariationsProps> = ({
     </div>
   );
 };
+
+export default SizeVariations;

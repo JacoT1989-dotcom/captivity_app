@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { ProductFormData, productFormSchema } from "./types";
 import BasicInfoTab from "./_components/BasicInfoTab";
@@ -15,9 +14,16 @@ import VariationsTab from "./_components/VariationsTab";
 import FeaturedImageTab from "./_components/FeaturedImageTab";
 import { createProduct } from "./actions";
 
+const PRESET_RANGES = [
+  { from: "1", to: "24" },
+  { from: "25", to: "100" },
+  { from: "101", to: "600" },
+  { from: "601", to: "2000" },
+];
+
 const ProductForm = () => {
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [activeTab, setActiveTab] = React.useState("basic-info");
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
@@ -27,14 +33,12 @@ const ProductForm = () => {
       description: "",
       sellingPrice: 0,
       isPublished: true,
-      dynamicPricing: [
-        {
-          from: "",
-          to: "",
-          type: "fixed_price",
-          amount: "",
-        },
-      ],
+      dynamicPricing: PRESET_RANGES.map(range => ({
+        from: range.from,
+        to: range.to,
+        type: "fixed_price",
+        amount: "",
+      })),
       variations: [
         {
           name: "",
@@ -60,7 +64,6 @@ const ProductForm = () => {
     },
   });
 
-  // Client-side onSubmit handler for ProductForm
   const onSubmit = async (data: ProductFormData) => {
     try {
       setIsSubmitting(true);
@@ -93,7 +96,7 @@ const ProductForm = () => {
         formData.append(`dynamicPricing.${index}.amount`, price.amount);
       });
 
-      // Add variations with proper image handling
+      // Add variations
       data.variations.forEach((variation, vIndex) => {
         formData.append(`variations.${vIndex}.name`, variation.name);
         formData.append(`variations.${vIndex}.color`, variation.color || "");
@@ -134,42 +137,35 @@ const ProductForm = () => {
       const result = await createProduct(formData);
 
       if (result.success) {
-        toast({
-          title: "Success",
-          description: "Product created successfully",
-        });
+        alert("Product created successfully");
         form.reset();
       } else {
-        toast({
-          title: "Error",
-          description: result.error || "Failed to create product",
-          variant: "destructive",
-        });
+        alert(result.error || "Failed to create product");
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
+      alert("An unexpected error occurred");
+      console.error(error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Cleanup images when component unmounts
   React.useEffect(() => {
     return () => {
       const formData = form.getValues();
+      // Cleanup featured image
+      if (formData.featuredImage.thumbnail?.startsWith("blob:")) {
+        URL.revokeObjectURL(formData.featuredImage.thumbnail);
+        URL.revokeObjectURL(formData.featuredImage.medium);
+        URL.revokeObjectURL(formData.featuredImage.large);
+      }
+      // Cleanup variation images
       formData.variations.forEach(variation => {
         if (variation.variationImageURL?.startsWith("blob:")) {
           URL.revokeObjectURL(variation.variationImageURL);
         }
       });
-      if (formData.featuredImage.thumbnail.startsWith("blob:")) {
-        URL.revokeObjectURL(formData.featuredImage.thumbnail);
-        URL.revokeObjectURL(formData.featuredImage.medium);
-        URL.revokeObjectURL(formData.featuredImage.large);
-      }
     };
   }, [form]);
 
@@ -180,12 +176,13 @@ const ProductForm = () => {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-6"
-            encType="multipart/form-data"
-          >
-            <Tabs defaultValue="basic-info" className="w-full">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <Tabs
+              defaultValue="basic-info"
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
                 <TabsTrigger value="dynamic-pricing">Pricing</TabsTrigger>
