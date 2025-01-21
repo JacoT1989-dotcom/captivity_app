@@ -285,6 +285,7 @@ export function useMenuItems() {
             isSubmenu: true,
             links: [
               { name: "Add Product", href: "/admin/products/create" },
+              { name: "Update Stock Levels", href: "/admin/products/update" },
 
               { name: "Inventory", href: "/admin/products/inventory" },
             ],
