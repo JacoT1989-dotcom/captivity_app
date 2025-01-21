@@ -2,9 +2,9 @@
 import { Product, FilterState, CollectionCategory } from "./types";
 
 // Constants
-const LOW_STOCK_THRESHOLD = 5;
+export const LOW_STOCK_THRESHOLD = 5;
 
-const categoryMappings: Record<string, string[]> = {
+export const categoryMappings: Record<string, string[]> = {
   tshirts: ["shirt", "t-shirt", "tshirt", "tee"],
   hoodies: ["hood", "sweatshirt", "sweater"],
   jackets: ["jacket", "coat", "blazer", "warmer"],
@@ -17,7 +17,7 @@ const categoryMappings: Record<string, string[]> = {
   kids: ["kids", "kid's", "kid", "youth", "junior", "children"],
 };
 
-const apparelTerms = [
+export const apparelTerms = [
   "apparel",
   "clothing",
   "wear",
@@ -38,7 +38,7 @@ const apparelTerms = [
   "top",
 ];
 
-const headwearTerms = [
+export const headwearTerms = [
   "cap",
   "hat",
   "beanie",
@@ -49,7 +49,7 @@ const headwearTerms = [
   "visor",
 ];
 
-const collectionTerms: Record<string, string[]> = {
+export const collectionTerms: Record<string, string[]> = {
   camo: ["camo", "camouflage", "military"],
   winter: ["winter", "cold", "warm", "thermal"],
   baseball: ["baseball", "sport", "athletic"],
@@ -59,6 +59,40 @@ const collectionTerms: Record<string, string[]> = {
   leisure: ["leisure", "casual", "lifestyle"],
   kids: ["kids", "children", "youth"],
   african: ["african", "ethnic", "traditional"],
+};
+
+// Stock Management Functions
+export const getStockBadgeColor = (quantity: number): string => {
+  const status = getStockStatus(quantity);
+  switch (status) {
+    case "out-of-stock":
+      return "bg-red-100 text-red-800";
+    case "low-stock":
+      return "bg-yellow-100 text-yellow-800";
+    case "in-stock":
+      return "bg-green-100 text-green-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+export const getStockStatus = (quantity: number): FilterState["stockLevel"] => {
+  if (quantity <= 0) return "out-of-stock";
+  if (quantity <= LOW_STOCK_THRESHOLD) return "low-stock";
+  return "in-stock";
+};
+
+export const calculateTotalStock = (
+  variations: Product["variations"]
+): number => {
+  return variations.reduce((total, variation) => total + variation.quantity, 0);
+};
+
+export const calculateStockStatus = (
+  variations: Product["variations"]
+): FilterState["stockLevel"] => {
+  const totalQuantity = calculateTotalStock(variations);
+  return getStockStatus(totalQuantity);
 };
 
 // String Utilities
@@ -132,12 +166,6 @@ export const handleGenderAgeFilter = (
   }
 };
 
-export const getStockStatus = (quantity: number): FilterState["stockLevel"] => {
-  if (quantity <= 0) return "out-of-stock";
-  if (quantity <= LOW_STOCK_THRESHOLD) return "low-stock";
-  return "in-stock";
-};
-
 // Main Filter Function
 export const applyProductFilters = (
   products: Product[],
@@ -145,7 +173,6 @@ export const applyProductFilters = (
 ): Product[] => {
   let filteredProducts = [...products];
 
-  // Apply type filters first
   if (filters.types.length > 0) {
     filteredProducts = filteredProducts.filter(product => {
       const productText = [...product.category, product.productName].join(" ");
@@ -159,50 +186,29 @@ export const applyProductFilters = (
     });
   }
 
-  // Filter and map products based on all criteria
-  return (
-    filteredProducts
-      .map(product => ({
-        ...product,
-        variations: product.variations.filter(variation => {
-          // Apply stock level filter to variations
-          if (filters.stockLevel !== "all") {
-            const quantity = variation.quantity;
-            const currentStatus = getStockStatus(quantity);
+  return filteredProducts
+    .map(product => ({
+      ...product,
+      variations: product.variations.filter(variation => {
+        if (filters.stockLevel !== "all") {
+          const quantity = variation.quantity;
+          const currentStatus = getStockStatus(quantity);
 
-            if (filters.stockLevel !== currentStatus) {
-              return false;
-            }
+          if (filters.stockLevel !== currentStatus) {
+            return false;
           }
+        }
 
-          // Apply color and size filters
-          const matchesColor =
-            filters.colors.length === 0 ||
-            filters.colors.includes(variation.color);
-          const matchesSize =
-            filters.sizes.length === 0 ||
-            filters.sizes.includes(variation.size);
+        const matchesColor =
+          filters.colors.length === 0 ||
+          filters.colors.includes(variation.color);
+        const matchesSize =
+          filters.sizes.length === 0 || filters.sizes.includes(variation.size);
 
-          return matchesColor && matchesSize;
-        }),
-      }))
-      // Remove products with no matching variations after all filters
-      .filter(product => product.variations.length > 0)
-  );
-};
-
-// Stock Calculation Functions
-export const calculateTotalStock = (
-  variations: Product["variations"]
-): number => {
-  return variations.reduce((total, variation) => total + variation.quantity, 0);
-};
-
-export const calculateStockStatus = (
-  variations: Product["variations"]
-): FilterState["stockLevel"] => {
-  const totalQuantity = calculateTotalStock(variations);
-  return getStockStatus(totalQuantity);
+        return matchesColor && matchesSize;
+      }),
+    }))
+    .filter(product => product.variations.length > 0);
 };
 
 // Product Sort Functions
@@ -231,13 +237,4 @@ export const sortProducts = (
 
     return direction === "asc" ? compareValue : -compareValue;
   });
-};
-
-// Export constants for use in other files
-export const constants = {
-  LOW_STOCK_THRESHOLD,
-  categoryMappings,
-  apparelTerms,
-  headwearTerms,
-  collectionTerms,
 };
