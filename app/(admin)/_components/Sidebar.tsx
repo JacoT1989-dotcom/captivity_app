@@ -23,7 +23,7 @@ const CollapsibleSidebar = () => {
 
   const toggleDropdown = useCallback((index: number) => {
     setActiveDropdown(prev => (prev === index ? null : index));
-    setActiveSubMenu(null); // Close any open submenu when changing dropdowns
+    setActiveSubMenu(null);
   }, []);
 
   const toggleSubMenu = useCallback((title: string) => {
@@ -50,8 +50,8 @@ const CollapsibleSidebar = () => {
             isSubItem ? "pl-12" : "pl-8"
           } pr-4 py-2.5 text-sm transition-all duration-200 relative ${
             isActive
-              ? "bg-blue-500/10 text-blue-500 border-l-2 border-blue-500 font-medium"
-              : "text-gray-600 hover:text-blue-500 hover:bg-blue-500/5"
+              ? "bg-primary/10 text-primary border-l-2 border-primary font-medium"
+              : "text-muted-foreground hover:text-primary hover:bg-primary/5"
           }`}
         >
           <span>{link.name}</span>
@@ -71,12 +71,12 @@ const CollapsibleSidebar = () => {
             onClick={() => toggleSubMenu(subMenu.title)}
             className={`w-full pl-8 pr-4 py-2.5 flex items-center justify-between text-sm transition-all duration-200 ${
               isSubMenuOpen
-                ? "bg-gray-100 text-gray-900 font-medium"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                ? "bg-secondary text-foreground font-medium"
+                : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
             }`}
           >
             <span>{subMenu.title}</span>
-            <div className="text-gray-400">
+            <div className="text-muted-foreground">
               {isSubMenuOpen ? (
                 <ChevronUp size={16} />
               ) : (
@@ -111,10 +111,10 @@ const CollapsibleSidebar = () => {
   if (!isOpen) {
     return (
       <div className="relative h-full flex">
-        <div className="w-0 overflow-hidden flex flex-col bg-white shadow-lg" />
+        <div className="w-0 overflow-hidden flex flex-col bg-background border-r" />
         <button
           onClick={toggleSidebar}
-          className="absolute top-4 -right-10 bg-white text-gray-600 p-2 rounded-r shadow-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="absolute top-4 -right-10 bg-background text-muted-foreground p-2 rounded-r border hover:bg-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           aria-label="Open sidebar"
         >
           <ChevronRight size={20} />
@@ -125,19 +125,19 @@ const CollapsibleSidebar = () => {
 
   return (
     <div className="relative h-full flex">
-      <div className="w-[280px] bg-white shadow-lg flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+      <div className="w-[280px] bg-background border-r flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto select-scroll">
           <div className="p-6">
             {/* User Welcome Section */}
             <div className="mb-8">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-foreground">
                 Welcome back,
               </h2>
               <div className="flex items-center mt-2">
-                <span className="text-xl font-bold text-gray-900">
+                <span className="text-xl font-bold text-foreground">
                   {user.displayName}
                 </span>
-                <span className="ml-2 px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-full">
+                <span className="ml-2 px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
                   Admin
                 </span>
               </div>
@@ -153,13 +153,13 @@ const CollapsibleSidebar = () => {
                       onClick={() => toggleDropdown(index)}
                       className={`w-full px-4 py-3 flex items-center justify-between transition-all duration-200 rounded-md ${
                         isDropdownOpen
-                          ? "bg-gray-100 text-gray-900 font-medium"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                          ? "bg-secondary text-foreground font-medium"
+                          : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
                       }`}
                     >
                       <span className="font-medium">{item.title}</span>
                       <div
-                        className={`text-gray-400 transition-transform duration-200 ${
+                        className={`text-muted-foreground transition-transform duration-200 ${
                           isDropdownOpen ? "rotate-180" : ""
                         }`}
                       >
@@ -184,7 +184,7 @@ const CollapsibleSidebar = () => {
 
       <button
         onClick={toggleSidebar}
-        className="absolute top-4 -right-10 bg-white text-gray-600 p-2 rounded-r shadow-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        className="absolute top-4 -right-10 bg-background text-muted-foreground p-2 rounded-r border hover:bg-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         aria-label="Close sidebar"
       >
         <ChevronLeft size={20} />
