@@ -26,7 +26,6 @@ interface SortConfig {
 }
 
 const ProductsStockLevel = () => {
-  // Sample data - replace with your actual data
   const [products] = useState<Product[]>([
     { id: 1, name: "Product A", collection: "Electronics", stockLevel: 45 },
     { id: 2, name: "Product B", collection: "Fashion", stockLevel: 23 },
@@ -44,7 +43,6 @@ const ProductsStockLevel = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [collectionFilter, setCollectionFilter] = useState<string>("all");
 
-  // Sorting function
   const sortedProducts = [...products].sort((a, b) => {
     if (sortConfig.direction === "asc") {
       return a[sortConfig.key] > b[sortConfig.key] ? 1 : -1;
@@ -52,7 +50,6 @@ const ProductsStockLevel = () => {
     return a[sortConfig.key] < b[sortConfig.key] ? 1 : -1;
   });
 
-  // Filtering function
   const filteredProducts = sortedProducts.filter(product => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -62,7 +59,6 @@ const ProductsStockLevel = () => {
     return matchesSearch && matchesCollection;
   });
 
-  // Pagination
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const displayedProducts = filteredProducts.slice(
@@ -82,11 +78,10 @@ const ProductsStockLevel = () => {
 
   return (
     <div className="p-4 max-w-6xl mx-auto">
-      {/* Navbar */}
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex gap-4">
           <div className="relative w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search products..."
               className="pl-8"
@@ -126,14 +121,13 @@ const ProductsStockLevel = () => {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-sm">
-          <thead className="bg-gray-100">
+          <thead className="bg-muted">
             <tr>
-              <th className="px-4 py-3 text-left">ID</th>
+              <th className="px-4 py-3 text-left font-medium">ID</th>
               <th
-                className="px-4 py-3 text-left cursor-pointer"
+                className="px-4 py-3 text-left font-medium cursor-pointer"
                 onClick={() => handleSort("name")}
               >
                 <div className="flex items-center gap-1">
@@ -147,7 +141,7 @@ const ProductsStockLevel = () => {
                 </div>
               </th>
               <th
-                className="px-4 py-3 text-left cursor-pointer"
+                className="px-4 py-3 text-left font-medium cursor-pointer"
                 onClick={() => handleSort("collection")}
               >
                 <div className="flex items-center gap-1">
@@ -161,7 +155,7 @@ const ProductsStockLevel = () => {
                 </div>
               </th>
               <th
-                className="px-4 py-3 text-left cursor-pointer"
+                className="px-4 py-3 text-left font-medium cursor-pointer"
                 onClick={() => handleSort("stockLevel")}
               >
                 <div className="flex items-center gap-1">
@@ -174,12 +168,12 @@ const ProductsStockLevel = () => {
                     ))}
                 </div>
               </th>
-              <th className="px-4 py-3 text-center">Actions</th>
+              <th className="px-4 py-3 text-center font-medium">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border">
             {displayedProducts.map(product => (
-              <tr key={product.id} className="border-t hover:bg-gray-50">
+              <tr key={product.id} className="hover:bg-muted/50">
                 <td className="px-4 py-3">{product.id}</td>
                 <td className="px-4 py-3">{product.name}</td>
                 <td className="px-4 py-3">{product.collection}</td>
@@ -192,7 +186,7 @@ const ProductsStockLevel = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-red-500"
+                      className="h-8 w-8 text-destructive hover:text-destructive/90"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -204,7 +198,6 @@ const ProductsStockLevel = () => {
         </table>
       </div>
 
-      {/* Pagination */}
       <div className="mt-4 flex items-center justify-center gap-2">
         <Button
           variant="outline"
@@ -213,7 +206,9 @@ const ProductsStockLevel = () => {
         >
           Previous
         </Button>
-        <span className="px-4 py-2 rounded-md bg-gray-100">{currentPage}</span>
+        <span className="px-4 py-2 rounded-md bg-muted text-muted-foreground">
+          {currentPage}
+        </span>
         <Button
           variant="outline"
           onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
