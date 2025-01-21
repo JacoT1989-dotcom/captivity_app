@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import { Control, useFormContext, useFieldArray } from "react-hook-form";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
 import {
   FormControl,
   FormField,
@@ -11,7 +11,36 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ProductFormData } from "../types";
+import { SizeVariations } from "./SizeVariations";
+import { cn } from "@/lib/utils";
+import { SOLID_COLORS } from "./solidColors";
+import { PATTERN_COLORS } from "./patternColors";
+
+// Combine both color types into a single array with type indicators
+const ALL_COLORS = [
+  ...SOLID_COLORS.map(color => ({
+    ...color,
+    type: "solid" as const,
+  })),
+  ...PATTERN_COLORS.map(color => ({
+    name: color.name,
+    type: "pattern" as const,
+    colors: color.colors,
+  })),
+];
 
 interface VariationsTabProps {
   control: Control<ProductFormData>;
@@ -20,7 +49,6 @@ interface VariationsTabProps {
 const VariationsTab: React.FC<VariationsTabProps> = ({ control }) => {
   const { setValue, watch, getValues } = useFormContext<ProductFormData>();
 
-  // Main variations field array
   const {
     fields: colorFields,
     append: appendColor,
@@ -59,10 +87,6 @@ const VariationsTab: React.FC<VariationsTabProps> = ({ control }) => {
   };
 
   const handleAddVariation = () => {
-    // Get current variations
-    const currentVariations = getValues("variations");
-
-    // Create new variation with empty fields while preserving existing ones
     const emptyVariation = {
       name: "",
       color: "",
@@ -79,35 +103,6 @@ const VariationsTab: React.FC<VariationsTabProps> = ({ control }) => {
     };
 
     appendColor(emptyVariation);
-  };
-
-  const addSizeToVariation = (variationIndex: number) => {
-    const variation = colorFields[variationIndex];
-    const currentSizes = variation.sizes || [];
-    const newSize = {
-      size: "",
-      quantity: 0,
-      sku: "",
-      sku2: "",
-    };
-
-    updateColor(variationIndex, {
-      ...variation,
-      sizes: [...currentSizes, newSize],
-    });
-  };
-
-  const removeSizeFromVariation = (
-    variationIndex: number,
-    sizeIndex: number
-  ) => {
-    const variation = colorFields[variationIndex];
-    const newSizes = variation.sizes.filter((_, idx) => idx !== sizeIndex);
-
-    updateColor(variationIndex, {
-      ...variation,
-      sizes: newSizes,
-    });
   };
 
   React.useEffect(() => {
@@ -173,9 +168,94 @@ const VariationsTab: React.FC<VariationsTabProps> = ({ control }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Color</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            "w-full justify-between",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value
+                            ? ALL_COLORS.find(
+                                color => color.name === field.value
+                              )?.name
+                            : "Select color..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search colors..." />
+                        <CommandEmpty>No color found.</CommandEmpty>
+                        <div className="max-h-[300px] overflow-y-auto">
+                          <CommandGroup heading="Solid Colors">
+                            {SOLID_COLORS.map(color => (
+                              <CommandItem
+                                key={color.name}
+                                value={color.name}
+                                onSelect={() => {
+                                  field.onChange(color.name);
+                                }}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className="w-4 h-4 rounded-full"
+                                    style={{ backgroundColor: color.hex }}
+                                  />
+                                  <span>{color.name}</span>
+                                </div>
+                                <Check
+                                  className={cn(
+                                    "ml-auto h-4 w-4",
+                                    field.value === color.name
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                          <CommandGroup heading="Pattern Colors">
+                            {PATTERN_COLORS.map(pattern => (
+                              <CommandItem
+                                key={pattern.name}
+                                value={pattern.name}
+                                onSelect={() => {
+                                  field.onChange(pattern.name);
+                                }}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="flex gap-1">
+                                    {pattern.colors.map((color, idx) => (
+                                      <div
+                                        key={idx}
+                                        className="w-3 h-3 rounded-full"
+                                        style={{ backgroundColor: color }}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span>{pattern.name}</span>
+                                </div>
+                                <Check
+                                  className={cn(
+                                    "ml-auto h-4 w-4",
+                                    field.value === pattern.name
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </div>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
@@ -216,105 +296,12 @@ const VariationsTab: React.FC<VariationsTabProps> = ({ control }) => {
             )}
           />
 
-          {/* Size Variations */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between mb-2">
-              <h5 className="text-sm font-medium">Sizes</h5>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => addSizeToVariation(variationIndex)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Size
-              </Button>
-            </div>
-
-            {field.sizes?.map((size, sizeIndex) => (
-              <div
-                key={sizeIndex}
-                className="grid grid-cols-4 gap-4 p-4 bg-accent/50 rounded-lg mb-2"
-              >
-                <FormField
-                  control={control}
-                  name={`variations.${variationIndex}.sizes.${sizeIndex}.size`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Size</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={control}
-                  name={`variations.${variationIndex}.sizes.${sizeIndex}.quantity`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Quantity</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={e =>
-                            field.onChange(parseInt(e.target.value) || 0)
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={control}
-                  name={`variations.${variationIndex}.sizes.${sizeIndex}.sku`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>SKU</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={control}
-                  name={`variations.${variationIndex}.sizes.${sizeIndex}.sku2`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>SKU2</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex items-end">
-                  {field.sizes.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      onClick={() =>
-                        removeSizeFromVariation(variationIndex, sizeIndex)
-                      }
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          <SizeVariations
+            control={control}
+            variationIndex={variationIndex}
+            field={field}
+            updateColor={updateColor}
+          />
         </div>
       ))}
     </div>
