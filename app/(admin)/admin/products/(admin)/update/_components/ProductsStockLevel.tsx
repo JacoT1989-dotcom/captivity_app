@@ -10,15 +10,21 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface Product {
   id: number;
   name: string;
   collection: string;
   stockLevel: number;
+  sizes: string[];
+  colors: string[];
 }
 
-type SortKey = keyof Pick<Product, "name" | "stockLevel" | "collection">;
+type SortKey =
+  | keyof Pick<Product, "name" | "stockLevel" | "collection">
+  | "sizes"
+  | "colors";
 
 interface SortConfig {
   key: SortKey;
@@ -27,11 +33,46 @@ interface SortConfig {
 
 const ProductsStockLevel = () => {
   const [products] = useState<Product[]>([
-    { id: 1, name: "Product A", collection: "Electronics", stockLevel: 45 },
-    { id: 2, name: "Product B", collection: "Fashion", stockLevel: 23 },
-    { id: 3, name: "Product C", collection: "Electronics", stockLevel: 67 },
-    { id: 4, name: "Product D", collection: "Home", stockLevel: 12 },
-    { id: 5, name: "Product E", collection: "Fashion", stockLevel: 89 },
+    {
+      id: 1,
+      name: "Product A",
+      collection: "Electronics",
+      stockLevel: 45,
+      sizes: ["S", "M", "L"],
+      colors: ["Red", "Blue"],
+    },
+    {
+      id: 2,
+      name: "Product B",
+      collection: "Fashion",
+      stockLevel: 23,
+      sizes: ["XS", "S"],
+      colors: ["Black", "White", "Gray"],
+    },
+    {
+      id: 3,
+      name: "Product C",
+      collection: "Electronics",
+      stockLevel: 67,
+      sizes: ["M", "L", "XL"],
+      colors: ["Green"],
+    },
+    {
+      id: 4,
+      name: "Product D",
+      collection: "Home",
+      stockLevel: 12,
+      sizes: ["One Size"],
+      colors: ["Brown", "Beige"],
+    },
+    {
+      id: 5,
+      name: "Product E",
+      collection: "Fashion",
+      stockLevel: 89,
+      sizes: ["S", "M"],
+      colors: ["Navy", "White"],
+    },
   ]);
 
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -44,6 +85,14 @@ const ProductsStockLevel = () => {
   const [collectionFilter, setCollectionFilter] = useState<string>("all");
 
   const sortedProducts = [...products].sort((a, b) => {
+    if (sortConfig.key === "sizes" || sortConfig.key === "colors") {
+      const aLength = a[sortConfig.key].length;
+      const bLength = b[sortConfig.key].length;
+      return sortConfig.direction === "asc"
+        ? aLength - bLength
+        : bLength - aLength;
+    }
+
     if (sortConfig.direction === "asc") {
       return a[sortConfig.key] > b[sortConfig.key] ? 1 : -1;
     }
@@ -53,7 +102,13 @@ const ProductsStockLevel = () => {
   const filteredProducts = sortedProducts.filter(product => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.collection.toLowerCase().includes(searchTerm.toLowerCase());
+      product.collection.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.colors.some(color =>
+        color.toLowerCase().includes(searchTerm.toLowerCase())
+      ) ||
+      product.sizes.some(size =>
+        size.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     const matchesCollection =
       collectionFilter === "all" || product.collection === collectionFilter;
     return matchesSearch && matchesCollection;
@@ -74,6 +129,17 @@ const ProductsStockLevel = () => {
           ? "desc"
           : "asc",
     });
+  };
+
+  const renderSortIcon = (key: SortKey) => {
+    if (sortConfig.key === key) {
+      return sortConfig.direction === "asc" ? (
+        <ChevronUp className="h-4 w-4" />
+      ) : (
+        <ChevronDown className="h-4 w-4" />
+      );
+    }
+    return null;
   };
 
   return (
@@ -132,12 +198,7 @@ const ProductsStockLevel = () => {
               >
                 <div className="flex items-center gap-1">
                   Name
-                  {sortConfig.key === "name" &&
-                    (sortConfig.direction === "asc" ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    ))}
+                  {renderSortIcon("name")}
                 </div>
               </th>
               <th
@@ -146,12 +207,25 @@ const ProductsStockLevel = () => {
               >
                 <div className="flex items-center gap-1">
                   Collection
-                  {sortConfig.key === "collection" &&
-                    (sortConfig.direction === "asc" ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    ))}
+                  {renderSortIcon("collection")}
+                </div>
+              </th>
+              <th
+                className="px-4 py-3 text-left font-medium cursor-pointer"
+                onClick={() => handleSort("sizes")}
+              >
+                <div className="flex items-center gap-1">
+                  Sizes
+                  {renderSortIcon("sizes")}
+                </div>
+              </th>
+              <th
+                className="px-4 py-3 text-left font-medium cursor-pointer"
+                onClick={() => handleSort("colors")}
+              >
+                <div className="flex items-center gap-1">
+                  Colors
+                  {renderSortIcon("colors")}
                 </div>
               </th>
               <th
@@ -160,12 +234,7 @@ const ProductsStockLevel = () => {
               >
                 <div className="flex items-center gap-1">
                   Stock Level
-                  {sortConfig.key === "stockLevel" &&
-                    (sortConfig.direction === "asc" ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    ))}
+                  {renderSortIcon("stockLevel")}
                 </div>
               </th>
               <th className="px-4 py-3 text-center font-medium">Actions</th>
@@ -177,6 +246,24 @@ const ProductsStockLevel = () => {
                 <td className="px-4 py-3">{product.id}</td>
                 <td className="px-4 py-3">{product.name}</td>
                 <td className="px-4 py-3">{product.collection}</td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-1">
+                    {product.sizes.map(size => (
+                      <Badge key={size} variant="secondary" className="text-xs">
+                        {size}
+                      </Badge>
+                    ))}
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-1">
+                    {product.colors.map(color => (
+                      <Badge key={color} variant="outline" className="text-xs">
+                        {color}
+                      </Badge>
+                    ))}
+                  </div>
+                </td>
                 <td className="px-4 py-3">{product.stockLevel}</td>
                 <td className="px-4 py-3">
                   <div className="flex justify-center gap-2">
