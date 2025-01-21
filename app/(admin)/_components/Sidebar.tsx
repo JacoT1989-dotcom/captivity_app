@@ -38,7 +38,7 @@ const CollapsibleSidebar = () => {
   }, []);
 
   const getDropdownClasses = useCallback((isOpen: boolean) => {
-    return `transition-all duration-200 ease-in-out bg-background  ${
+    return `transition-all duration-200 ease-in-out bg-background ${
       isOpen ? "" : "h-0"
     } overflow-hidden`;
   }, []);
@@ -51,18 +51,11 @@ const CollapsibleSidebar = () => {
           href={link.href}
           className={`block ${isSubItem ? "px-8" : "px-6"} py-2 text-sm transition-colors duration-200 relative ${
             isActive
-              ? "bg-background text-foreground  border-l-4 border-blue-500"
+              ? "bg-background text-foreground border-l-4 border-blue-500"
               : "text-foreground hover:text-white hover:bg-foreground"
           }`}
         >
-          <div className="flex items-center justify-between">
-            <span>{link.name}</span>
-            {typeof link.count !== "undefined" && (
-              <span className="ml-2 bg-red-500 text-foreground text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center">
-                {link.count}
-              </span>
-            )}
-          </div>
+          <span>{link.name}</span>
         </Link>
       );
     },
@@ -79,8 +72,8 @@ const CollapsibleSidebar = () => {
             onClick={() => toggleSubMenu(subMenu.title)}
             className={`w-full px-6 py-2 flex items-center justify-between text-sm transition-colors duration-200 ${
               isSubMenuOpen
-                ? "bg-background text-foreground "
-                : "bg-background text-foreground  hover:text-white hover:bg-foreground"
+                ? "bg-background text-foreground"
+                : "bg-background text-foreground hover:text-white hover:bg-foreground"
             }`}
           >
             <span>{subMenu.title}</span>
@@ -133,15 +126,15 @@ const CollapsibleSidebar = () => {
 
   return (
     <div className="relative h-full flex">
-      <div className="w-[300px] bg-background text-foreground  flex flex-col overflow-hidden">
+      <div className="w-[300px] bg-background text-foreground flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto">
           <div className="p-4">
             {/* User Welcome Section */}
             <div className="mb-6 px-2">
-              <h2 className="text-xl font-bold text-foreground ">
+              <h2 className="text-xl font-bold text-foreground">
                 Welcome, {user.displayName}
               </h2>
-              <p className="text-sm  text-foreground  mt-1">Administrator</p>
+              <p className="text-sm text-foreground mt-1">Administrator</p>
             </div>
 
             {/* Divider */}
@@ -160,10 +153,10 @@ const CollapsibleSidebar = () => {
                           isDropdownOpen ? "bg-gray-800" : ""
                         }`}
                       >
-                        <span className="font-medium  text-foreground ">
+                        <span className="font-medium text-foreground">
                           {item.title}
                         </span>
-                        <div className="text-foreground ">
+                        <div className="text-foreground">
                           {isDropdownOpen ? (
                             <ChevronUp size={18} />
                           ) : (
@@ -195,7 +188,7 @@ const CollapsibleSidebar = () => {
 
       <button
         onClick={toggleSidebar}
-        className="absolute top-4 -right-10 bg-background text-foreground  p-2 rounded-r hover:bg-gray-800 transition-colors duration-200 focus:outline-none"
+        className="absolute top-4 -right-10 bg-background text-foreground p-2 rounded-r hover:bg-gray-800 transition-colors duration-200 focus:outline-none"
         aria-label="Close sidebar"
       >
         <ChevronLeft size={20} />

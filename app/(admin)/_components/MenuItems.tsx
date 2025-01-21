@@ -1,20 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import {
-  fetchAllOrderCounts,
-  fetchAllRoleCounts,
-} from "../admin/users/actions";
-import { useCollectionsStore } from "../admin/products/_store/useCollectionsStore";
-import { useUserStatsStore } from "../admin/useUserStatsStore";
+import { useMemo } from "react";
 
 interface MenuLink {
   name: string;
   href: string;
-  count?: number;
 }
-
-interface stats {}
 
 interface MenuItem {
   title: string;
@@ -22,116 +13,7 @@ interface MenuItem {
   isSubmenu?: boolean;
 }
 
-const INITIAL_USER_COUNTS = {
-  pendingApproval: 0,
-  customers: 0,
-  subscribers: 0,
-  promo: 0,
-  distributors: 0,
-  shopManagers: 0,
-  editors: 0,
-  vendors: 0,
-};
-
-const INITIAL_ORDER_COUNTS = {
-  all: 0,
-  pending: 0,
-  processing: 0,
-  shipped: 0,
-  delivered: 0,
-  cancelled: 0,
-  refunded: 0,
-};
-
-const INITIAL_COLLECTION_COUNTS = {
-  winter: 0,
-  summer: 0,
-  camo: 0,
-  baseball: 0,
-  signature: 0,
-  fashion: 0,
-  leisure: 0,
-  sport: 0,
-  african: 0,
-  industrial: 0,
-};
-
-const TWO_HOURS = 2 * 60 * 60 * 1000;
-const MINIMUM_FETCH_INTERVAL = 10000;
-
 export function useMenuItems() {
-  const [userCounts, setUserCounts] = useState(INITIAL_USER_COUNTS);
-  const lastFetchTime = useRef<number>(0);
-  const isMounted = useRef(true);
-  const fetchPromiseRef = useRef<Promise<void> | null>(null);
-
-  const [orderCounts, setOrderCounts] = useState(INITIAL_ORDER_COUNTS);
-
-  const { counts: collectionCounts, fetchCollections } = useCollectionsStore();
-
-  const loadCounts = useCallback(
-    async (forceRefresh = false) => {
-      const now = Date.now();
-      const timeSinceLastFetch = now - lastFetchTime.current;
-
-      if (
-        fetchPromiseRef.current ||
-        !isMounted.current ||
-        (!forceRefresh && timeSinceLastFetch < MINIMUM_FETCH_INTERVAL)
-      ) {
-        return;
-      }
-
-      lastFetchTime.current = now;
-
-      try {
-        const [userResult, orderResult] = await Promise.all([
-          fetchAllRoleCounts(),
-          fetchAllOrderCounts(),
-          fetchCollections(),
-        ]);
-
-        if (!isMounted.current) return;
-
-        if (userResult.success) {
-          setUserCounts(prev =>
-            JSON.stringify(prev) !== JSON.stringify(userResult.counts)
-              ? userResult.counts
-              : prev
-          );
-        }
-        if (orderResult.success) {
-          setOrderCounts(prev =>
-            JSON.stringify(prev) !== JSON.stringify(orderResult.counts)
-              ? orderResult.counts
-              : prev
-          );
-        }
-      } catch (error) {
-        console.error("Error loading counts:", error);
-      } finally {
-        fetchPromiseRef.current = null;
-      }
-    },
-    [fetchCollections]
-  );
-
-  useEffect(() => {
-    isMounted.current = true;
-
-    loadCounts(true);
-
-    const intervalId = setInterval(() => {
-      loadCounts(true);
-    }, TWO_HOURS);
-
-    return () => {
-      isMounted.current = false;
-      clearInterval(intervalId);
-      fetchPromiseRef.current = null;
-    };
-  }, [loadCounts]);
-
   return useMemo<MenuItem[]>(
     () => [
       {
@@ -144,42 +26,34 @@ export function useMenuItems() {
               {
                 name: "Pending Approval",
                 href: "/admin/users/update/role-user",
-                count: userCounts.pendingApproval,
               },
               {
                 name: "Customers",
                 href: "/admin/users/update/role-customer",
-                count: userCounts.customers,
               },
               {
                 name: "Subscribers",
                 href: "/admin/users/update/role-subscriber",
-                count: userCounts.subscribers,
               },
               {
                 name: "Promo Users",
                 href: "/admin/users/update/role-promo",
-                count: userCounts.promo,
               },
               {
                 name: "Distributors",
                 href: "/admin/users/update/role-distributors",
-                count: userCounts.distributors,
               },
               {
                 name: "Shop Managers",
                 href: "/admin/users/update/role-shop_manager",
-                count: userCounts.shopManagers,
               },
               {
                 name: "Editors",
                 href: "/admin/users/update/role-editor",
-                count: userCounts.editors,
               },
               {
                 name: "Vendors",
                 href: "/admin/users/update/role-vendor",
-                count: userCounts.vendors,
               },
             ],
           },
@@ -190,37 +64,30 @@ export function useMenuItems() {
               {
                 name: "All Orders",
                 href: "/admin/orders/orders",
-                count: orderCounts.all,
               },
               {
                 name: "Pending Orders",
                 href: "/admin/pendingOrders",
-                count: orderCounts.pending,
               },
               {
                 name: "Processing Orders",
                 href: "/admin/orders/processing",
-                count: orderCounts.processing,
               },
               {
                 name: "Shipped Orders",
                 href: "/admin/orders/shipped",
-                count: orderCounts.shipped,
               },
               {
                 name: "Delivered Orders",
                 href: "/admin/orders/completed",
-                count: orderCounts.delivered,
               },
               {
                 name: "Cancelled Orders",
                 href: "/admin/orders/cancelled",
-                count: orderCounts.cancelled,
               },
               {
                 name: "Refunded Orders",
                 href: "/admin/orders/refunded",
-                count: orderCounts.refunded,
               },
             ],
           },
@@ -231,52 +98,42 @@ export function useMenuItems() {
               {
                 name: "Winter Collection",
                 href: "/admin/products/winter",
-                count: collectionCounts.winter,
               },
               {
                 name: "Summer Collection",
                 href: "/admin/products/summer",
-                count: collectionCounts.summer,
               },
               {
                 name: "Camo Collection",
                 href: "/admin/products/camo",
-                count: collectionCounts.camo,
               },
               {
                 name: "Baseball Collection",
                 href: "/admin/products/baseball",
-                count: collectionCounts.baseball,
               },
               {
                 name: "Signature Collection",
                 href: "/admin/products/signature",
-                count: collectionCounts.signature,
               },
               {
                 name: "Fashion Collection",
                 href: "/admin/products/fashion",
-                count: collectionCounts.fashion,
               },
               {
                 name: "Leisure Collection",
                 href: "/admin/products/leisure",
-                count: collectionCounts.leisure,
               },
               {
                 name: "Sport Collection",
                 href: "/admin/products/sport",
-                count: collectionCounts.sport,
               },
               {
                 name: "African Collection",
                 href: "/admin/products/african",
-                count: collectionCounts.african,
               },
               {
                 name: "Industrial Collection",
                 href: "/admin/products/industrial",
-                count: collectionCounts.industrial,
               },
             ],
           },
@@ -286,13 +143,10 @@ export function useMenuItems() {
             links: [
               { name: "Add Product", href: "/admin/products/create" },
               { name: "Update Stock Levels", href: "/admin/products/update" },
-
-              { name: "Inventory", href: "/admin/products/inventory" },
             ],
           },
         ],
       },
-
       {
         title: "Warehouse",
         links: [
@@ -449,7 +303,7 @@ export function useMenuItems() {
         ],
       },
     ],
-    [userCounts, collectionCounts, orderCounts]
+    []
   );
 }
 
