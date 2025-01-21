@@ -297,3 +297,37 @@ export async function getProducts(
     };
   }
 }
+
+// actions.ts
+export async function deleteProduct(
+  productId: string
+): Promise<UpdateStockResult> {
+  try {
+    const { user } = await validateRequest();
+    if (!user) {
+      throw new Error("Unauthorized access");
+    }
+
+    await prisma.product.delete({
+      where: {
+        id: productId,
+        userId: user.id,
+      },
+    });
+
+    revalidatePath("/products");
+    revalidatePath("/admin/products");
+
+    return {
+      success: true,
+      message: "Product deleted successfully",
+    };
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to delete product",
+    };
+  }
+}
