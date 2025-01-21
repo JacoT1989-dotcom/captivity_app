@@ -18,7 +18,7 @@ interface VariationsTabProps {
 }
 
 const VariationsTab: React.FC<VariationsTabProps> = ({ control }) => {
-  const { setValue, watch } = useFormContext<ProductFormData>();
+  const { setValue, watch, getValues } = useFormContext<ProductFormData>();
 
   // Main variations field array
   const {
@@ -56,6 +56,29 @@ const VariationsTab: React.FC<VariationsTabProps> = ({ control }) => {
     } catch (error) {
       console.error("Error handling variation image upload:", error);
     }
+  };
+
+  const handleAddVariation = () => {
+    // Get current variations
+    const currentVariations = getValues("variations");
+
+    // Create new variation with empty fields while preserving existing ones
+    const emptyVariation = {
+      name: "",
+      color: "",
+      sizes: [
+        {
+          size: "",
+          quantity: 0,
+          sku: "",
+          sku2: "",
+        },
+      ],
+      variationImageURL: "",
+      variationImage: null,
+    };
+
+    appendColor(emptyVariation);
   };
 
   const addSizeToVariation = (variationIndex: number) => {
@@ -98,21 +121,6 @@ const VariationsTab: React.FC<VariationsTabProps> = ({ control }) => {
     };
   }, [colorFields, watch]);
 
-  const emptySize = {
-    size: "",
-    quantity: 0,
-    sku: "",
-    sku2: "",
-  };
-
-  const emptyVariation = {
-    name: "",
-    color: "",
-    sizes: [emptySize],
-    variationImageURL: "",
-    variationImage: null,
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -121,7 +129,7 @@ const VariationsTab: React.FC<VariationsTabProps> = ({ control }) => {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => appendColor(emptyVariation)}
+          onClick={handleAddVariation}
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Color Variation
@@ -276,17 +284,33 @@ const VariationsTab: React.FC<VariationsTabProps> = ({ control }) => {
                   )}
                 />
 
+                <FormField
+                  control={control}
+                  name={`variations.${variationIndex}.sizes.${sizeIndex}.sku2`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SKU2</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <div className="flex items-end">
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    onClick={() =>
-                      removeSizeFromVariation(variationIndex, sizeIndex)
-                    }
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {field.sizes.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      onClick={() =>
+                        removeSizeFromVariation(variationIndex, sizeIndex)
+                      }
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}

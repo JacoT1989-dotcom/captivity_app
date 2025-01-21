@@ -11,11 +11,70 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { ProductFormData } from "../types";
 
 interface BasicInfoTabProps {
   control: Control<ProductFormData>;
 }
+
+const categoryOptions = {
+  headwear: [
+    { value: "new-in-headwear", label: "New In Headwear" },
+    { value: "flat-peaks", label: "Flat Peaks" },
+    { value: "pre-curved-peaks", label: "Pre-curved Peaks" },
+    { value: "hats", label: "Hats" },
+    { value: "multifunctional-headwear", label: "Multifunctional Headwear" },
+    { value: "beanies", label: "Beanies" },
+    { value: "trucker-caps", label: "Trucker Caps" },
+    { value: "bucket-hats", label: "Bucket Hats" },
+  ],
+  apparel: [
+    { value: "new-in-apparel", label: "New In Apparel" },
+    { value: "men", label: "Men" },
+    { value: "women", label: "Women" },
+    { value: "kids", label: "Kids" },
+    { value: "t-shirts", label: "T-Shirts" },
+    { value: "golfers", label: "Golfers" },
+    { value: "hoodies", label: "Hoodies" },
+    { value: "jackets", label: "Jackets" },
+    { value: "bottoms", label: "Bottoms" },
+  ],
+  collections: [
+    { value: "camo-collection", label: "Camo Collection" },
+    { value: "winter-collection", label: "Winter Collection" },
+    { value: "baseball-collection", label: "Baseball Collection" },
+    { value: "fashion-collection", label: "Fashion Collection" },
+    { value: "sport-collection", label: "Sport Collection" },
+    { value: "industrial-collection", label: "Industrial Collection" },
+    { value: "leisure-collection", label: "Leisure Collection" },
+    { value: "kids-collection", label: "Kids Collection" },
+    { value: "african-collection", label: "African Collection" },
+  ],
+};
+//
+
+// Flatten all options into a single array for searching
+const allOptions = [
+  ...categoryOptions.headwear,
+  ...categoryOptions.apparel,
+  ...categoryOptions.collections,
+];
 
 const BasicInfoTab: React.FC<BasicInfoTabProps> = ({ control }) => {
   return (
@@ -38,15 +97,134 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({ control }) => {
         control={control}
         name="category"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="flex flex-col">
             <FormLabel>Categories</FormLabel>
-            <FormControl>
-              <Input
-                {...field}
-                onChange={e => field.onChange(e.target.value.split(","))}
-                placeholder="Enter categories separated by commas"
-              />
-            </FormControl>
+            <Popover>
+              <PopoverTrigger asChild>
+                <FormControl>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className={cn(
+                      "justify-between",
+                      !field.value?.length && "text-muted-foreground"
+                    )}
+                  >
+                    {field.value?.length > 0
+                      ? `${field.value.length} categories selected`
+                      : "Select categories"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </FormControl>
+              </PopoverTrigger>
+              <PopoverContent className="w-[400px] p-0">
+                <Command>
+                  <CommandInput placeholder="Search categories..." />
+                  <CommandEmpty>No category found.</CommandEmpty>
+                  <div className="max-h-[300px] overflow-y-auto">
+                    <CommandGroup heading="Headwear">
+                      {categoryOptions.headwear.map(option => (
+                        <CommandItem
+                          key={option.value}
+                          onSelect={() => {
+                            const values = field.value || [];
+                            const newValues = values.includes(option.value)
+                              ? values.filter(value => value !== option.value)
+                              : [...values, option.value];
+                            field.onChange(newValues);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              field.value?.includes(option.value)
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {option.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                    <CommandGroup heading="Apparel">
+                      {categoryOptions.apparel.map(option => (
+                        <CommandItem
+                          key={option.value}
+                          onSelect={() => {
+                            const values = field.value || [];
+                            const newValues = values.includes(option.value)
+                              ? values.filter(value => value !== option.value)
+                              : [...values, option.value];
+                            field.onChange(newValues);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              field.value?.includes(option.value)
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {option.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                    <CommandGroup heading="Collections">
+                      {categoryOptions.collections.map(option => (
+                        <CommandItem
+                          key={option.value}
+                          onSelect={() => {
+                            const values = field.value || [];
+                            const newValues = values.includes(option.value)
+                              ? values.filter(value => value !== option.value)
+                              : [...values, option.value];
+                            field.onChange(newValues);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              field.value?.includes(option.value)
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {option.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </div>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            {field.value?.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {field.value.map(category => {
+                  const option = allOptions.find(opt => opt.value === category);
+                  return (
+                    <Badge
+                      key={category}
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      {option?.label}
+                      <button
+                        type="button"
+                        className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        onClick={() => {
+                          field.onChange(
+                            field.value?.filter(value => value !== category)
+                          );
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </Badge>
+                  );
+                })}
+              </div>
+            )}
             <FormMessage />
           </FormItem>
         )}

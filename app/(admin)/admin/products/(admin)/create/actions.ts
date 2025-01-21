@@ -95,35 +95,27 @@ export async function createProduct(
       throw new Error("Unauthorized access");
     }
 
-    // Log incoming data for debugging
-    console.log("Received form data:", {
-      productName: formData.get("productName"),
-      category: formData.getAll("category[]"),
-      sellingPrice: formData.get("sellingPrice"),
-      isPublished: formData.get("isPublished"),
-      description: formData.get("description"),
-    });
-
-    let featuredImageUrls: ImageUrls;
+    // Handle featured image upload
+    let featuredImageUrls: ImageUrls | undefined;
     const featuredImageFile = formData.get("featuredImage") as File;
 
-    // Handle featured image - either upload new file or use existing URLs
     if (featuredImageFile instanceof File && featuredImageFile.size > 0) {
       featuredImageUrls = await uploadFeaturedImages(featuredImageFile);
     } else {
-      // Use existing URLs if provided
       const thumbnailUrl = formData.get("featuredImage.thumbnail") as string;
       const mediumUrl = formData.get("featuredImage.medium") as string;
       const largeUrl = formData.get("featuredImage.large") as string;
 
-      featuredImageUrls = {
-        thumbnail: thumbnailUrl || "",
-        medium: mediumUrl || "",
-        large: largeUrl || "",
-      };
+      if (thumbnailUrl) {
+        featuredImageUrls = {
+          thumbnail: thumbnailUrl,
+          medium: mediumUrl,
+          large: largeUrl,
+        };
+      }
     }
 
-    // Process variations
+    // Process variations with image uploads
     const variations: Array<Omit<Prisma.VariationCreateInput, "product">> = [];
     const variationEntries = Array.from(formData.entries())
       .filter(([key]) => key.startsWith("variations"))
@@ -143,17 +135,35 @@ export async function createProduct(
         {} as Record<string, any>
       );
 
-    // Process each variation
-    Object.values(variationEntries).forEach((variation: any) => {
+    // Process each variation and handle image uploads
+    for (const [index, variation] of Object.entries(variationEntries)) {
+      const variationImage = formData.get(
+        `variations.${index}.variationImage`
+      ) as File;
+      let variationImageURL = variation.variationImageURL || "";
+
+      // Upload variation image if provided
+      if (variationImage instanceof File && variationImage.size > 0) {
+        const fileExt = variationImage.name.split(".").pop() || "jpg";
+        const timestamp = Date.now();
+        const path = `products/variations/variation_${timestamp}_${index}.${fileExt}`;
+
+        try {
+          variationImageURL = await uploadImage(variationImage, path);
+        } catch (error) {
+          console.error(
+            `Failed to upload variation image for index ${index}:`,
+            error
+          );
+        }
+      }
+
       if (variation.sizes) {
         Object.values(variation.sizes).forEach((size: any) => {
           variations.push({
             name: variation.name,
             color: variation.color || "",
-            // Use existing URL if it's a URL string
-            variationImageURL: variation.variationImageURL?.startsWith("http")
-              ? variation.variationImageURL
-              : "",
+            variationImageURL,
             size: size.size?.trim() || "",
             quantity: Number(size.quantity) || 0,
             sku: size.sku?.trim() || "",
@@ -161,7 +171,7 @@ export async function createProduct(
           });
         });
       }
-    });
+    }
 
     // Process dynamic pricing
     const dynamicPricingEntries = Array.from(formData.entries())
@@ -191,13 +201,9 @@ export async function createProduct(
       description: formData.get("description") as string,
       sellingPrice: Number(formData.get("sellingPrice")),
       isPublished: formData.get("isPublished") === "true",
-      featuredImage: featuredImageUrls.thumbnail
+      featuredImage: featuredImageUrls
         ? {
-            create: {
-              thumbnail: featuredImageUrls.thumbnail,
-              medium: featuredImageUrls.medium,
-              large: featuredImageUrls.large,
-            },
+            create: featuredImageUrls,
           }
         : undefined,
       variations: {

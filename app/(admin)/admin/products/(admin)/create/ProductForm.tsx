@@ -60,6 +60,7 @@ const ProductForm = () => {
     },
   });
 
+  // Client-side onSubmit handler for ProductForm
   const onSubmit = async (data: ProductFormData) => {
     try {
       setIsSubmitting(true);
@@ -73,7 +74,7 @@ const ProductForm = () => {
       data.category.forEach(cat => formData.append("category[]", cat));
 
       // Add featured image
-      if (data.featuredImage.file) {
+      if (data.featuredImage.file instanceof File) {
         formData.append("featuredImage", data.featuredImage.file);
       } else if (data.featuredImage.thumbnail) {
         formData.append(
@@ -92,14 +93,15 @@ const ProductForm = () => {
         formData.append(`dynamicPricing.${index}.amount`, price.amount);
       });
 
-      // Add variations
+      // Add variations with proper image handling
       data.variations.forEach((variation, vIndex) => {
         formData.append(`variations.${vIndex}.name`, variation.name);
         formData.append(`variations.${vIndex}.color`, variation.color || "");
 
-        if (variation.variationImage) {
+        // Handle variation image
+        if (variation.variationImage instanceof File) {
           formData.append(
-            `variations.${vIndex}.image`,
+            `variations.${vIndex}.variationImage`,
             variation.variationImage
           );
         } else if (variation.variationImageURL) {
@@ -109,6 +111,7 @@ const ProductForm = () => {
           );
         }
 
+        // Add sizes for each variation
         variation.sizes.forEach((size, sIndex) => {
           formData.append(
             `variations.${vIndex}.sizes.${sIndex}.size`,

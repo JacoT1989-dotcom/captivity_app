@@ -1,6 +1,5 @@
 import React from "react";
-import { Control, useFieldArray } from "react-hook-form";
-import { Plus, Trash2 } from "lucide-react";
+import { Control } from "react-hook-form";
 import {
   FormControl,
   FormField,
@@ -9,43 +8,28 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { ProductFormData } from "../types";
 
 interface DynamicPricingTabProps {
   control: Control<ProductFormData>;
 }
 
-const DynamicPricingTab: React.FC<DynamicPricingTabProps> = ({ control }) => {
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "dynamicPricing",
-  });
+const PRESET_RANGES = [
+  { from: "1", to: "24" },
+  { from: "25", to: "100" },
+  { from: "101", to: "600" },
+  { from: "601", to: "2000" },
+];
 
+const DynamicPricingTab: React.FC<DynamicPricingTabProps> = ({ control }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Dynamic Pricing</h3>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            append({
-              from: "",
-              to: "",
-              type: "fixed_price",
-              amount: "",
-            })
-          }
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Pricing Rule
-        </Button>
       </div>
 
-      {fields.map((field, index) => (
-        <div key={field.id} className="flex gap-4 items-start">
+      {PRESET_RANGES.map((range, index) => (
+        <div key={index} className="flex gap-4 items-start">
           <FormField
             control={control}
             name={`dynamicPricing.${index}.from`}
@@ -53,7 +37,13 @@ const DynamicPricingTab: React.FC<DynamicPricingTabProps> = ({ control }) => {
               <FormItem className="flex-1">
                 <FormLabel>From</FormLabel>
                 <FormControl>
-                  <Input {...field} type="number" min="0" />
+                  <Input
+                    {...field}
+                    type="number"
+                    min="0"
+                    value={range.from}
+                    readOnly
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -67,7 +57,13 @@ const DynamicPricingTab: React.FC<DynamicPricingTabProps> = ({ control }) => {
               <FormItem className="flex-1">
                 <FormLabel>To</FormLabel>
                 <FormControl>
-                  <Input {...field} type="number" min="0" />
+                  <Input
+                    {...field}
+                    type="number"
+                    min="0"
+                    value={range.to}
+                    readOnly
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -88,15 +84,14 @@ const DynamicPricingTab: React.FC<DynamicPricingTabProps> = ({ control }) => {
             )}
           />
 
-          <Button
-            type="button"
-            variant="destructive"
-            size="icon"
-            className="mt-8"
-            onClick={() => remove(index)}
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          {/* Hidden field for type */}
+          <FormField
+            control={control}
+            name={`dynamicPricing.${index}.type`}
+            render={({ field }) => (
+              <input type="hidden" {...field} value="fixed_price" />
+            )}
+          />
         </div>
       ))}
     </div>
