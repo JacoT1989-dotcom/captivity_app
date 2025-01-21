@@ -1,6 +1,13 @@
 "use client";
-import React, { useState } from "react";
-import { Search, ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import {
+  Search,
+  ChevronDown,
+  ChevronUp,
+  Pencil,
+  Trash2,
+  Eye,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -10,118 +17,49 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
-interface Product {
-  id: number;
-  name: string;
-  collection: string;
-  stockLevel: number;
-  sizes: string[];
-  colors: string[];
-}
+import VariationsModal from "./VariationsModal";
+import {
+  useApplyFilters,
+  useDeleteProduct,
+  useFetchProducts,
+  useFilteredProducts,
+  useFilters,
+  useIsLoading,
+  usePagination,
+  useProducts,
+} from "../_store/product-store";
+import { FilterState, Product } from "../types";
+import { calculateTotalStock, getStockStatus } from "../utils";
 
-type SortKey =
-  | keyof Pick<Product, "name" | "stockLevel" | "collection">
-  | "sizes"
-  | "colors";
-
-interface SortConfig {
-  key: SortKey;
-  direction: "asc" | "desc";
-}
+const LOW_STOCK_THRESHOLD = 5;
 
 const ProductsStockLevel = () => {
-  const [products] = useState<Product[]>([
-    {
-      id: 1,
-      name: "Product A",
-      collection: "Electronics",
-      stockLevel: 45,
-      sizes: ["S", "M", "L"],
-      colors: ["Red", "Blue"],
-    },
-    {
-      id: 2,
-      name: "Product B",
-      collection: "Fashion",
-      stockLevel: 23,
-      sizes: ["XS", "S"],
-      colors: ["Black", "White", "Gray"],
-    },
-    {
-      id: 3,
-      name: "Product C",
-      collection: "Electronics",
-      stockLevel: 67,
-      sizes: ["M", "L", "XL"],
-      colors: ["Green"],
-    },
-    {
-      id: 4,
-      name: "Product D",
-      collection: "Home",
-      stockLevel: 12,
-      sizes: ["One Size"],
-      colors: ["Brown", "Beige"],
-    },
-    {
-      id: 5,
-      name: "Product E",
-      collection: "Fashion",
-      stockLevel: 89,
-      sizes: ["S", "M"],
-      colors: ["Navy", "White"],
-    },
-  ]);
+  const fetchProducts = useFetchProducts();
+  const deleteProduct = useDeleteProduct();
+  const products = useProducts();
+  const filteredProducts = useFilteredProducts();
+  const isLoading = useIsLoading();
+  const applyFilters = useApplyFilters();
+  const filters = useFilters();
+  const { currentPage, totalPages, itemsPerPage } = usePagination();
 
-  const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: "name",
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: "asc" | "desc";
+  }>({
+    key: "productName",
     direction: "asc",
   });
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [collectionFilter, setCollectionFilter] = useState<string>("all");
 
-  const sortedProducts = [...products].sort((a, b) => {
-    if (sortConfig.key === "sizes" || sortConfig.key === "colors") {
-      const aLength = a[sortConfig.key].length;
-      const bLength = b[sortConfig.key].length;
-      return sortConfig.direction === "asc"
-        ? aLength - bLength
-        : bLength - aLength;
-    }
+  useEffect(() => {
+    fetchProducts(currentPage, itemsPerPage);
+  }, [currentPage, itemsPerPage, fetchProducts]);
 
-    if (sortConfig.direction === "asc") {
-      return a[sortConfig.key] > b[sortConfig.key] ? 1 : -1;
-    }
-    return a[sortConfig.key] < b[sortConfig.key] ? 1 : -1;
-  });
-
-  const filteredProducts = sortedProducts.filter(product => {
-    const matchesSearch =
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.collection.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.colors.some(color =>
-        color.toLowerCase().includes(searchTerm.toLowerCase())
-      ) ||
-      product.sizes.some(size =>
-        size.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    const matchesCollection =
-      collectionFilter === "all" || product.collection === collectionFilter;
-    return matchesSearch && matchesCollection;
-  });
-
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const displayedProducts = filteredProducts.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
-
-  const handleSort = (key: SortKey) => {
+  const handleSort = (key: string) => {
     setSortConfig({
       key,
       direction:
@@ -131,7 +69,30 @@ const ProductsStockLevel = () => {
     });
   };
 
-  const renderSortIcon = (key: SortKey) => {
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    fetchProducts(1, itemsPerPage, term);
+  };
+
+  const handleDelete = async (productId: string) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      await deleteProduct(productId);
+    }
+  };
+
+  const handleFilterChange = (value: FilterState["stockLevel"]) => {
+    applyFilters({
+      ...filters,
+      stockLevel: value,
+    });
+  };
+
+  const handleViewVariations = (product: Product) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const renderSortIcon = (key: string) => {
     if (sortConfig.key === key) {
       return sortConfig.direction === "asc" ? (
         <ChevronUp className="h-4 w-4" />
@@ -140,6 +101,20 @@ const ProductsStockLevel = () => {
       );
     }
     return null;
+  };
+
+  const getStockBadgeColor = (quantity: number) => {
+    const status = getStockStatus(quantity);
+    switch (status) {
+      case "out-of-stock":
+        return "bg-red-100 text-red-800";
+      case "low-stock":
+        return "bg-yellow-100 text-yellow-800";
+      case "in-stock":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
   };
 
   return (
@@ -152,19 +127,21 @@ const ProductsStockLevel = () => {
               placeholder="Search products..."
               className="pl-8"
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+              onChange={e => handleSearch(e.target.value)}
             />
           </div>
 
-          <Select value={collectionFilter} onValueChange={setCollectionFilter}>
+          <Select value={filters.stockLevel} onValueChange={handleFilterChange}>
             <SelectTrigger className="w-40">
-              <SelectValue placeholder="Collection" />
+              <SelectValue placeholder="Stock Level" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Collections</SelectItem>
-              <SelectItem value="Electronics">Electronics</SelectItem>
-              <SelectItem value="Fashion">Fashion</SelectItem>
-              <SelectItem value="Home">Home</SelectItem>
+              <SelectItem value="all">All Stock</SelectItem>
+              <SelectItem value="in-stock">In Stock</SelectItem>
+              <SelectItem value="low-stock">
+                Low Stock ({LOW_STOCK_THRESHOLD} or less)
+              </SelectItem>
+              <SelectItem value="out-of-stock">Out of Stock</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -172,7 +149,7 @@ const ProductsStockLevel = () => {
         <div className="flex gap-4">
           <Select
             value={itemsPerPage.toString()}
-            onValueChange={value => setItemsPerPage(Number(value))}
+            onValueChange={value => fetchProducts(1, Number(value))}
           >
             <SelectTrigger className="w-24">
               <SelectValue placeholder="Show" />
@@ -194,93 +171,84 @@ const ProductsStockLevel = () => {
               <th className="px-4 py-3 text-left font-medium">ID</th>
               <th
                 className="px-4 py-3 text-left font-medium cursor-pointer"
-                onClick={() => handleSort("name")}
+                onClick={() => handleSort("productName")}
               >
                 <div className="flex items-center gap-1">
                   Name
-                  {renderSortIcon("name")}
+                  {renderSortIcon("productName")}
                 </div>
               </th>
               <th
                 className="px-4 py-3 text-left font-medium cursor-pointer"
-                onClick={() => handleSort("collection")}
+                onClick={() => handleSort("category")}
               >
                 <div className="flex items-center gap-1">
-                  Collection
-                  {renderSortIcon("collection")}
+                  Category
+                  {renderSortIcon("category")}
                 </div>
               </th>
-              <th
-                className="px-4 py-3 text-left font-medium cursor-pointer"
-                onClick={() => handleSort("sizes")}
-              >
-                <div className="flex items-center gap-1">
-                  Sizes
-                  {renderSortIcon("sizes")}
-                </div>
-              </th>
-              <th
-                className="px-4 py-3 text-left font-medium cursor-pointer"
-                onClick={() => handleSort("colors")}
-              >
-                <div className="flex items-center gap-1">
-                  Colors
-                  {renderSortIcon("colors")}
-                </div>
-              </th>
-              <th
-                className="px-4 py-3 text-left font-medium cursor-pointer"
-                onClick={() => handleSort("stockLevel")}
-              >
-                <div className="flex items-center gap-1">
-                  Stock Level
-                  {renderSortIcon("stockLevel")}
-                </div>
-              </th>
+              <th className="px-4 py-3 text-left font-medium">Variations</th>
+              <th className="px-4 py-3 text-left font-medium">Stock Level</th>
               <th className="px-4 py-3 text-center font-medium">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {displayedProducts.map(product => (
-              <tr key={product.id} className="hover:bg-muted/50">
-                <td className="px-4 py-3">{product.id}</td>
-                <td className="px-4 py-3">{product.name}</td>
-                <td className="px-4 py-3">{product.collection}</td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {product.sizes.map(size => (
-                      <Badge key={size} variant="secondary" className="text-xs">
-                        {size}
-                      </Badge>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {product.colors.map(color => (
-                      <Badge key={color} variant="outline" className="text-xs">
-                        {color}
-                      </Badge>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-4 py-3">{product.stockLevel}</td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-center gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive/90"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+            {isLoading ? (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-muted-foreground"
+                >
+                  Loading products...
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredProducts.map(product => {
+                const totalStock = calculateTotalStock(product.variations);
+                const stockBadgeColor = getStockBadgeColor(totalStock);
+
+                return (
+                  <tr key={product.id} className="hover:bg-muted/50">
+                    <td className="px-4 py-3">{product.id}</td>
+                    <td className="px-4 py-3">{product.productName}</td>
+                    <td className="px-4 py-3">{product.category.join(", ")}</td>
+                    <td className="px-4 py-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewVariations(product)}
+                        className="text-xs"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View {product.variations.length} Variations
+                      </Button>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${stockBadgeColor}`}
+                      >
+                        {totalStock}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-center gap-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive/90"
+                          onClick={() => handleDelete(product.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
@@ -288,7 +256,7 @@ const ProductsStockLevel = () => {
       <div className="mt-4 flex items-center justify-center gap-2">
         <Button
           variant="outline"
-          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          onClick={() => fetchProducts(currentPage - 1, itemsPerPage)}
           disabled={currentPage === 1}
         >
           Previous
@@ -298,12 +266,22 @@ const ProductsStockLevel = () => {
         </span>
         <Button
           variant="outline"
-          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+          onClick={() => fetchProducts(currentPage + 1, itemsPerPage)}
           disabled={currentPage === totalPages}
         >
           Next
         </Button>
       </div>
+
+      {/* Variations Modal */}
+      <VariationsModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+      />
     </div>
   );
 };

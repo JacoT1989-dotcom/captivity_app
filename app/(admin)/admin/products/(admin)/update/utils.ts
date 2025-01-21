@@ -1,6 +1,9 @@
 // utils.ts
 import { Product, FilterState, CollectionCategory } from "./types";
 
+// Constants
+const LOW_STOCK_THRESHOLD = 5;
+
 const categoryMappings: Record<string, string[]> = {
   tshirts: ["shirt", "t-shirt", "tshirt", "tee"],
   hoodies: ["hood", "sweatshirt", "sweater"],
@@ -46,10 +49,24 @@ const headwearTerms = [
   "visor",
 ];
 
+const collectionTerms: Record<string, string[]> = {
+  camo: ["camo", "camouflage", "military"],
+  winter: ["winter", "cold", "warm", "thermal"],
+  baseball: ["baseball", "sport", "athletic"],
+  fashion: ["fashion", "trendy", "style"],
+  sport: ["sport", "athletic", "active"],
+  industrial: ["industrial", "work", "safety"],
+  leisure: ["leisure", "casual", "lifestyle"],
+  kids: ["kids", "children", "youth"],
+  african: ["african", "ethnic", "traditional"],
+};
+
+// String Utilities
 export const normalizeString = (str: string): string => {
   return str.toLowerCase().replace(/[-_\s]/g, "");
 };
 
+// Category Matching Functions
 export const matchesCategory = (
   textToSearch: string,
   categoryType: string
@@ -81,24 +98,13 @@ export const matchesCollectionCategory = (
     .toLowerCase();
   const categoryName = category.replace("-collection", "").toLowerCase();
 
-  const collectionTerms: Record<string, string[]> = {
-    camo: ["camo", "camouflage", "military"],
-    winter: ["winter", "cold", "warm", "thermal"],
-    baseball: ["baseball", "sport", "athletic"],
-    fashion: ["fashion", "trendy", "style"],
-    sport: ["sport", "athletic", "active"],
-    industrial: ["industrial", "work", "safety"],
-    leisure: ["leisure", "casual", "lifestyle"],
-    kids: ["kids", "children", "youth"],
-    african: ["african", "ethnic", "traditional"],
-  };
-
   return (
     collectionTerms[categoryName]?.some(term => searchText.includes(term)) ||
     false
   );
 };
 
+// Filter Utilities
 export const handleGenderAgeFilter = (
   productText: string,
   filterType: string
@@ -126,6 +132,13 @@ export const handleGenderAgeFilter = (
   }
 };
 
+export const getStockStatus = (quantity: number): FilterState["stockLevel"] => {
+  if (quantity <= 0) return "out-of-stock";
+  if (quantity <= LOW_STOCK_THRESHOLD) return "low-stock";
+  return "in-stock";
+};
+
+// Main Filter Function
 export const applyProductFilters = (
   products: Product[],
   filters: FilterState
@@ -154,10 +167,12 @@ export const applyProductFilters = (
         variations: product.variations.filter(variation => {
           // Apply stock level filter to variations
           if (filters.stockLevel !== "all") {
-            if (filters.stockLevel === "in" && variation.quantity <= 0)
+            const quantity = variation.quantity;
+            const currentStatus = getStockStatus(quantity);
+
+            if (filters.stockLevel !== currentStatus) {
               return false;
-            if (filters.stockLevel === "out" && variation.quantity > 0)
-              return false;
+            }
           }
 
           // Apply color and size filters
@@ -174,4 +189,55 @@ export const applyProductFilters = (
       // Remove products with no matching variations after all filters
       .filter(product => product.variations.length > 0)
   );
+};
+
+// Stock Calculation Functions
+export const calculateTotalStock = (
+  variations: Product["variations"]
+): number => {
+  return variations.reduce((total, variation) => total + variation.quantity, 0);
+};
+
+export const calculateStockStatus = (
+  variations: Product["variations"]
+): FilterState["stockLevel"] => {
+  const totalQuantity = calculateTotalStock(variations);
+  return getStockStatus(totalQuantity);
+};
+
+// Product Sort Functions
+export const sortProducts = (
+  products: Product[],
+  sortBy: string,
+  direction: "asc" | "desc"
+): Product[] => {
+  return [...products].sort((a, b) => {
+    let compareValue: number;
+
+    switch (sortBy) {
+      case "productName":
+        compareValue = a.productName.localeCompare(b.productName);
+        break;
+      case "category":
+        compareValue = a.category[0]?.localeCompare(b.category[0] || "") || 0;
+        break;
+      case "stock":
+        compareValue =
+          calculateTotalStock(a.variations) - calculateTotalStock(b.variations);
+        break;
+      default:
+        compareValue = 0;
+    }
+
+    return direction === "asc" ? compareValue : -compareValue;
+  });
+};
+
+// Export constants for use in other files
+export const constants = {
+  LOW_STOCK_THRESHOLD,
+  categoryMappings,
+  apparelTerms,
+  headwearTerms,
+  collectionTerms,
 };

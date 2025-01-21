@@ -90,7 +90,7 @@ export type CollectionCategory =
 
 // Filter Types
 export interface FilterState {
-  stockLevel: "all" | "in" | "out";
+  stockLevel: "all" | "in-stock" | "low-stock" | "out-of-stock";
   sizes: string[];
   colors: string[];
   types: string[];
