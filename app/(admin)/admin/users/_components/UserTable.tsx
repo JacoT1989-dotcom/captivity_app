@@ -106,9 +106,9 @@ const UserTable = ({ users, title }: UserTableProps) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+        <h2 className="text-2xl font-bold text-foreground">{title}</h2>
         <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-foreground">
             {filteredUsers.length} users total
           </div>
           <div className="w-72">
@@ -118,40 +118,40 @@ const UserTable = ({ users, title }: UserTableProps) => {
       </div>
 
       {filteredUsers.length === 0 ? (
-        <div className="bg-white shadow-md rounded-lg p-6 text-center text-gray-500">
+        <div className="bg-background shadow-md rounded-lg p-6 text-center text-foreground">
           {searchTerm
             ? `No ${title.toLowerCase()} found matching "${searchTerm}"`
             : `No ${title.toLowerCase()} to display at this time`}
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto bg-white shadow-md rounded-lg">
+          <div className="overflow-x-auto bg-background shadow-md rounded-lg">
             <table className="min-w-full leading-normal">
               <thead>
-                <tr className="bg-gray-100">
+                <tr className="bg-background">
                   <th
-                    className="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer"
+                    className="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-foreground uppercase tracking-wider cursor-pointer"
                     onClick={() => handleSort("displayName")}
                   >
                     User
                     <SortIndicator field="displayName" />
                   </th>
                   <th
-                    className="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer"
+                    className="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-foreground uppercase tracking-wider cursor-pointer"
                     onClick={() => handleSort("role")}
                   >
                     Role
                     <SortIndicator field="role" />
                   </th>
                   <th
-                    className="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer"
+                    className="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-foreground uppercase tracking-wider cursor-pointer"
                     onClick={() => handleSort("companyName")}
                   >
                     Company
                     <SortIndicator field="companyName" />
                   </th>
                   <th
-                    className="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer"
+                    className="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-foreground uppercase tracking-wider cursor-pointer"
                     onClick={() => handleSort("createdAt")}
                   >
                     Created At
@@ -162,38 +162,38 @@ const UserTable = ({ users, title }: UserTableProps) => {
               <tbody>
                 {paginatedUsers.map(user => (
                   <tr key={user.id}>
-                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <td className="px-5 py-5 border-b border-gray-200 bg-background text-sm">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 w-10 h-10">
-                          <User className="w-full h-full rounded-full text-gray-500" />
+                          <User className="w-full h-full rounded-full text-foreground" />
                         </div>
                         <div className="ml-3">
-                          <p className="text-gray-900 whitespace-no-wrap font-semibold">
+                          <p className="text-foreground whitespace-no-wrap font-semibold">
                             {user.displayName ||
                               `${user.firstName} ${user.lastName}`}
                           </p>
-                          <p className="text-gray-600 whitespace-no-wrap">
+                          <p className="text-foreground whitespace-no-wrap">
                             {user.email}
                           </p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <td className="px-5 py-5 border-b border-gray-200 bg-background text-sm">
                       <UserRoleSelect
                         userId={user.id}
                         initialRole={user.role}
                       />
                     </td>
-                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                      <p className="text-gray-900 whitespace-no-wrap">
+                    <td className="px-5 py-5 border-b border-gray-200 bg-background text-sm">
+                      <p className="text-foreground whitespace-no-wrap">
                         {user.companyName}
                       </p>
                     </td>
-                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                      <p className="text-gray-900 whitespace-no-wrap">
+                    <td className="px-5 py-5 border-b border-gray-200 bg-background text-sm">
+                      <p className="text-foreground whitespace-no-wrap">
                         {new Date(user.createdAt).toLocaleDateString()}
                       </p>
-                      <p className="text-gray-500 text-xs mt-1">
+                      <p className="text-foreground text-xs mt-1">
                         {new Date(user.createdAt).toLocaleTimeString()}
                       </p>
                     </td>
@@ -203,9 +203,9 @@ const UserTable = ({ users, title }: UserTableProps) => {
             </table>
           </div>
 
-          <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+          <div className="flex items-center justify-between px-4 py-3 bg-background border-t border-gray-200 sm:px-6">
             <div className="flex items-center">
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-foreground">
                 Showing <span className="font-medium">{startIndex + 1}</span> to{" "}
                 <span className="font-medium">
                   {Math.min(startIndex + USERS_PER_PAGE, filteredUsers.length)}
@@ -218,7 +218,7 @@ const UserTable = ({ users, title }: UserTableProps) => {
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-background border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
@@ -275,7 +275,7 @@ const UserTable = ({ users, title }: UserTableProps) => {
                   setCurrentPage(prev => Math.min(prev + 1, totalPages))
                 }
                 disabled={currentPage === totalPages}
-                className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-foreground bg-background border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
               </button>

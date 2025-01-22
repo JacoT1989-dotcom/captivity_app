@@ -11,7 +11,7 @@ const Page = async ({ searchParams }: PageProps) => {
   const { activities, pagination } = await getRecentActivities(page);
 
   return (
-    <div className="mx-10">
+    <div className="mx-10 bg-background">
       <Suspense fallback={<div>Loading...</div>}>
         <AdminPanel initialActivities={activities} pagination={pagination} />
       </Suspense>
