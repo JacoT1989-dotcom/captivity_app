@@ -1,9 +1,10 @@
 import { useProductStore } from "./product-store";
 
-// Selector hooks
 export const useProducts = () => useProductStore(state => state.products);
 export const useFilteredProducts = () =>
   useProductStore(state => state.filteredProducts);
+export const usePaginatedProducts = () =>
+  useProductStore(state => state.paginatedProducts);
 export const useCurrentCollection = () =>
   useProductStore(state => state.currentCollection);
 export const useCurrentCategory = () =>
@@ -21,7 +22,6 @@ export const usePagination = () => {
   };
 };
 
-// Action hooks
 export const useFetchAllProducts = () =>
   useProductStore(state => state.fetchAllProducts);
 export const useFetchProducts = () =>

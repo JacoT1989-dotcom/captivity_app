@@ -20,50 +20,15 @@ import {
   matchesCollectionCategory,
   applyProductFilters,
 } from "../utils";
-import { ProductStore, ProductStoreState } from "./storeTypes";
-
-const initialState: ProductStoreState = {
-  // Collection States
-  products: [],
-  filteredProducts: [],
-  apparelProducts: [],
-  headwearProducts: [],
-  collectionProducts: {
-    "all-in-collections": [],
-    "camo-collection": [],
-    "winter-collection": [],
-    "baseball-collection": [],
-    "fashion-collection": [],
-    "sport-collection": [],
-    "industrial-collection": [],
-    "leisure-collection": [],
-    "kids-collection": [],
-    "african-collection": [],
-  },
-  currentCollection: null,
-  currentCategory: null,
-
-  // Pagination State
-  currentPage: 1,
-  totalPages: 1,
-  totalItems: 0,
-  itemsPerPage: 10,
-
-  // UI States
-  isLoading: false,
-  error: null,
-  filters: {
-    stockLevel: "all",
-    sizes: [],
-    colors: [],
-    types: [],
-  },
-};
+import {
+  ProductStore,
+  ProductStoreState,
+  initialStoreState,
+} from "./storeTypes";
 
 export const useProductStore = create<ProductStore>()((set, get) => ({
-  ...initialState,
+  ...initialStoreState,
 
-  // CRUD Operations
   fetchAllProducts: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -73,38 +38,13 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
       }
 
       const totalItems = initialResponse.data.pagination.total;
-      console.log("Total products to fetch:", totalItems);
-
       const response = await getProducts(1, totalItems);
+
       if (!response.success || !response.data) {
         throw new Error(response.error || "Failed to fetch all products");
       }
 
       const { products } = response.data;
-
-      console.log("All Products Loaded:", {
-        totalCount: products.length,
-        breakdown: {
-          headwear: products.filter(p =>
-            p.category.some(c => c.includes("headwear"))
-          ).length,
-          apparel: products.filter(p =>
-            p.category.some(c => c.includes("apparel"))
-          ).length,
-          collections: products.filter(p =>
-            p.category.some(c => c.includes("collection"))
-          ).length,
-        },
-        categoryBreakdown: products.reduce(
-          (acc, p) => {
-            p.category.forEach(c => {
-              acc[c] = (acc[c] || 0) + 1;
-            });
-            return acc;
-          },
-          {} as Record<string, number>
-        ),
-      });
 
       set({
         products,
@@ -115,6 +55,7 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
       });
 
       get().categorizeProducts(products);
+      get().fetchProducts(1, get().itemsPerPage);
     } catch (error) {
       set({
         isLoading: false,
@@ -125,15 +66,19 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
   },
 
   fetchProducts: async (page = 1, limit = 10, search?: string) => {
-    const { products } = get();
+    const { products, filters } = get();
+    const allFilteredResults = applyProductFilters(products, filters);
+
     const start = (page - 1) * limit;
     const end = start + limit;
-    const paginatedProducts = products.slice(start, end);
 
     set({
       currentPage: page,
-      totalPages: Math.ceil(products.length / limit),
-      filteredProducts: paginatedProducts,
+      totalPages: Math.ceil(allFilteredResults.length / limit),
+      itemsPerPage: limit,
+      totalItems: allFilteredResults.length,
+      filteredProducts: allFilteredResults,
+      paginatedProducts: allFilteredResults.slice(start, end),
     });
   },
 
@@ -175,6 +120,7 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
       const currentProducts = get().products.filter(p => p.id !== productId);
       set({ products: currentProducts });
       get().categorizeProducts(currentProducts);
+      get().fetchProducts(get().currentPage, get().itemsPerPage);
 
       set({ isLoading: false });
     } catch (error) {
@@ -197,6 +143,7 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
         throw new Error(response.error || "Failed to update stock");
       }
       await get().fetchProduct(productId);
+      get().fetchProducts(get().currentPage, get().itemsPerPage);
       set({ isLoading: false });
     } catch (error) {
       set({
@@ -234,13 +181,10 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
   setProducts: (products: Product[]) => {
     set({ products });
     get().categorizeProducts(products);
+    get().fetchProducts(1, get().itemsPerPage);
   },
 
   categorizeProducts: (products: Product[]) => {
-    console.log("Starting Product Categorization:", {
-      totalProducts: products.length,
-    });
-
     const apparelProducts = products.filter(product => {
       const searchText = [...product.category, product.productName].join(" ");
       return isApparelProduct(searchText);
@@ -251,7 +195,7 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
       return isHeadwearProduct(searchText);
     });
 
-    const collectionProducts = { ...initialState.collectionProducts };
+    const collectionProducts = { ...initialStoreState.collectionProducts };
 
     Object.keys(collectionProducts).forEach(category => {
       const typedCategory = category as CollectionCategory;
@@ -262,18 +206,6 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
           matchesCollectionCategory(product, typedCategory)
         );
       }
-    });
-
-    console.log("Categorization Results:", {
-      total: products.length,
-      apparel: apparelProducts.length,
-      headwear: headwearProducts.length,
-      collections: Object.fromEntries(
-        Object.entries(collectionProducts).map(([key, value]) => [
-          key,
-          value.length,
-        ])
-      ),
     });
 
     set({
@@ -289,12 +221,6 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
     const pathParts = pathname.split("/").filter(Boolean);
     const collectionType = pathParts[1] as CollectionType;
     const category = pathParts[2] || null;
-
-    console.log("Filtering by pathname:", {
-      pathname,
-      collectionType,
-      category,
-    });
 
     let filteredProducts = [...products];
 
@@ -340,24 +266,16 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
       filters
     );
 
-    console.log("Filter Results:", {
-      type: collectionType,
-      category,
-      initialCount: filteredProducts.length,
-      finalCount: finalFilteredProducts.length,
-      appliedFilters: filters,
-    });
-
     set({
       currentCollection: collectionType,
       currentCategory: category,
       filteredProducts: finalFilteredProducts,
     });
+
+    get().fetchProducts(1, get().itemsPerPage);
   },
 
   applyFilters: (newFilters: FilterState) => {
-    console.log("Applying filters:", newFilters);
-
     const { products, currentCollection, currentCategory } = get();
     set({ filters: newFilters });
 
@@ -365,18 +283,12 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
       get().filterByPathname(`/${currentCollection}/${currentCategory}`);
     } else {
       const filteredProducts = applyProductFilters(products, newFilters);
-      console.log("Filter application results:", {
-        totalProducts: products.length,
-        filteredCount: filteredProducts.length,
-        filters: newFilters,
-      });
-
       set({ filteredProducts });
+      get().fetchProducts(1, get().itemsPerPage);
     }
   },
 
   reset: () => {
-    console.log("Resetting store to initial state");
-    set(initialState);
+    set(initialStoreState);
   },
 }));

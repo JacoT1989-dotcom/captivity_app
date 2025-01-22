@@ -6,11 +6,11 @@ import {
   CollectionCategory,
 } from "../types";
 
-// Store State Interface
 export interface ProductStoreState {
   // Collection States
   products: Product[];
   filteredProducts: Product[];
+  paginatedProducts: Product[];
   apparelProducts: Product[];
   headwearProducts: Product[];
   collectionProducts: Record<CollectionCategory, Product[]>;
@@ -29,9 +29,7 @@ export interface ProductStoreState {
   filters: FilterState;
 }
 
-// Store Actions Interface
 export interface ProductStoreActions {
-  // CRUD Operations
   fetchAllProducts: () => Promise<void>;
   fetchProducts: (
     page?: number,
@@ -48,8 +46,6 @@ export interface ProductStoreActions {
     variationId: string,
     image: File
   ) => Promise<void>;
-
-  // Collection Operations
   setProducts: (products: Product[]) => void;
   filterByPathname: (pathname: string) => void;
   applyFilters: (filters: FilterState) => void;
@@ -58,13 +54,12 @@ export interface ProductStoreActions {
   reset: () => void;
 }
 
-// Combined Store Type
 export type ProductStore = ProductStoreState & ProductStoreActions;
 
-// Initial State Type Helper
 export const initialStoreState: ProductStoreState = {
   products: [],
   filteredProducts: [],
+  paginatedProducts: [],
   apparelProducts: [],
   headwearProducts: [],
   collectionProducts: {
@@ -95,11 +90,3 @@ export const initialStoreState: ProductStoreState = {
     searchTerm: "",
   },
 };
-
-// Store Selector Types
-export interface PaginationState {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-}
