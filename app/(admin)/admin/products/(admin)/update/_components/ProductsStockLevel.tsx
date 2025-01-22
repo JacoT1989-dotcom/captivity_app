@@ -14,7 +14,7 @@ import {
 import { FilterState, Product } from "../types";
 import ProductFilters from "./ProductFilters";
 import ProductTable from "./ProductTable";
-import VariationsModal from "./VariationsModal";
+import VariationsModal from "./(variations-modal)/VariationsModal";
 
 const ProductsStockLevel = () => {
   const fetchProducts = useFetchProducts();

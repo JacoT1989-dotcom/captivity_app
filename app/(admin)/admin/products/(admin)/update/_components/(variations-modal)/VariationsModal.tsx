@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X, ImageOff } from "lucide-react";
-import { getStockBadgeColor } from "../utils";
+import { getStockBadgeColor } from "../../utils";
 
 interface DynamicPricing {
   id: string;
