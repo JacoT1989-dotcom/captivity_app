@@ -58,7 +58,7 @@ const PricingRanges: React.FC<{
     { from: "1", to: "24" },
     { from: "25", to: "100" },
     { from: "101", to: "600" },
-    { from: "601", to: "2000" },
+    { from: "601", to: "20000" },
   ];
 
   // Function to find the price for a given range
