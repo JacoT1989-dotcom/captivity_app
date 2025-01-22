@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronDown, ChevronUp, Pencil, Trash2, Eye } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Product } from "../types";
 import { calculateTotalStock, getStockStatus } from "../utils";
@@ -127,9 +127,6 @@ const ProductTable: React.FC<ProductTableProps> = ({
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-center gap-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
