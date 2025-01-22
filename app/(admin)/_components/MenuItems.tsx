@@ -92,7 +92,7 @@ export function useMenuItems() {
             ],
           },
           {
-            title: "Categories",
+            title: "Collections",
             isSubmenu: true,
             links: [
               {

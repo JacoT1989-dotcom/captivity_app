@@ -36,7 +36,7 @@ const CollapsibleSidebar = () => {
 
   const getDropdownClasses = useCallback((isOpen: boolean) => {
     return `transition-all duration-300 ease-in-out ${
-      isOpen ? "max-h-96" : "max-h-0"
+      isOpen ? "max-h-[60vh] overflow-y-auto" : "max-h-0"
     } overflow-hidden`;
   }, []);
 
