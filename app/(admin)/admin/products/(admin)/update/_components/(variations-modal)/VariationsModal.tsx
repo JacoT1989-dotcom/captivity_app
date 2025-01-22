@@ -15,56 +15,8 @@ import {
 } from "@/components/ui/select";
 import { X, ImageOff } from "lucide-react";
 import { getStockBadgeColor } from "../../utils";
-
-interface DynamicPricing {
-  id: string;
-  from: string;
-  to: string;
-  type: string;
-  amount: string;
-  productId: string;
-}
-
-interface Variation {
-  id: string;
-  name: string;
-  color: string;
-  size: string;
-  sku: string;
-  sku2: string;
-  variationImageURL: string;
-  quantity: number;
-  productId: string;
-}
-
-interface Product {
-  id: string;
-  productName: string;
-  sellingPrice: number;
-  variations: Variation[];
-  dynamicPricing: DynamicPricing[];
-}
-
-interface VariationsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  product: Product | null;
-}
-
-interface PriceRange {
-  range: string;
-  quantity: {
-    from: string;
-    to: string;
-  };
-  price: number;
-}
-
-interface PriceRangeConfig {
-  from: string;
-  to: string;
-  label: string;
-}
+import { formatZAR, priceRangeConfigs } from "./utils";
+import type { VariationsModalProps, PriceRange, Variation } from "./types";
 
 const VariationsModal: React.FC<VariationsModalProps> = ({
   isOpen,
@@ -73,25 +25,6 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
 }) => {
   const [selectedSize, setSelectedSize] = useState<string>("all");
   const [selectedColor, setSelectedColor] = useState<string>("all");
-
-  const priceRangeConfigs = useMemo<PriceRangeConfig[]>(
-    () => [
-      { from: "1", to: "24", label: "1-24 items" },
-      { from: "25", to: "100", label: "25-100 items" },
-      { from: "101", to: "600", label: "101-600 items" },
-      { from: "601", to: "20000", label: "601-20000 items" },
-    ],
-    []
-  );
-
-  const formatZAR = (amount: number): string => {
-    return new Intl.NumberFormat("en-ZA", {
-      style: "currency",
-      currency: "ZAR",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
 
   const priceRanges = useMemo<PriceRange[] | null>(() => {
     if (!product) return null;
@@ -125,7 +58,7 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
       console.error("Error processing price ranges:", error);
       return null;
     }
-  }, [product, priceRangeConfigs]);
+  }, [product]);
 
   const uniqueColors = useMemo(() => {
     if (!product?.variations) return [];
