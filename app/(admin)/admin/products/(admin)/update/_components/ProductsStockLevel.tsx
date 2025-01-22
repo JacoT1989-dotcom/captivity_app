@@ -10,7 +10,7 @@ import {
   useFilters,
   useIsLoading,
   usePagination,
-} from "../_store/product-store";
+} from "../_store/productHooks";
 import { FilterState, Product } from "../types";
 
 import ProductFilters from "./ProductFilters";

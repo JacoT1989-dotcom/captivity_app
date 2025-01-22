@@ -67,7 +67,6 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
   fetchAllProducts: async () => {
     set({ isLoading: true, error: null });
     try {
-      // First, get the total count
       const initialResponse = await getProducts(1, 1);
       if (!initialResponse.success || !initialResponse.data) {
         throw new Error(initialResponse.error || "Failed to fetch products");
@@ -76,7 +75,6 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
       const totalItems = initialResponse.data.pagination.total;
       console.log("Total products to fetch:", totalItems);
 
-      // Now fetch all products
       const response = await getProducts(1, totalItems);
       if (!response.success || !response.data) {
         throw new Error(response.error || "Failed to fetch all products");
@@ -116,7 +114,6 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
         isLoading: false,
       });
 
-      // Categorize all products
       get().categorizeProducts(products);
     } catch (error) {
       set({
@@ -127,7 +124,6 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
     }
   },
 
-  // Original fetchProducts kept for pagination display
   fetchProducts: async (page = 1, limit = 10, search?: string) => {
     const { products } = get();
     const start = (page - 1) * limit;
@@ -384,44 +380,3 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
     set(initialState);
   },
 }));
-
-// Selector hooks
-export const useProducts = () => useProductStore(state => state.products);
-export const useFilteredProducts = () =>
-  useProductStore(state => state.filteredProducts);
-export const useCurrentCollection = () =>
-  useProductStore(state => state.currentCollection);
-export const useCurrentCategory = () =>
-  useProductStore(state => state.currentCategory);
-export const useFilters = () => useProductStore(state => state.filters);
-export const useIsLoading = () => useProductStore(state => state.isLoading);
-export const useError = () => useProductStore(state => state.error);
-export const usePagination = () => {
-  const store = useProductStore();
-  return {
-    currentPage: store.currentPage,
-    totalPages: store.totalPages,
-    totalItems: store.totalItems,
-    itemsPerPage: store.itemsPerPage,
-  };
-};
-
-// Action hooks
-export const useFetchAllProducts = () =>
-  useProductStore(state => state.fetchAllProducts);
-export const useFetchProducts = () =>
-  useProductStore(state => state.fetchProducts);
-export const useFetchProduct = () =>
-  useProductStore(state => state.fetchProduct);
-export const useDeleteProduct = () =>
-  useProductStore(state => state.deleteProduct);
-export const useUpdateStock = () =>
-  useProductStore(state => state.updateProductStock);
-export const useUpdateVariationImage = () =>
-  useProductStore(state => state.updateVariationImage);
-export const useSetProducts = () => useProductStore(state => state.setProducts);
-export const useFilterByPathname = () =>
-  useProductStore(state => state.filterByPathname);
-export const useApplyFilters = () =>
-  useProductStore(state => state.applyFilters);
-export const useResetStore = () => useProductStore(state => state.reset);
