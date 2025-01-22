@@ -1,4 +1,3 @@
-// storeTypes.ts
 import {
   Product,
   VariationStock,
@@ -33,6 +32,7 @@ export interface ProductStoreState {
 // Store Actions Interface
 export interface ProductStoreActions {
   // CRUD Operations
+  fetchAllProducts: () => Promise<void>;
   fetchProducts: (
     page?: number,
     limit?: number,
@@ -92,6 +92,7 @@ export const initialStoreState: ProductStoreState = {
     sizes: [],
     colors: [],
     types: [],
+    searchTerm: "",
   },
 };
 

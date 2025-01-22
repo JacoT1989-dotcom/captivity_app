@@ -94,6 +94,7 @@ export interface FilterState {
   sizes: string[];
   colors: string[];
   types: string[];
+  searchTerm?: string;
 }
 
 // API Response Types

@@ -1,4 +1,3 @@
-// productStore.ts
 import { create } from "zustand";
 import {
   Product,
@@ -65,26 +64,59 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
   ...initialState,
 
   // CRUD Operations
-  fetchProducts: async (page = 1, limit = 10, search?: string) => {
+  fetchAllProducts: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await getProducts(page, limit, search);
-      if (!response.success || !response.data) {
-        throw new Error(response.error || "Failed to fetch products");
+      // First, get the total count
+      const initialResponse = await getProducts(1, 1);
+      if (!initialResponse.success || !initialResponse.data) {
+        throw new Error(initialResponse.error || "Failed to fetch products");
       }
 
-      const { products, pagination } = response.data;
+      const totalItems = initialResponse.data.pagination.total;
+      console.log("Total products to fetch:", totalItems);
+
+      // Now fetch all products
+      const response = await getProducts(1, totalItems);
+      if (!response.success || !response.data) {
+        throw new Error(response.error || "Failed to fetch all products");
+      }
+
+      const { products } = response.data;
+
+      console.log("All Products Loaded:", {
+        totalCount: products.length,
+        breakdown: {
+          headwear: products.filter(p =>
+            p.category.some(c => c.includes("headwear"))
+          ).length,
+          apparel: products.filter(p =>
+            p.category.some(c => c.includes("apparel"))
+          ).length,
+          collections: products.filter(p =>
+            p.category.some(c => c.includes("collection"))
+          ).length,
+        },
+        categoryBreakdown: products.reduce(
+          (acc, p) => {
+            p.category.forEach(c => {
+              acc[c] = (acc[c] || 0) + 1;
+            });
+            return acc;
+          },
+          {} as Record<string, number>
+        ),
+      });
 
       set({
         products,
-        currentPage: pagination.currentPage,
-        totalPages: pagination.pages,
-        totalItems: pagination.total,
-        itemsPerPage: pagination.perPage,
+        totalItems: products.length,
+        currentPage: 1,
+        totalPages: Math.ceil(products.length / get().itemsPerPage),
         isLoading: false,
       });
 
-      // Categorize the fetched products
+      // Categorize all products
       get().categorizeProducts(products);
     } catch (error) {
       set({
@@ -95,6 +127,20 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
     }
   },
 
+  // Original fetchProducts kept for pagination display
+  fetchProducts: async (page = 1, limit = 10, search?: string) => {
+    const { products } = get();
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    const paginatedProducts = products.slice(start, end);
+
+    set({
+      currentPage: page,
+      totalPages: Math.ceil(products.length / limit),
+      filteredProducts: paginatedProducts,
+    });
+  },
+
   fetchProduct: async (productId: string) => {
     set({ isLoading: true, error: null });
     try {
@@ -103,7 +149,6 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
         throw new Error(response.error || "Failed to fetch product");
       }
 
-      // Update the product in the current list
       const currentProducts = [...get().products];
       const productIndex = currentProducts.findIndex(p => p.id === productId);
 
@@ -131,7 +176,6 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
         throw new Error(response.error || "Failed to delete product");
       }
 
-      // Remove product from state and update categories
       const currentProducts = get().products.filter(p => p.id !== productId);
       set({ products: currentProducts });
       get().categorizeProducts(currentProducts);
@@ -156,10 +200,7 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
       if (!response.success) {
         throw new Error(response.error || "Failed to update stock");
       }
-
-      // Refresh the product data
       await get().fetchProduct(productId);
-
       set({ isLoading: false });
     } catch (error) {
       set({
@@ -181,10 +222,7 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
       if (!response.success) {
         throw new Error(response.error || "Failed to update variation image");
       }
-
-      // Refresh the product data
       await get().fetchProduct(productId);
-
       set({ isLoading: false });
     } catch (error) {
       set({
@@ -197,13 +235,16 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
     }
   },
 
-  // Collection Operations
   setProducts: (products: Product[]) => {
     set({ products });
     get().categorizeProducts(products);
   },
 
   categorizeProducts: (products: Product[]) => {
+    console.log("Starting Product Categorization:", {
+      totalProducts: products.length,
+    });
+
     const apparelProducts = products.filter(product => {
       const searchText = [...product.category, product.productName].join(" ");
       return isApparelProduct(searchText);
@@ -216,16 +257,27 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
 
     const collectionProducts = { ...initialState.collectionProducts };
 
-    // Categorize products into collections
     Object.keys(collectionProducts).forEach(category => {
+      const typedCategory = category as CollectionCategory;
       if (category === "all-in-collections") {
-        collectionProducts[category as CollectionCategory] = products;
-        return;
+        collectionProducts[typedCategory] = products;
+      } else {
+        collectionProducts[typedCategory] = products.filter(product =>
+          matchesCollectionCategory(product, typedCategory)
+        );
       }
-      collectionProducts[category as CollectionCategory] = products.filter(
-        product =>
-          matchesCollectionCategory(product, category as CollectionCategory)
-      );
+    });
+
+    console.log("Categorization Results:", {
+      total: products.length,
+      apparel: apparelProducts.length,
+      headwear: headwearProducts.length,
+      collections: Object.fromEntries(
+        Object.entries(collectionProducts).map(([key, value]) => [
+          key,
+          value.length,
+        ])
+      ),
     });
 
     set({
@@ -241,6 +293,12 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
     const pathParts = pathname.split("/").filter(Boolean);
     const collectionType = pathParts[1] as CollectionType;
     const category = pathParts[2] || null;
+
+    console.log("Filtering by pathname:", {
+      pathname,
+      collectionType,
+      category,
+    });
 
     let filteredProducts = [...products];
 
@@ -286,6 +344,14 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
       filters
     );
 
+    console.log("Filter Results:", {
+      type: collectionType,
+      category,
+      initialCount: filteredProducts.length,
+      finalCount: finalFilteredProducts.length,
+      appliedFilters: filters,
+    });
+
     set({
       currentCollection: collectionType,
       currentCategory: category,
@@ -294,6 +360,8 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
   },
 
   applyFilters: (newFilters: FilterState) => {
+    console.log("Applying filters:", newFilters);
+
     const { products, currentCollection, currentCategory } = get();
     set({ filters: newFilters });
 
@@ -301,11 +369,18 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
       get().filterByPathname(`/${currentCollection}/${currentCategory}`);
     } else {
       const filteredProducts = applyProductFilters(products, newFilters);
+      console.log("Filter application results:", {
+        totalProducts: products.length,
+        filteredCount: filteredProducts.length,
+        filters: newFilters,
+      });
+
       set({ filteredProducts });
     }
   },
 
   reset: () => {
+    console.log("Resetting store to initial state");
     set(initialState);
   },
 }));
@@ -332,6 +407,8 @@ export const usePagination = () => {
 };
 
 // Action hooks
+export const useFetchAllProducts = () =>
+  useProductStore(state => state.fetchAllProducts);
 export const useFetchProducts = () =>
   useProductStore(state => state.fetchProducts);
 export const useFetchProduct = () =>
