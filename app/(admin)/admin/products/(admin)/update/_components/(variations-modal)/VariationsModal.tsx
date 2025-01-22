@@ -115,7 +115,7 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
         </div>
 
         <DialogHeader className="px-4 py-3 border-b sticky top-0 bg-white z-10">
-          <div className="space-y-4">
+          <div className="space-y-4 flex justify-between">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <DialogTitle className="text-lg font-semibold text-gray-900">
@@ -140,12 +140,6 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
                   </div>
                 )}
               </div>
-              <button
-                onClick={onClose}
-                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
             </div>
 
             <div className="flex gap-4">
