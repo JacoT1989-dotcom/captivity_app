@@ -296,7 +296,9 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
 
                           <div className="flex justify-between items-center text-xs">
                             <span className="font-medium">SKU:</span>
-                            <span>{variation.sku}</span>
+                            <span className="line-clamp-1 hover:line-clamp-none">
+                              {variation.sku}
+                            </span>
                           </div>
 
                           <div className="flex justify-between items-center text-xs">
