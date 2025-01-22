@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import {
   Dialog,
@@ -6,6 +6,13 @@ import {
   DialogTitle,
   DialogHeader,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { X, ImageOff } from "lucide-react";
 import { getStockBadgeColor } from "../utils";
 
@@ -16,7 +23,7 @@ interface Variation {
   size: string;
   sku: string;
   sku2: string;
-  variationImageURL: string; // Name from Prisma schema
+  variationImageURL: string;
   quantity: number;
   productId: string;
 }
@@ -38,62 +45,96 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
   onClose,
   product,
 }) => {
-  useEffect(() => {
-    if (product) {
-      console.log("Full Product Data:", JSON.stringify(product, null, 2));
-      console.log("Sample Variation Keys:", Object.keys(product.variations[0]));
+  const [selectedSize, setSelectedSize] = useState<string>("all");
+  const [selectedColor, setSelectedColor] = useState<string>("all");
 
-      // Log the first few variations in detail
-      product.variations.slice(0, 3).forEach((variation, index) => {
-        console.log(`Detailed Variation ${index + 1}:`, {
-          ...variation,
-          imageFields: {
-            variationImageURL: variation.variationImageURL,
-            hasImage: !!variation.variationImageURL,
-          },
-        });
-      });
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedSize("all");
+      setSelectedColor("all");
     }
-  }, [product]);
+  }, [isOpen]);
 
   if (!product) return null;
 
-  // Group variations first by color, then by size
-  const groupedByColor = product.variations.reduce(
+  // Get unique colors and sizes
+  const uniqueColors = Array.from(
+    new Set(product.variations.map(v => v.color))
+  ).sort();
+  const uniqueSizes = Array.from(
+    new Set(product.variations.map(v => v.size))
+  ).sort();
+
+  // Filter variations based on selected filters
+  const filteredVariations = product.variations.filter(variation => {
+    const matchesSize =
+      selectedSize === "all" || variation.size === selectedSize;
+    const matchesColor =
+      selectedColor === "all" || variation.color === selectedColor;
+    return matchesSize && matchesColor;
+  });
+
+  // Group filtered variations by color
+  const groupedByColor = filteredVariations.reduce(
     (colorAcc, variation) => {
       if (!colorAcc[variation.color]) {
         colorAcc[variation.color] = {};
       }
-
       if (!colorAcc[variation.color][variation.size]) {
         colorAcc[variation.color][variation.size] = [];
       }
-
       colorAcc[variation.color][variation.size].push(variation);
       return colorAcc;
     },
     {} as Record<string, Record<string, Variation[]>>
   );
 
-  // Get unique sizes across all variations
-  const allSizes = Array.from(
-    new Set(product.variations.map(v => v.size))
-  ).sort();
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-[1800px] h-[90vh] md:h-[80vh] flex flex-col">
         <DialogHeader className="px-4 py-3 border-b sticky top-0 bg-white z-10">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-lg font-semibold text-gray-900">
-              {product.productName} - Variations
-            </DialogTitle>
-            <button
-              onClick={onClose}
-              className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-lg font-semibold text-gray-900">
+                {product.productName} - Variations
+              </DialogTitle>
+              <button
+                onClick={onClose}
+                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex gap-4">
+              <Select value={selectedSize} onValueChange={setSelectedSize}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Size" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sizes</SelectItem>
+                  {uniqueSizes.map(size => (
+                    <SelectItem key={size} value={size}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedColor} onValueChange={setSelectedColor}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Color" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Colors</SelectItem>
+                  {uniqueColors.map(color => (
+                    <SelectItem key={color} value={color}>
+                      {color}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </DialogHeader>
 
@@ -112,22 +153,13 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8 gap-3">
-                  {allSizes.map(size => {
-                    const variation = sizeGroups[size]?.[0];
-                    if (!variation) return null;
-
-                    // Log each variation being rendered
-                    console.log(
-                      `Rendering ${color} - ${size}, Image URL:`,
-                      variation.variationImageURL
-                    );
-
+                  {Object.entries(sizeGroups).map(([size, variations]) => {
+                    const variation = variations[0];
                     return (
                       <div
                         key={`${color}-${size}`}
                         className="bg-white rounded-lg border p-2 space-y-2"
                       >
-                        {/* Image */}
                         <div className="relative aspect-square rounded-md overflow-hidden bg-gray-50">
                           {variation.variationImageURL ? (
                             <Image
@@ -136,12 +168,6 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
                               fill
                               className="object-contain p-2"
                               sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
-                              onError={e => {
-                                console.error("Image failed to load:", {
-                                  url: variation.variationImageURL,
-                                  error: e,
-                                });
-                              }}
                             />
                           ) : (
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -153,7 +179,6 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
                           )}
                         </div>
 
-                        {/* Details */}
                         <div className="space-y-1.5">
                           <div className="flex justify-between items-center text-xs">
                             <span className="font-medium">Size:</span>
@@ -173,7 +198,9 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
                           <div className="flex justify-between items-center text-xs">
                             <span className="font-medium">Stock:</span>
                             <span
-                              className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getStockBadgeColor(variation.quantity)}`}
+                              className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getStockBadgeColor(
+                                variation.quantity
+                              )}`}
                             >
                               {variation.quantity}
                             </span>
