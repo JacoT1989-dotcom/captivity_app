@@ -141,64 +141,69 @@ const OrderTable: React.FC<OrderTableProps> = ({
             orders
           </div>
 
- 
-<Table>
-  <TableHeader>
-    <TableRow>
-      <TableHead>Order #</TableHead>
-      <TableHead>Company</TableHead>
-      <TableHead>Customer</TableHead>
-      <TableHead>Total Amount</TableHead>
-      <TableHead>Items</TableHead>
-      <TableHead>Date</TableHead>
-      <TableHead>Status</TableHead>
-      <TableHead>Actions</TableHead>
-    </TableRow>
-  </TableHeader>
-  <TableBody>
-    {initialData.orders.map((order) => (
-      <TableRow 
-        key={order.id}
-        className="cursor-pointer hover:bg-gray-50"
-        onClick={() => router.push(`/admin/orders/${order.id}`)}
-      >
-        <TableCell>{order.referenceNumber || order.id.slice(0, 8)}</TableCell>
-        <TableCell>{order.companyName}</TableCell>
-        <TableCell>
-          <div>
-            <div>{`${order.firstName} ${order.lastName}`}</div>
-            <div className="text-sm text-gray-500">{order.email}</div>
-          </div>
-        </TableCell>
-        <TableCell>R {order.totalAmount.toFixed(2)}</TableCell>
-        <TableCell>{order.orderItems.length} items</TableCell>
-        <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
-        <TableCell>
-          <Badge className={getStatusColor(order.status)}>
-            {order.status}
-          </Badge>
-        </TableCell>
-        <TableCell>
-          <Select
-            defaultValue={order.status}
-            onValueChange={(value) => handleStatusChange(order.id, value as OrderStatus)}
-          >
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.values(OrderStatus).map((status) => (
-                <SelectItem key={status} value={status}>
-                  {status.charAt(0) + status.slice(1).toLowerCase()}
-                </SelectItem>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order #</TableHead>
+                <TableHead>Company</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Total Amount</TableHead>
+                <TableHead>Items</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {initialData.orders.map(order => (
+                <TableRow
+                  key={order.id}
+                  className="cursor-pointer hover:bg-muted-foreground"
+                  onClick={() => router.push(`/admin/orders/${order.id}`)}
+                >
+                  <TableCell>
+                    {order.referenceNumber || order.id.slice(0, 8)}
+                  </TableCell>
+                  <TableCell>{order.companyName}</TableCell>
+                  <TableCell>
+                    <div>
+                      <div>{`${order.firstName} ${order.lastName}`}</div>
+                      <div className="text-sm text-gray-500">{order.email}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>R {order.totalAmount.toFixed(2)}</TableCell>
+                  <TableCell>{order.orderItems.length} items</TableCell>
+                  <TableCell>
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(order.status)}>
+                      {order.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      defaultValue={order.status}
+                      onValueChange={value =>
+                        handleStatusChange(order.id, value as OrderStatus)
+                      }
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.values(OrderStatus).map(status => (
+                          <SelectItem key={status} value={status}>
+                            {status.charAt(0) + status.slice(1).toLowerCase()}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                </TableRow>
               ))}
-            </SelectContent>
-          </Select>
-        </TableCell>
-      </TableRow>
-    ))}
-  </TableBody>
-</Table>
+            </TableBody>
+          </Table>
 
           {initialData.totalPages > 1 && (
             <div className="flex justify-center mt-4">

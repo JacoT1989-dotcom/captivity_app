@@ -269,28 +269,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
       title: "View Pending Orders",
       description: "Handle new customer orders",
       gradient:
-        "bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200",
+        "bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 text-black hover:to-blue-200 border border-blue-200",
       href: "/admin/pendingOrders",
     },
     {
       title: "Create Product",
       description: "Create a new product",
       gradient:
-        "bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 border border-purple-200",
+        "bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 text-black hover:to-purple-200 border border-purple-200",
       href: "/admin/products/create",
     },
     {
       title: "Generate Report",
       description: "Report to the Distributor",
       gradient:
-        "bg-gradient-to-br from-emerald-50 to-emerald-100 hover:from-emerald-100 hover:to-emerald-200 border border-emerald-200",
+        "bg-gradient-to-br from-emerald-50 to-emerald-100 hover:from-emerald-100 text-black hover:to-emerald-200 border border-emerald-200",
       onClick: () => console.log("Generate report"),
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <header className="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg">
+    <div className="min-h-screen bg-gradient-to-br from-background to-gray-100">
+      <header className="bg-gradient-to-r from-blue-600 to-indigo-900 shadow-lg">
         <div className="px-4 py-4 mx-auto max-w-7xl">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
