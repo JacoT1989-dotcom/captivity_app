@@ -175,17 +175,51 @@ export const applyProductFilters = (
 
   if (filters.types.length > 0) {
     filteredProducts = filteredProducts.filter(product => {
-      const productText = [...product.category, product.productName].join(" ");
+      const productText = [...product.category, product.productName]
+        .join(" ")
+        .toLowerCase();
 
-      return filters.types.some(type => {
-        if (["men", "women", "kids"].includes(type.toLowerCase())) {
-          return handleGenderAgeFilter(productText, type);
+      // First check if we're filtering by main category type
+      const mainCategoryType = filters.types[0];
+      if (mainCategoryType === "headwear") {
+        const isHeadwear = isHeadwearProduct(productText);
+
+        // If we have a specific headwear subcategory, check that too
+        if (filters.types.length > 1 && isHeadwear) {
+          const subcategory = filters.types[1];
+          return matchesCategory(productText, subcategory);
         }
-        return matchesCategory(productText, type);
-      });
+        return isHeadwear;
+      }
+
+      if (mainCategoryType === "apparel") {
+        const isApparel = isApparelProduct(productText);
+
+        // If we have a specific apparel subcategory, check that too
+        if (filters.types.length > 1 && isApparel) {
+          const subcategory = filters.types[1];
+          return matchesCategory(productText, subcategory);
+        }
+        return isApparel;
+      }
+
+      if (mainCategoryType === "collections") {
+        // If we have a specific collection, check that
+        if (filters.types.length > 1) {
+          const collectionType = filters.types[1];
+          return matchesCollectionCategory(
+            product,
+            `${collectionType}-collection` as CollectionCategory
+          );
+        }
+        return true; // Show all collections if no specific collection selected
+      }
+
+      return false;
     });
   }
 
+  // Apply stock level filter
   return filteredProducts
     .map(product => ({
       ...product,
