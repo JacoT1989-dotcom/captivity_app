@@ -1,5 +1,11 @@
 import { create } from "zustand";
-import { CategoryStore, CategoryState, FilterState, Product } from "./types";
+import {
+  CategoryStore,
+  CategoryState,
+  FilterState,
+  Product,
+  DynamicPricing,
+} from "./types";
 import { getAllCategories } from "../all-collections-actions";
 
 export const normalizeString = (str: string): string => {
@@ -85,7 +91,6 @@ function applyProductFilters(
   // Step 2: Filter by stock level
   if (filters.stockLevel !== "all") {
     filteredProducts = filteredProducts.filter(product => {
-      // For stock level filtering, check all variations
       const hasVariationsInStock = product.variations.some(v => v.quantity > 0);
       const hasVariationsOutOfStock = product.variations.every(
         v => v.quantity <= 0
@@ -110,7 +115,6 @@ function applyProductFilters(
           filters.colors.length === 0 ||
           filters.colors.includes(variation.color);
 
-        // Check stock level with size/color combination
         let matchesStock = true;
         if (filters.stockLevel !== "all") {
           const isVariationInStock = variation.quantity > 0;
@@ -184,6 +188,32 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
     }
   },
 
+  updateProductPrice: (
+    productId: string,
+    newDynamicPricing: DynamicPricing[]
+  ) => {
+    const { products, currentPath, filters } = get();
+
+    const updatedProducts = products.map(product => {
+      if (product.id === productId) {
+        return {
+          ...product,
+          dynamicPricing: newDynamicPricing,
+        };
+      }
+      return product;
+    });
+
+    set({ products: updatedProducts });
+
+    const filteredProducts = applyProductFilters(
+      updatedProducts,
+      filters,
+      currentPath
+    );
+    set({ filteredProducts });
+  },
+
   setProducts: products => {
     set({ products });
     const { currentPath } = get();
@@ -198,7 +228,6 @@ export const useCategoryStore = create<CategoryStore>()((set, get) => ({
     const pathParts = pathname.split("/").filter(Boolean);
     const specificCollection = pathParts[2];
 
-    // Update filters based on URL
     if (specificCollection) {
       let newType = specificCollection;
 
@@ -291,3 +320,5 @@ export const useCurrentPricing = () =>
   useCategoryStore(state => state.getCurrentPricing);
 export const useEffectivePrice = () =>
   useCategoryStore(state => state.getEffectivePrice);
+export const useUpdateProductPrice = () =>
+  useCategoryStore(state => state.updateProductPrice);

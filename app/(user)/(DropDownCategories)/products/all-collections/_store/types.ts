@@ -136,3 +136,21 @@ export interface FilterSidebarProps {
   onFilterChange?: (filters: FilterState) => void;
   initialFilters?: FilterState;
 }
+
+export interface CategoryStore extends CategoryState {
+  // Existing methods
+  fetchCategories: () => Promise<void>;
+  setProducts: (products: Product[]) => void;
+  filterProductsByPath: (pathname: string) => void;
+  applyFilters: (filters: FilterState) => void;
+  sortProducts: (sortOrder: string) => void;
+  getCurrentPricing: (product: Product) => DynamicPricing | null;
+  getEffectivePrice: (product: Product) => number;
+  reset: () => void;
+
+  // Add this new method
+  updateProductPrice: (
+    productId: string,
+    newDynamicPricing: DynamicPricing[]
+  ) => void;
+}

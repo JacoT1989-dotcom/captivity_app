@@ -4,6 +4,11 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import {
+  useCurrentPricing,
+  useEffectivePrice,
+} from "./_store/all-collections-store";
+import { Product } from "./_store/types";
 
 interface ProductLookup {
   id: string;
@@ -48,12 +53,18 @@ interface ProductLookupModalProps {
   productVariations: ProductVariations | undefined;
 }
 
-// Pricing Ranges Component
+interface PricingRange {
+  from: string;
+  to: string;
+}
+
 const PricingRanges: React.FC<{
   dynamicPricing: ProductLookup["dynamicPricing"];
   sellingPrice: number;
+  productId: string;
 }> = ({ dynamicPricing, sellingPrice }) => {
-  // Define our desired ranges
+  console.log("💰 Dynamic Pricing Data:", dynamicPricing);
+
   const desiredRanges = [
     { from: "1", to: "24" },
     { from: "25", to: "100" },
@@ -61,21 +72,48 @@ const PricingRanges: React.FC<{
     { from: "601", to: "20000" },
   ];
 
-  // Function to find the price for a given range
   const getPriceForRange = (from: string, to: string) => {
     if (!dynamicPricing?.length) {
       return sellingPrice;
     }
 
-    const pricing = dynamicPricing.find(
-      p => parseInt(p.from) <= parseInt(from) && parseInt(p.to) >= parseInt(to)
-    );
+    // Find matching price rules for this range
+    const applicablePricing = dynamicPricing.filter(pricing => {
+      const pricingStart = parseInt(pricing.from);
+      const pricingEnd = parseInt(pricing.to);
+      const rangeStart = parseInt(from);
+      const rangeEnd = parseInt(to);
 
-    return pricing ? parseFloat(pricing.amount) : sellingPrice;
+      // Check if the ranges overlap
+      return pricingStart <= rangeEnd && pricingEnd >= rangeStart;
+    });
+
+    if (applicablePricing.length === 0) {
+      return sellingPrice;
+    }
+
+    // Get the most specific (smallest range) pricing rule
+    const bestPricing = applicablePricing.reduce((best, current) => {
+      const currentRange = parseInt(current.to) - parseInt(current.from);
+      const bestRange = parseInt(best.to) - parseInt(best.from);
+      return currentRange < bestRange ? current : best;
+    });
+
+    console.log(`🏷️ Price calculation for range ${from}-${to}:`, {
+      appliedPricing: bestPricing,
+      originalPrice: sellingPrice,
+    });
+
+    return parseFloat(bestPricing.amount);
   };
 
   const formatPrice = (price: number) => {
-    return `R${price.toFixed(2)}`;
+    return new Intl.NumberFormat("en-ZA", {
+      style: "currency",
+      currency: "ZAR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(price);
   };
 
   return (
@@ -101,6 +139,11 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
   product,
   productVariations,
 }) => {
+  console.log("🔄 ProductLookupModal Rendered:", {
+    productId,
+    productPricing: product?.dynamicPricing,
+    timestamp: new Date().toISOString(),
+  });
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
@@ -150,7 +193,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
     productVariations.variations.find(v => v.color === selectedColor)
       ?.variations || [];
 
-  const getCurrentImage = () => {
+  const getCurrentImage = (): string => {
     if (selectedColor && selectedSize) {
       const colorVariation = productVariations.variations.find(
         v => v.color === selectedColor
@@ -190,7 +233,6 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
   return (
     <Dialog open={isOpen}>
       <DialogContent className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-7xl h-[90vh] md:h-auto">
-        {/* Header */}
         <div className="flex items-center justify-between p-3 border-b rounded-md bg-white sticky top-0 z-10">
           <h2 className="text-lg font-semibold text-red-600">
             {product.productName}
@@ -203,10 +245,8 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
           </button>
         </div>
 
-        {/* Main Content */}
         <div className="overflow-y-auto md:overflow-hidden h-[calc(100%-3.5rem)]">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 p-4">
-            {/* Left Column - Image */}
             <div className="lg:col-span-2">
               <div className="aspect-square relative rounded-lg overflow-hidden bg-gray-50 border">
                 <Image
@@ -220,11 +260,8 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
               </div>
             </div>
 
-            {/* Middle Column - Product Options */}
             <div className="lg:col-span-2 space-y-8">
-              {/* Product Options Card */}
               <div className="bg-white rounded-lg border p-2 space-y-6">
-                {/* Color Selection */}
                 <div>
                   <label className="block text-sm text-gray-600 mb-1.5">
                     Colour:
@@ -246,7 +283,6 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                   </div>
                 </div>
 
-                {/* Size Selection */}
                 <div>
                   <label className="block text-sm text-gray-600 mb-1.5">
                     Size:
@@ -283,7 +319,6 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                   </div>
                 </div>
 
-                {/* Quantity Selection */}
                 <div>
                   <label className="block text-sm text-gray-600 mb-1.5">
                     Quantity:
@@ -335,11 +370,9 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                 </div>
               </div>
 
-              {/* Login Button */}
               <Button
-                className="w-full py-2.5 bg-red-600 text-white rounded-md
-                hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 
-                disabled:cursor-not-allowed"
+                className="w-full py-2.5 bg-red-600 text-white rounded-md hover:bg-red-700 
+                          transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!currentVariation || currentVariation.quantity === 0}
                 asChild
               >
@@ -347,12 +380,12 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
               </Button>
             </div>
 
-            {/* Right Column - Pricing */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg border p-3">
                 <PricingRanges
                   dynamicPricing={product.dynamicPricing}
                   sellingPrice={product.sellingPrice}
+                  productId={product.id}
                 />
               </div>
             </div>
