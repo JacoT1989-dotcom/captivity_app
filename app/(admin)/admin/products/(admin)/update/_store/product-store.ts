@@ -12,6 +12,7 @@ import {
   getProducts,
   updateStock,
   deleteProduct,
+  updateDynamicPricing,
 } from "../actions";
 import {
   isApparelProduct,
@@ -150,6 +151,30 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
         isLoading: false,
         error:
           error instanceof Error ? error.message : "Failed to update stock",
+      });
+    }
+  },
+
+  updateProductDynamicPricing: async (
+    productId: string,
+    pricing: { id: string; from: string; to: string; amount: number }[]
+  ) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await updateDynamicPricing(productId, pricing);
+      if (!response.success) {
+        throw new Error(response.error || "Failed to update dynamic pricing");
+      }
+      await get().fetchProduct(productId);
+      get().fetchProducts(get().currentPage, get().itemsPerPage);
+      set({ isLoading: false });
+    } catch (error) {
+      set({
+        isLoading: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to update dynamic pricing",
       });
     }
   },

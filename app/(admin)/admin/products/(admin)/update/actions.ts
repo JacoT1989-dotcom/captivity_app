@@ -55,7 +55,6 @@ async function uploadImage(file: File, path: string): Promise<string> {
   }
 }
 
-// Fetch product with all its relations
 export async function getProduct(
   productId: string
 ): Promise<ProductWithRelations> {
@@ -94,7 +93,6 @@ export async function getProduct(
   }
 }
 
-// Update stock levels
 export async function updateStock(
   productId: string,
   variations: VariationStock[]
@@ -105,7 +103,6 @@ export async function updateStock(
       throw new Error("Unauthorized access");
     }
 
-    // Verify product ownership
     const product = await prisma.product.findUnique({
       where: {
         id: productId,
@@ -117,7 +114,6 @@ export async function updateStock(
       throw new Error("Product not found or unauthorized");
     }
 
-    // Update stock levels for each variation
     await Promise.all(
       variations.map(async variation => {
         await prisma.variation.update({
@@ -148,7 +144,60 @@ export async function updateStock(
   }
 }
 
-// Add new variation image
+export async function updateDynamicPricing(
+  productId: string,
+  pricing: { id: string; from: string; to: string; amount: number }[]
+): Promise<UpdateStockResult> {
+  try {
+    const { user } = await validateRequest();
+    if (!user) {
+      throw new Error("Unauthorized access");
+    }
+
+    const product = await prisma.product.findUnique({
+      where: {
+        id: productId,
+        userId: user.id,
+      },
+    });
+
+    if (!product) {
+      throw new Error("Product not found or unauthorized");
+    }
+
+    await Promise.all(
+      pricing.map(async price => {
+        await prisma.dynamicPricing.update({
+          where: {
+            id: price.id,
+            productId: productId,
+          },
+          data: {
+            amount: price.amount.toString(),
+          },
+        });
+      })
+    );
+
+    revalidatePath("/products");
+    revalidatePath("/admin/products");
+
+    return {
+      success: true,
+      message: "Dynamic pricing updated successfully",
+    };
+  } catch (error) {
+    console.error("Error updating dynamic pricing:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to update dynamic pricing",
+    };
+  }
+}
+
 export async function addVariationImage(
   productId: string,
   variationId: string,
@@ -160,7 +209,6 @@ export async function addVariationImage(
       throw new Error("Unauthorized access");
     }
 
-    // Verify product ownership and variation existence
     const variation = await prisma.variation.findFirst({
       where: {
         id: variationId,
@@ -175,7 +223,6 @@ export async function addVariationImage(
       throw new Error("Variation not found or unauthorized");
     }
 
-    // Delete old image if it exists
     if (variation.variationImageURL) {
       try {
         const oldUrl = new URL(variation.variationImageURL);
@@ -186,14 +233,12 @@ export async function addVariationImage(
       }
     }
 
-    // Upload new variation image
     const fileExt = image.name.split(".").pop() || "jpg";
     const timestamp = Date.now();
     const path = `products/variations/variation_${timestamp}_${variationId}.${fileExt}`;
 
     const imageUrl = await uploadImage(image, path);
 
-    // Update variation with new image URL
     await prisma.variation.update({
       where: {
         id: variationId,
@@ -222,7 +267,6 @@ export async function addVariationImage(
   }
 }
 
-// Fetch all products for admin with pagination
 export async function getProducts(
   page: number = 1,
   limit: number = 10,
@@ -298,7 +342,6 @@ export async function getProducts(
   }
 }
 
-// actions.ts
 export async function deleteProduct(
   productId: string
 ): Promise<UpdateStockResult> {

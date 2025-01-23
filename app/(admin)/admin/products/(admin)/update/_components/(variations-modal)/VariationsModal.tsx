@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from "react";
-import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -13,10 +12,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, ImageOff } from "lucide-react";
-import { getStockBadgeColor } from "../../utils";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Edit2, Save, X } from "lucide-react";
+import {
+  VariationsModalProps,
+  Variation,
+  DynamicPricing,
+  PriceRange,
+} from "./types";
+import { VariationCard } from "./VariationCard";
 import { formatZAR, priceRangeConfigs } from "./utils";
-import type { VariationsModalProps, PriceRange, Variation } from "./types";
+import {
+  useUpdateStock,
+  useUpdateVariationImage,
+  useUpdateDynamicPricing,
+} from "../../_store/productHooks";
+
+interface EditableVariation extends Omit<Variation, "quantity"> {
+  quantity: string;
+}
+
+interface GroupedVariations {
+  [color: string]: {
+    [size: string]: Variation[];
+  };
+}
+
+interface EditablePriceRange extends PriceRange {
+  id: string;
+  editedPrice: string;
+}
 
 const VariationsModal: React.FC<VariationsModalProps> = ({
   isOpen,
@@ -25,52 +51,48 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
 }) => {
   const [selectedSize, setSelectedSize] = useState<string>("all");
   const [selectedColor, setSelectedColor] = useState<string>("all");
+  const [editingVariation, setEditingVariation] =
+    useState<EditableVariation | null>(null);
+  const [editingPriceRanges, setEditingPriceRanges] = useState(false);
+  const [editablePriceRanges, setEditablePriceRanges] = useState<
+    EditablePriceRange[]
+  >([]);
+
+  const updateStock = useUpdateStock();
+  const updateVariationImage = useUpdateVariationImage();
+  const updateDynamicPricing = useUpdateDynamicPricing();
 
   const priceRanges = useMemo<PriceRange[] | null>(() => {
     if (!product) return null;
-
-    try {
-      const ranges = product.dynamicPricing
-        .filter(pricing =>
-          priceRangeConfigs.some(
-            config => config.from === pricing.from && config.to === pricing.to
-          )
+    return product.dynamicPricing
+      .filter((pricing: DynamicPricing) =>
+        priceRangeConfigs.some(
+          config => config.from === pricing.from && config.to === pricing.to
         )
-        .map(pricing => {
-          const config = priceRangeConfigs.find(
+      )
+      .map((pricing: DynamicPricing) => ({
+        range:
+          priceRangeConfigs.find(
             c => c.from === pricing.from && c.to === pricing.to
-          );
-
-          return {
-            range: config?.label || `${pricing.from}-${pricing.to} items`,
-            quantity: {
-              from: pricing.from,
-              to: pricing.to,
-            },
-            price: parseFloat(pricing.amount),
-          };
-        });
-
-      return ranges.sort(
-        (a, b) => parseInt(a.quantity.from) - parseInt(b.quantity.from)
-      );
-    } catch (error) {
-      console.error("Error processing price ranges:", error);
-      return null;
-    }
+          )?.label || `${pricing.from}-${pricing.to} items`,
+        quantity: { from: pricing.from, to: pricing.to },
+        price: parseFloat(pricing.amount),
+        id: pricing.id,
+      }))
+      .sort((a, b) => parseInt(a.quantity.from) - parseInt(b.quantity.from));
   }, [product]);
 
-  const uniqueColors = useMemo(() => {
+  const uniqueColors = useMemo<string[]>(() => {
     if (!product?.variations) return [];
     return Array.from(new Set(product.variations.map(v => v.color))).sort();
   }, [product?.variations]);
 
-  const uniqueSizes = useMemo(() => {
+  const uniqueSizes = useMemo<string[]>(() => {
     if (!product?.variations) return [];
     return Array.from(new Set(product.variations.map(v => v.size))).sort();
   }, [product?.variations]);
 
-  const filteredVariations = useMemo(() => {
+  const filteredVariations = useMemo<Variation[]>(() => {
     if (!product?.variations) return [];
     return product.variations.filter(variation => {
       const matchesSize =
@@ -81,12 +103,10 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
     });
   }, [product?.variations, selectedSize, selectedColor]);
 
-  const groupedVariations = useMemo(() => {
-    const result: Record<string, Record<string, Variation[]>> = {};
+  const groupedVariations = useMemo<GroupedVariations>(() => {
+    const result: GroupedVariations = {};
     filteredVariations.forEach(variation => {
-      if (!result[variation.color]) {
-        result[variation.color] = {};
-      }
+      if (!result[variation.color]) result[variation.color] = {};
       if (!result[variation.color][variation.size]) {
         result[variation.color][variation.size] = [];
       }
@@ -95,10 +115,80 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
     return result;
   }, [filteredVariations]);
 
+  const handleEditPriceRanges = () => {
+    if (!priceRanges) return;
+    setEditablePriceRanges(
+      priceRanges.map(range => ({
+        ...range,
+        id: range.id,
+        editedPrice: range.price.toString(),
+      }))
+    );
+    setEditingPriceRanges(true);
+  };
+
+  const handlePriceRangeChange = (id: string, value: string) => {
+    setEditablePriceRanges(prev =>
+      prev.map(range =>
+        range.id === id ? { ...range, editedPrice: value } : range
+      )
+    );
+  };
+
+  const handleSavePriceRanges = async () => {
+    if (!product || !editablePriceRanges.length) return;
+
+    const updatedPricing = editablePriceRanges.map(range => ({
+      id: range.id,
+      from: range.quantity.from,
+      to: range.quantity.to,
+      amount: parseFloat(range.editedPrice),
+    }));
+
+    await updateDynamicPricing(product.id, updatedPricing);
+    setEditingPriceRanges(false);
+  };
+
+  const handleImageUpload = async (variationId: string, file: File) => {
+    if (product) {
+      await updateVariationImage(product.id, variationId, file);
+    }
+  };
+
+  const handleSaveVariation = async (variation: Variation) => {
+    if (!editingVariation || !product) return;
+
+    const updatedQuantity = parseInt(editingVariation.quantity);
+    if (isNaN(updatedQuantity)) return;
+
+    await updateStock(product.id, [
+      {
+        id: variation.id,
+        quantity: updatedQuantity,
+      },
+    ]);
+
+    setEditingVariation(null);
+  };
+
+  const handleEditVariation = (variation: Variation) => {
+    if (!product) return;
+    setEditingVariation({
+      ...variation,
+      quantity: variation.quantity.toString(),
+    });
+  };
+
+  const handleEditingChange = (updatedVariation: EditableVariation) => {
+    setEditingVariation(updatedVariation);
+  };
+
   useEffect(() => {
     if (!isOpen) {
       setSelectedSize("all");
       setSelectedColor("all");
+      setEditingVariation(null);
+      setEditingPriceRanges(false);
     }
   }, [isOpen]);
 
@@ -106,14 +196,7 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent
-        className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-[1800px] h-[90vh] md:h-[80vh] flex flex-col"
-        aria-describedby="variation-content"
-      >
-        <div id="variation-content" className="sr-only">
-          Product variations and pricing details for {product.productName}
-        </div>
-
+      <DialogContent className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-[1800px] h-[90vh] md:h-[80vh] flex flex-col">
         <DialogHeader className="px-4 py-3 border-b sticky top-0 bg-white z-10">
           <div className="space-y-4 flex justify-between">
             <div className="flex items-center justify-between">
@@ -123,20 +206,74 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
                 </DialogTitle>
                 {priceRanges && (
                   <div className="flex flex-col gap-1 mt-2">
-                    <div className="text-sm font-medium text-gray-700">
-                      Price Ranges:
-                    </div>
-                    {priceRanges.map((range, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between text-sm"
-                      >
-                        <span className="text-gray-600">{range.range}</span>
-                        <span className="font-medium text-gray-900">
-                          {formatZAR(range.price)}
-                        </span>
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium text-gray-700">
+                        Price Ranges:
                       </div>
-                    ))}
+                      {!editingPriceRanges && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleEditPriceRanges}
+                        >
+                          <Edit2 className="h-3 w-3 mr-1" />
+                          Edit Prices
+                        </Button>
+                      )}
+                    </div>
+                    {editingPriceRanges ? (
+                      <>
+                        {editablePriceRanges.map(range => (
+                          <div
+                            key={range.id}
+                            className="flex items-center justify-between text-sm gap-2"
+                          >
+                            <span className="text-gray-600">{range.range}</span>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                value={range.editedPrice}
+                                onChange={e =>
+                                  handlePriceRangeChange(
+                                    range.id,
+                                    e.target.value
+                                  )
+                                }
+                                className="w-24 h-6 text-xs"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                        <div className="flex justify-end gap-2 mt-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingPriceRanges(false)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={handleSavePriceRanges}
+                          >
+                            <Save className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      priceRanges.map((range, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between text-sm"
+                        >
+                          <span className="text-gray-600">{range.range}</span>
+                          <span className="font-medium text-gray-900">
+                            {formatZAR(range.price)}
+                          </span>
+                        </div>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
@@ -192,66 +329,19 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
                   {Object.entries(sizeGroups).map(([size, variations]) => {
                     const variation = variations[0];
                     return (
-                      <div
+                      <VariationCard
                         key={`${color}-${size}`}
-                        className="bg-white rounded-lg border p-2 space-y-2"
-                      >
-                        <div className="relative aspect-square rounded-md overflow-hidden bg-gray-50">
-                          {variation.variationImageURL ? (
-                            <Image
-                              src={variation.variationImageURL}
-                              alt={`${color} ${size}`}
-                              fill
-                              className="object-contain p-2"
-                              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
-                            />
-                          ) : (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                              <ImageOff className="h-6 w-6 text-gray-400" />
-                              <span className="text-xs text-gray-500 mt-1">
-                                No image
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="font-medium">Size:</span>
-                            <span>{size}</span>
-                          </div>
-
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="font-medium">SKU:</span>
-                            <span className="line-clamp-1 hover:line-clamp-none">
-                              {variation.sku}
-                            </span>
-                          </div>
-
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="font-medium">SKU2:</span>
-                            <span>{variation.sku2}</span>
-                          </div>
-
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="font-medium">Stock:</span>
-                            <span
-                              className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getStockBadgeColor(
-                                variation.quantity
-                              )}`}
-                            >
-                              {variation.quantity}
-                            </span>
-                          </div>
-
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="font-medium">Base Price:</span>
-                            <span className="font-medium">
-                              {formatZAR(product.sellingPrice)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                        variation={variation}
+                        color={color}
+                        size={size}
+                        product={product}
+                        editingVariation={editingVariation}
+                        onEdit={handleEditVariation}
+                        onSave={handleSaveVariation}
+                        onCancelEdit={() => setEditingVariation(null)}
+                        onUpdateImage={handleImageUpload}
+                        onEditingChange={handleEditingChange}
+                      />
                     );
                   })}
                 </div>

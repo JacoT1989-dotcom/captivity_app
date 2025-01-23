@@ -35,6 +35,7 @@ export interface VariationsModalProps {
 }
 
 export interface PriceRange {
+  id: string; // Add this line
   range: string;
   quantity: {
     from: string;
@@ -47,4 +48,18 @@ export interface PriceRangeConfig {
   from: string;
   to: string;
   label: string;
+}
+
+export interface ApiResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
+export interface ImageUploadResponse extends ApiResponse {
+  imageUrl?: string;
+}
+
+export interface ProductResponse extends ApiResponse {
+  data?: Product;
 }

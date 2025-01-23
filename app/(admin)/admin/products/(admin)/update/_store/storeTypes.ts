@@ -37,9 +37,14 @@ export interface ProductStoreActions {
     search?: string
   ) => Promise<void>;
   fetchProduct: (productId: string) => Promise<void>;
+  deleteProduct: (productId: string) => Promise<void>;
   updateProductStock: (
     productId: string,
     variations: VariationStock[]
+  ) => Promise<void>;
+  updateProductDynamicPricing: (
+    productId: string,
+    pricing: { id: string; from: string; to: string; amount: number }[]
   ) => Promise<void>;
   updateVariationImage: (
     productId: string,
@@ -50,7 +55,6 @@ export interface ProductStoreActions {
   filterByPathname: (pathname: string) => void;
   applyFilters: (filters: FilterState) => void;
   categorizeProducts: (products: Product[]) => void;
-  deleteProduct: (productId: string) => Promise<void>;
   reset: () => void;
 }
 
