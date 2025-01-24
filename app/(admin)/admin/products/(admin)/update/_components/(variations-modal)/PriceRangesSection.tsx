@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo } from "react";
+import React, { useCallback, useState, useMemo, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Edit2, Save, X } from "lucide-react";
@@ -33,38 +33,36 @@ export const PriceRangesSection: React.FC<PriceRangesSectionProps> = ({
   const [editablePriceRanges, setEditablePriceRanges] = useState<
     EditablePriceRange[]
   >([]);
+  const [isUpdating, setIsUpdating] = useState(false);
   const updateDynamicPricing = useUpdateDynamicPricing();
 
-  const priceRanges = useMemo<PriceRange[] | null>(() => {
-    if (!product) return null;
-    return product.dynamicPricing
-      .filter((pricing: DynamicPricing) =>
-        priceRangeConfigs.some(
-          config => config.from === pricing.from && config.to === pricing.to
+  useEffect(() => {
+    if (product?.dynamicPricing) {
+      const ranges = product.dynamicPricing
+        .filter((pricing: DynamicPricing) =>
+          priceRangeConfigs.some(
+            config => config.from === pricing.from && config.to === pricing.to
+          )
         )
-      )
-      .map((pricing: DynamicPricing) => ({
-        range:
-          priceRangeConfigs.find(
-            c => c.from === pricing.from && c.to === pricing.to
-          )?.label || `${pricing.from}-${pricing.to} items`,
-        quantity: { from: pricing.from, to: pricing.to },
-        price: parseFloat(pricing.amount),
-        id: pricing.id,
-      }))
-      .sort((a, b) => parseInt(a.quantity.from) - parseInt(b.quantity.from));
+        .map((pricing: DynamicPricing) => ({
+          range:
+            priceRangeConfigs.find(
+              c => c.from === pricing.from && c.to === pricing.to
+            )?.label || `${pricing.from}-${pricing.to} items`,
+          quantity: { from: pricing.from, to: pricing.to },
+          price: parseFloat(pricing.amount),
+          id: pricing.id,
+          editedPrice: pricing.amount,
+        }))
+        .sort((a, b) => parseInt(a.quantity.from) - parseInt(b.quantity.from));
+
+      setEditablePriceRanges(ranges);
+    }
   }, [product]);
 
   const handleEditPriceRanges = useCallback(() => {
-    if (!priceRanges) return;
-    setEditablePriceRanges(
-      priceRanges.map(range => ({
-        ...range,
-        editedPrice: range.price.toString(),
-      }))
-    );
     setEditingPriceRanges(true);
-  }, [priceRanges]);
+  }, []);
 
   const handlePriceRangeChange = useCallback((id: string, value: string) => {
     setEditablePriceRanges(prev =>
@@ -75,7 +73,7 @@ export const PriceRangesSection: React.FC<PriceRangesSectionProps> = ({
   }, []);
 
   const handleSavePriceRanges = useCallback(async () => {
-    if (!product || !editablePriceRanges.length) return;
+    if (!product || !editablePriceRanges.length || isUpdating) return;
 
     const updatedPricing = editablePriceRanges.map(range => ({
       id: range.id,
@@ -85,7 +83,10 @@ export const PriceRangesSection: React.FC<PriceRangesSectionProps> = ({
     }));
 
     try {
-      setEditingPriceRanges(false);
+      setIsUpdating(true);
+
+      await updateDynamicPricing(product.id, updatedPricing);
+
       const updatedProduct = {
         ...product,
         dynamicPricing: updatedPricing.map(p => ({
@@ -93,25 +94,37 @@ export const PriceRangesSection: React.FC<PriceRangesSectionProps> = ({
           type: "dynamic",
           productId: product.id,
           amount: p.amount.toString(),
-        })) as DynamicPricing[],
-      } as Product;
+        })),
+      };
 
       updateLocalProduct(updatedProduct);
-      await updateDynamicPricing(product.id, updatedPricing);
+      setEditingPriceRanges(false);
     } catch (error) {
       console.error("Failed to update pricing:", error);
-      setEditingPriceRanges(true);
+    } finally {
+      setIsUpdating(false);
     }
-  }, [product, editablePriceRanges, updateDynamicPricing, updateLocalProduct]);
+  }, [
+    product,
+    editablePriceRanges,
+    updateDynamicPricing,
+    updateLocalProduct,
+    isUpdating,
+  ]);
 
-  if (!priceRanges) return null;
+  if (!editablePriceRanges.length) return null;
 
   return (
     <div className="flex flex-col gap-1 mt-2">
       <div className="flex items-center justify-between">
         <div className="text-sm font-medium text-gray-700">Price Ranges:</div>
         {!editingPriceRanges && (
-          <Button variant="ghost" size="sm" onClick={handleEditPriceRanges}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleEditPriceRanges}
+            disabled={isUpdating}
+          >
             <Edit2 className="h-3 w-3 mr-1" />
             Edit Prices
           </Button>
@@ -133,6 +146,7 @@ export const PriceRangesSection: React.FC<PriceRangesSectionProps> = ({
                     handlePriceRangeChange(range.id, e.target.value)
                   }
                   className="w-24 h-6 text-xs"
+                  disabled={isUpdating}
                 />
               </div>
             </div>
@@ -142,23 +156,30 @@ export const PriceRangesSection: React.FC<PriceRangesSectionProps> = ({
               size="sm"
               variant="ghost"
               onClick={() => setEditingPriceRanges(false)}
+              disabled={isUpdating}
             >
               <X className="h-3 w-3" />
             </Button>
-            <Button size="sm" variant="default" onClick={handleSavePriceRanges}>
+            <Button
+              size="sm"
+              variant="default"
+              onClick={handleSavePriceRanges}
+              disabled={isUpdating}
+            >
               <Save className="h-3 w-3" />
+              {isUpdating && <span className="ml-2">Saving...</span>}
             </Button>
           </div>
         </>
       ) : (
-        priceRanges.map((range, index) => (
+        editablePriceRanges.map(range => (
           <div
-            key={index}
+            key={range.id}
             className="flex items-center justify-between text-sm"
           >
             <span className="text-gray-600">{range.range}</span>
             <span className="font-medium text-gray-900">
-              {formatZAR(range.price)}
+              {formatZAR(parseFloat(range.editedPrice))}
             </span>
           </div>
         ))
