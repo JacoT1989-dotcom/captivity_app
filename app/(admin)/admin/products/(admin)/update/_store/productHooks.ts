@@ -1,3 +1,4 @@
+// productHooks.ts
 import { useProductStore } from "./product-store";
 
 // State Selectors

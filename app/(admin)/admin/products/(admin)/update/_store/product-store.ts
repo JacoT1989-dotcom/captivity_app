@@ -1,3 +1,4 @@
+// product-store.ts
 import { create } from "zustand";
 import {
   Product,
@@ -31,7 +32,6 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
   ...initialStoreState,
 
   fetchAllProducts: async () => {
-    set({ isLoading: true, error: null });
     try {
       const initialResponse = await getProducts(1, 1);
       if (!initialResponse.success || !initialResponse.data) {
@@ -52,6 +52,7 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
         totalItems: products.length,
         currentPage: 1,
         totalPages: Math.ceil(products.length / get().itemsPerPage),
+        error: null,
         isLoading: false,
       });
 
@@ -59,9 +60,9 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
       get().fetchProducts(1, get().itemsPerPage);
     } catch (error) {
       set({
-        isLoading: false,
         error:
           error instanceof Error ? error.message : "Failed to fetch products",
+        isLoading: false,
       });
     }
   },
@@ -84,7 +85,6 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
   },
 
   fetchProduct: async (productId: string) => {
-    set({ isLoading: true, error: null });
     try {
       const response = await getProduct(productId);
       if (!response.success || !response.data) {
@@ -96,39 +96,13 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
 
       if (productIndex !== -1) {
         currentProducts[productIndex] = response.data;
-        set({ products: currentProducts });
+        set({ products: currentProducts, error: null });
         get().categorizeProducts(currentProducts);
       }
-
-      set({ isLoading: false });
     } catch (error) {
       set({
-        isLoading: false,
         error:
           error instanceof Error ? error.message : "Failed to fetch product",
-      });
-    }
-  },
-
-  deleteProduct: async (productId: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await deleteProduct(productId);
-      if (!response.success) {
-        throw new Error(response.error || "Failed to delete product");
-      }
-
-      const currentProducts = get().products.filter(p => p.id !== productId);
-      set({ products: currentProducts });
-      get().categorizeProducts(currentProducts);
-      get().fetchProducts(get().currentPage, get().itemsPerPage);
-
-      set({ isLoading: false });
-    } catch (error) {
-      set({
-        isLoading: false,
-        error:
-          error instanceof Error ? error.message : "Failed to delete product",
       });
     }
   },
@@ -137,21 +111,38 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
     productId: string,
     variations: VariationStock[]
   ) => {
-    set({ isLoading: true, error: null });
+    const currentProducts = [...get().products];
+    const productIndex = currentProducts.findIndex(p => p.id === productId);
+
+    if (productIndex === -1) return;
+
+    // Optimistic update
+    const updatedProduct = { ...currentProducts[productIndex] };
+    variations.forEach(variation => {
+      const varIndex = updatedProduct.variations.findIndex(
+        v => v.id === variation.id
+      );
+      if (varIndex !== -1) {
+        updatedProduct.variations[varIndex].quantity = variation.quantity;
+      }
+    });
+
+    set({ products: currentProducts });
+    get().categorizeProducts(currentProducts);
+
     try {
       const response = await updateStock(productId, variations);
       if (!response.success) {
         throw new Error(response.error || "Failed to update stock");
       }
-      await get().fetchProduct(productId);
-      get().fetchProducts(get().currentPage, get().itemsPerPage);
-      set({ isLoading: false });
     } catch (error) {
+      // Revert on failure
       set({
-        isLoading: false,
+        products: currentProducts,
         error:
           error instanceof Error ? error.message : "Failed to update stock",
       });
+      get().categorizeProducts(currentProducts);
     }
   },
 
@@ -159,23 +150,37 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
     productId: string,
     pricing: { id: string; from: string; to: string; amount: number }[]
   ) => {
-    set({ isLoading: true, error: null });
+    const currentProducts = [...get().products];
+    const productIndex = currentProducts.findIndex(p => p.id === productId);
+
+    if (productIndex === -1) return;
+
+    // Optimistic update
+    const updatedProduct = { ...currentProducts[productIndex] };
+    updatedProduct.dynamicPricing = pricing.map(p => ({
+      ...p,
+      type: "dynamic",
+      productId,
+      amount: p.amount.toString(),
+    }));
+
+    currentProducts[productIndex] = updatedProduct;
+    set({ products: currentProducts });
+    get().categorizeProducts(currentProducts);
+
     try {
       const response = await updateDynamicPricing(productId, pricing);
       if (!response.success) {
-        throw new Error(response.error || "Failed to update dynamic pricing");
+        throw new Error(response.error || "Failed to update pricing");
       }
-      await get().fetchProduct(productId);
-      get().fetchProducts(get().currentPage, get().itemsPerPage);
-      set({ isLoading: false });
     } catch (error) {
+      // Revert on failure
       set({
-        isLoading: false,
+        products: currentProducts,
         error:
-          error instanceof Error
-            ? error.message
-            : "Failed to update dynamic pricing",
+          error instanceof Error ? error.message : "Failed to update pricing",
       });
+      get().categorizeProducts(currentProducts);
     }
   },
 
@@ -184,29 +189,54 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
     variationId: string,
     image: File
   ) => {
-    set({ isLoading: true, error: null });
     try {
       const response = await addVariationImage(productId, variationId, image);
       if (!response.success) {
-        throw new Error(response.error || "Failed to update variation image");
+        throw new Error(response.error || "Failed to update image");
       }
-      await get().fetchProduct(productId);
-      set({ isLoading: false });
+
+      const productResponse = await getProduct(productId);
+      if (productResponse.success && productResponse.data) {
+        const currentProducts = [...get().products];
+        const productIndex = currentProducts.findIndex(p => p.id === productId);
+        if (productIndex !== -1) {
+          currentProducts[productIndex] = productResponse.data;
+          set({ products: currentProducts, error: null });
+          get().categorizeProducts(currentProducts);
+        }
+      }
     } catch (error) {
       set({
-        isLoading: false,
         error:
-          error instanceof Error
-            ? error.message
-            : "Failed to update variation image",
+          error instanceof Error ? error.message : "Failed to update image",
+      });
+    }
+  },
+
+  deleteProduct: async (productId: string) => {
+    const currentProducts = [...get().products];
+
+    try {
+      const response = await deleteProduct(productId);
+      if (!response.success) {
+        throw new Error(response.error || "Failed to delete product");
+      }
+
+      const updatedProducts = currentProducts.filter(p => p.id !== productId);
+      set({ products: updatedProducts, error: null });
+      get().categorizeProducts(updatedProducts);
+      get().fetchProducts(get().currentPage, get().itemsPerPage);
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error ? error.message : "Failed to delete product",
       });
     }
   },
 
   setProducts: (products: Product[]) => {
-    set({ products });
+    set({ products, error: null });
     get().categorizeProducts(products);
-    get().fetchProducts(1, get().itemsPerPage);
   },
 
   categorizeProducts: (products: Product[]) => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,18 +15,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Edit2, Save, X } from "lucide-react";
-import {
-  VariationsModalProps,
-  Variation,
-  DynamicPricing,
-  PriceRange,
-} from "./types";
+import type { VariationsModalProps, Variation, PriceRange } from "./types";
+import type { Product, DynamicPricing } from "../../types";
 import { VariationCard } from "./VariationCard";
 import { formatZAR, priceRangeConfigs } from "./utils";
 import {
   useUpdateStock,
   useUpdateVariationImage,
   useUpdateDynamicPricing,
+  useProducts,
+  useSetProducts,
 } from "../../_store/productHooks";
 
 interface EditableVariation extends Omit<Variation, "quantity"> {
@@ -61,6 +59,8 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
   const updateStock = useUpdateStock();
   const updateVariationImage = useUpdateVariationImage();
   const updateDynamicPricing = useUpdateDynamicPricing();
+  const products = useProducts();
+  const setProducts = useSetProducts();
 
   const priceRanges = useMemo<PriceRange[] | null>(() => {
     if (!product) return null;
@@ -115,7 +115,17 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
     return result;
   }, [filteredVariations]);
 
-  const handleEditPriceRanges = () => {
+  const updateLocalProduct = useCallback(
+    (updatedProduct: Product) => {
+      const newProducts = products.map(p =>
+        p.id === updatedProduct.id ? updatedProduct : p
+      );
+      setProducts(newProducts);
+    },
+    [products, setProducts]
+  );
+
+  const handleEditPriceRanges = useCallback(() => {
     if (!priceRanges) return;
     setEditablePriceRanges(
       priceRanges.map(range => ({
@@ -125,17 +135,17 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
       }))
     );
     setEditingPriceRanges(true);
-  };
+  }, [priceRanges]);
 
-  const handlePriceRangeChange = (id: string, value: string) => {
+  const handlePriceRangeChange = useCallback((id: string, value: string) => {
     setEditablePriceRanges(prev =>
       prev.map(range =>
         range.id === id ? { ...range, editedPrice: value } : range
       )
     );
-  };
+  }, []);
 
-  const handleSavePriceRanges = async () => {
+  const handleSavePriceRanges = useCallback(async () => {
     if (!product || !editablePriceRanges.length) return;
 
     const updatedPricing = editablePriceRanges.map(range => ({
@@ -145,43 +155,87 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
       amount: parseFloat(range.editedPrice),
     }));
 
-    await updateDynamicPricing(product.id, updatedPricing);
-    setEditingPriceRanges(false);
-  };
+    try {
+      setEditingPriceRanges(false);
+      const updatedProduct = {
+        ...product,
+        dynamicPricing: updatedPricing.map(p => ({
+          ...p,
+          type: "dynamic",
+          productId: product.id,
+          amount: p.amount.toString(),
+        })) as DynamicPricing[],
+      } as Product;
 
-  const handleImageUpload = async (variationId: string, file: File) => {
-    if (product) {
-      await updateVariationImage(product.id, variationId, file);
+      updateLocalProduct(updatedProduct);
+      await updateDynamicPricing(product.id, updatedPricing);
+    } catch (error) {
+      console.error("Failed to update pricing:", error);
+      setEditingPriceRanges(true);
     }
-  };
+  }, [product, editablePriceRanges, updateDynamicPricing, updateLocalProduct]);
 
-  const handleSaveVariation = async (variation: Variation) => {
-    if (!editingVariation || !product) return;
+  const handleImageUpload = useCallback(
+    async (variationId: string, file: File) => {
+      if (!product) return;
+      try {
+        await updateVariationImage(product.id, variationId, file);
+      } catch (error) {
+        console.error("Failed to update image:", error);
+      }
+    },
+    [product, updateVariationImage]
+  );
 
-    const updatedQuantity = parseInt(editingVariation.quantity);
-    if (isNaN(updatedQuantity)) return;
+  const handleSaveVariation = useCallback(
+    async (variation: Variation) => {
+      if (!editingVariation || !product) return;
 
-    await updateStock(product.id, [
-      {
-        id: variation.id,
-        quantity: updatedQuantity,
-      },
-    ]);
+      const updatedQuantity = parseInt(editingVariation.quantity);
+      if (isNaN(updatedQuantity)) return;
 
-    setEditingVariation(null);
-  };
+      try {
+        setEditingVariation(null);
+        const updatedVariations = product.variations.map(v =>
+          v.id === variation.id ? { ...v, quantity: updatedQuantity } : v
+        );
+        const updatedProduct = {
+          ...product,
+          variations: updatedVariations,
+        } as Product;
 
-  const handleEditVariation = (variation: Variation) => {
-    if (!product) return;
-    setEditingVariation({
-      ...variation,
-      quantity: variation.quantity.toString(),
-    });
-  };
+        updateLocalProduct(updatedProduct);
+        await updateStock(product.id, [
+          {
+            id: variation.id,
+            quantity: updatedQuantity,
+          },
+        ]);
+      } catch (error) {
+        console.error("Failed to update stock:", error);
+        setEditingVariation(editingVariation);
+      }
+    },
+    [editingVariation, product, updateStock, updateLocalProduct]
+  );
 
-  const handleEditingChange = (updatedVariation: EditableVariation) => {
-    setEditingVariation(updatedVariation);
-  };
+  const handleEditVariation = useCallback(
+    (variation: Variation) => {
+      if (!product) return;
+      setEditingVariation({
+        ...variation,
+        quantity: variation.quantity.toString(),
+      });
+    },
+    [product]
+  );
+
+  const handleEditingChange = useCallback(
+    (updatedVariation: EditableVariation) => {
+      setEditingVariation(updatedVariation);
+    },
+    []
+  );
 
   useEffect(() => {
     if (!isOpen) {
