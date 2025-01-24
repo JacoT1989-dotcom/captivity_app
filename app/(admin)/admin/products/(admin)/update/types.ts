@@ -3,6 +3,21 @@ import { Prisma } from "@prisma/client";
 // Base Types
 export type QueryMode = "default" | "insensitive";
 
+// Image Types and Constants
+export const ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/svg+xml",
+  "image/bmp",
+  "image/tiff",
+] as const;
+
+export type AllowedImageType = (typeof ALLOWED_IMAGE_TYPES)[number];
+
+export const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+
 // Collection Types
 export type CollectionType = "apparel" | "headwear" | "collections";
 
