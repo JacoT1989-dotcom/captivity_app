@@ -1,8 +1,45 @@
-// types.ts
 import { Prisma } from "@prisma/client";
 
 // Base Types
 export type QueryMode = "default" | "insensitive";
+
+// Collection Types
+export type CollectionType = "apparel" | "headwear" | "collections";
+
+export type ApparelCategory =
+  | "all-in-apparel"
+  | "new-in-apparel"
+  | "men"
+  | "women"
+  | "kids"
+  | "t-shirts"
+  | "golfers"
+  | "hoodies"
+  | "jackets"
+  | "bottoms";
+
+export type HeadwearCategory =
+  | "all-in-headwear"
+  | "new-in-headwear"
+  | "flat-peaks"
+  | "pre-curved-peaks"
+  | "hats"
+  | "multifunctional-headwear"
+  | "beanies"
+  | "trucker-caps"
+  | "bucket-hats";
+
+export type CollectionCategory =
+  | "all-in-collections"
+  | "camo-collection"
+  | "winter-collection"
+  | "baseball-collection"
+  | "fashion-collection"
+  | "sport-collection"
+  | "industrial-collection"
+  | "leisure-collection"
+  | "kids-collection"
+  | "african-collection";
 
 // Product Related Types
 export interface Product {
@@ -50,44 +87,6 @@ export interface FeaturedImage {
   productId: string;
 }
 
-// Collection Types
-export type CollectionType = "apparel" | "headwear" | "collections";
-
-export type ApparelCategory =
-  | "all-in-apparel"
-  | "new-in-apparel"
-  | "men"
-  | "women"
-  | "kids"
-  | "t-shirts"
-  | "golfers"
-  | "hoodies"
-  | "jackets"
-  | "bottoms";
-
-export type HeadwearCategory =
-  | "all-in-headwear"
-  | "new-in-headwear"
-  | "flat-peaks"
-  | "pre-curved-peaks"
-  | "hats"
-  | "multifunctional-headwear"
-  | "beanies"
-  | "trucker-caps"
-  | "bucket-hats";
-
-export type CollectionCategory =
-  | "all-in-collections"
-  | "camo-collection"
-  | "winter-collection"
-  | "baseball-collection"
-  | "fashion-collection"
-  | "sport-collection"
-  | "industrial-collection"
-  | "leisure-collection"
-  | "kids-collection"
-  | "african-collection";
-
 // Filter Types
 export interface FilterState {
   stockLevel: "all" | "in-stock" | "low-stock" | "out-of-stock";
@@ -97,7 +96,54 @@ export interface FilterState {
   searchTerm?: string;
 }
 
+// Price Range Types
+export interface PriceRange {
+  id: string;
+  range: string;
+  quantity: {
+    from: string;
+    to: string;
+  };
+  price: number;
+}
+
+export interface PriceRangeConfig {
+  from: string;
+  to: string;
+  label: string;
+}
+
+export interface EditablePriceRange extends PriceRange {
+  editedPrice: string;
+}
+
+// Component Props Types
+export interface VariationsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  product: Product | null;
+}
+
+export interface PriceRangesSectionProps {
+  product: Product;
+  updateLocalProduct: (product: Product) => void;
+}
+
 // API Response Types
+export interface ApiResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
+export interface ImageUploadResponse extends ApiResponse {
+  imageUrl?: string;
+}
+
+export interface ProductResponse extends ApiResponse {
+  data?: Product;
+}
+
 export interface UpdateStockResult {
   success: boolean;
   message?: string;
@@ -127,68 +173,4 @@ export interface ProductsResponse {
 export interface VariationStock {
   id: string;
   quantity: number;
-}
-
-// Image Types
-export const ALLOWED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-  "image/svg+xml",
-  "image/bmp",
-  "image/tiff",
-] as const;
-
-export type AllowedImageType = (typeof ALLOWED_IMAGE_TYPES)[number];
-
-export const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
-
-// Store State Types
-export interface ProductState {
-  // Collection States
-  products: Product[];
-  filteredProducts: Product[];
-  apparelProducts: Product[];
-  headwearProducts: Product[];
-  collectionProducts: Record<CollectionCategory, Product[]>;
-  currentCollection: CollectionType | null;
-  currentCategory: string | null;
-
-  // Pagination State
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-
-  // UI States
-  isLoading: boolean;
-  error: string | null;
-  filters: FilterState;
-}
-
-export interface ProductStore extends ProductState {
-  // CRUD Operations
-  fetchProducts: (
-    page?: number,
-    limit?: number,
-    search?: string
-  ) => Promise<void>;
-  fetchProduct: (productId: string) => Promise<void>;
-  updateProductStock: (
-    productId: string,
-    variations: VariationStock[]
-  ) => Promise<void>;
-  updateVariationImage: (
-    productId: string,
-    variationId: string,
-    image: File
-  ) => Promise<void>;
-
-  // Collection Operations
-  setProducts: (products: Product[]) => void;
-  filterByPathname: (pathname: string) => void;
-  applyFilters: (filters: FilterState) => void;
-  categorizeProducts: (products: Product[]) => void;
-  reset: () => void;
 }

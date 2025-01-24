@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ImageOff, Edit2, Save, X } from "lucide-react";
 import { getStockBadgeColor } from "../../utils";
 import { formatZAR } from "./utils";
-import { Variation, Product } from "./types";
+import { Product, Variation } from "../../types";
 
 interface EditableVariation extends Omit<Variation, "quantity"> {
   quantity: string;

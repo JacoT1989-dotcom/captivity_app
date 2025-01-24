@@ -1,4 +1,5 @@
-import { PriceRangeConfig } from "./types";
+import { PriceRangeConfig } from "../../types";
+
 
 export const formatZAR = (amount: number): string => {
   return new Intl.NumberFormat("en-ZA", {
