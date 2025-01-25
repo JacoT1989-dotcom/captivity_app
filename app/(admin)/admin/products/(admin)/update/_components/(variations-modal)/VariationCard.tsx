@@ -1,9 +1,8 @@
-// VariationCard.tsx
 import React from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ImageOff, Edit2, Save, X } from "lucide-react";
+import { Save, X } from "lucide-react";
 import { getStockBadgeColor } from "../../utils";
 import { formatZAR } from "./utils";
 import { Product, Variation } from "../../types";
@@ -21,7 +20,6 @@ interface VariationCardProps {
   onEdit: (variation: Variation) => void;
   onSave: (variation: Variation) => void;
   onCancelEdit: () => void;
-  onUpdateImage: (variationId: string, file: File) => Promise<void>;
   onEditingChange: (editingVariation: EditableVariation) => void;
 }
 
@@ -34,54 +32,20 @@ export const VariationCard: React.FC<VariationCardProps> = ({
   onEdit,
   onSave,
   onCancelEdit,
-  onUpdateImage,
   onEditingChange,
 }) => {
   const isEditing = editingVariation?.id === variation.id;
 
-  const handleImageUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      await onUpdateImage(variation.id, file);
-    }
-  };
-
   return (
     <div className="bg-white rounded-lg border p-2 space-y-2">
       <div className="relative aspect-square rounded-md overflow-hidden bg-gray-50">
-        {variation.variationImageURL ? (
-          <Image
-            src={variation.variationImageURL}
-            alt={`${color} ${size}`}
-            fill
-            className="object-contain p-2"
-            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
-          />
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <ImageOff className="h-6 w-6 text-gray-400" />
-            <span className="text-xs text-gray-500 mt-1">No image</span>
-          </div>
-        )}
-        <input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          id={`image-upload-${variation.id}`}
-          onChange={handleImageUpload}
+        <Image
+          src={variation.variationImageURL || "/placeholder.png"}
+          alt={`${color} ${size}`}
+          fill
+          className="object-contain p-2"
+          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
         />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute bottom-1 right-1 bg-white/80 hover:bg-white"
-          onClick={() =>
-            document.getElementById(`image-upload-${variation.id}`)?.click()
-          }
-        >
-          <Edit2 className="h-3 w-3" />
-        </Button>
       </div>
 
       <div className="space-y-1.5">
@@ -166,7 +130,6 @@ export const VariationCard: React.FC<VariationCardProps> = ({
               className="w-full mt-2"
               onClick={() => onEdit(variation)}
             >
-              <Edit2 className="h-3 w-3 mr-1" />
               Edit Stock
             </Button>
           </>

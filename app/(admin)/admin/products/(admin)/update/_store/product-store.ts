@@ -155,23 +155,55 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
 
     if (productIndex === -1) return;
 
-    // Optimistic update
-    const updatedProduct = { ...currentProducts[productIndex] };
-    updatedProduct.dynamicPricing = pricing.map(p => ({
+    // Create the updated pricing structure
+    const formattedPricing = pricing.map(p => ({
       ...p,
       type: "dynamic",
       productId,
       amount: p.amount.toString(),
     }));
 
+    // Optimistic update
+    const updatedProduct = {
+      ...currentProducts[productIndex],
+      dynamicPricing: formattedPricing,
+    };
     currentProducts[productIndex] = updatedProduct;
-    set({ products: currentProducts });
-    get().categorizeProducts(currentProducts);
+
+    // Update local state immediately
+    set({
+      products: currentProducts,
+      filteredProducts: get().filteredProducts.map(p =>
+        p.id === productId ? updatedProduct : p
+      ),
+      paginatedProducts: get().paginatedProducts.map(p =>
+        p.id === productId ? updatedProduct : p
+      ),
+    });
 
     try {
       const response = await updateDynamicPricing(productId, pricing);
       if (!response.success) {
         throw new Error(response.error || "Failed to update pricing");
+      }
+
+      // Fetch the latest product data to ensure consistency
+      const productResponse = await getProduct(productId);
+      if (productResponse.success && productResponse.data) {
+        const freshProduct = productResponse.data;
+        const updatedProducts = currentProducts.map(p =>
+          p.id === productId ? freshProduct : p
+        );
+
+        set({
+          products: updatedProducts,
+          filteredProducts: get().filteredProducts.map(p =>
+            p.id === productId ? freshProduct : p
+          ),
+          paginatedProducts: get().paginatedProducts.map(p =>
+            p.id === productId ? freshProduct : p
+          ),
+        });
       }
     } catch (error) {
       // Revert on failure
@@ -179,8 +211,9 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
         products: currentProducts,
         error:
           error instanceof Error ? error.message : "Failed to update pricing",
+        filteredProducts: get().filteredProducts,
+        paginatedProducts: get().paginatedProducts,
       });
-      get().categorizeProducts(currentProducts);
     }
   },
 
