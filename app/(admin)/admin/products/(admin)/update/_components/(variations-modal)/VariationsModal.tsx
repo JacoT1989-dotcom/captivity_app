@@ -12,25 +12,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Edit2, ImageOff, ChevronDown, ChevronUp } from "lucide-react";
-import Image from "next/image";
-import {
-  Product,
-  Variation,
-  VariationsModalProps,
-  UpdateStockResult,
-} from "../../types";
+import ColorImageUploader from "./ColorImageUploader";
+import { Product, Variation, VariationsModalProps } from "../../types";
 import { VariationCard } from "./VariationCard";
 import {
   useUpdateStock,
-  useUpdateVariationImage,
   useProducts,
   useSetProducts,
   useFetchProduct,
 } from "../../_store/productHooks";
 import PriceRangesSection from "./PriceRangesSection";
-import { updateVariationImagesForColor } from "../../product-actions";
 
 interface EditableVariation extends Omit<Variation, "quantity"> {
   quantity: string;
@@ -56,12 +47,9 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
   const [selectedColor, setSelectedColor] = useState<string>("all");
   const [editingVariation, setEditingVariation] =
     useState<EditableVariation | null>(null);
-  const [processingImage, setProcessingImage] = useState<string | null>(null);
   const [debugLog, setDebugLog] = useState<string[]>([]);
-  const [showDebugLog, setShowDebugLog] = useState(false);
 
   const updateStock = useUpdateStock();
-  const updateVariationImage = useUpdateVariationImage();
   const products = useProducts();
   const setProducts = useSetProducts();
   const fetchProduct = useFetchProduct();
@@ -141,45 +129,6 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
     );
     return result;
   }, [filteredVariations, addDebugLog]);
-
-  const handleColorImageUpload = async (color: string, file: File) => {
-    if (!product) return;
-    setProcessingImage(color);
-
-    try {
-      const colorVariations = product.variations.filter(v => v.color === color);
-      addDebugLog(
-        `Found ${colorVariations.length} variations to update for color ${color}`
-      );
-
-      const base64 = await new Promise<string>(resolve => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-
-      const result = await updateVariationImagesForColor(
-        product.id,
-        colorVariations,
-        base64,
-        file.type
-      );
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      await fetchProduct(product.id);
-      addDebugLog("Successfully updated all variations");
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      addDebugLog(`Error updating images: ${errorMessage}`);
-      console.error("Image upload error:", error);
-    } finally {
-      setProcessingImage(null);
-    }
-  };
 
   const updateLocalProduct = useCallback(
     (updatedProduct: Product) => {
@@ -338,50 +287,13 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
                     />
                   </div>
 
-                  <div className="relative w-24 h-24 bg-gray-50 rounded-lg overflow-hidden border">
-                    {colorGroup.masterImage ? (
-                      <Image
-                        src={colorGroup.masterImage}
-                        alt={`${color} master image`}
-                        fill
-                        className="object-contain p-2"
-                        sizes="96px"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <ImageOff className="h-6 w-6 text-gray-400" />
-                        <span className="text-xs text-gray-500 mt-1">
-                          No image
-                        </span>
-                      </div>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      id={`color-image-${color}`}
-                      onChange={e => {
-                        const file = e.target.files?.[0];
-                        if (file) handleColorImageUpload(color, file);
-                      }}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute bottom-1 right-1 bg-white/80 hover:bg-white"
-                      onClick={() =>
-                        document.getElementById(`color-image-${color}`)?.click()
-                      }
-                      disabled={processingImage === color}
-                    >
-                      <Edit2 className="h-3 w-3" />
-                      {processingImage === color && (
-                        <span className="absolute inset-0 flex items-center justify-center bg-white/80">
-                          <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900" />
-                        </span>
-                      )}
-                    </Button>
-                  </div>
+                  <ColorImageUploader
+                    color={color}
+                    masterImage={colorGroup.masterImage}
+                    product={product}
+                    onUpdateComplete={() => fetchProduct(product.id)}
+                    addDebugLog={addDebugLog}
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8 gap-3">
