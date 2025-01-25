@@ -1,4 +1,3 @@
-// product-store.ts
 import { create } from "zustand";
 import {
   Product,
@@ -6,9 +5,12 @@ import {
   FilterState,
   CollectionType,
   CollectionCategory,
+  ProductStore,
+  ProductStoreState,
+  initialStoreState,
+  UpdateStockResult,
 } from "../types";
 import {
-  addVariationImage,
   getProduct,
   getProducts,
   updateStock,
@@ -22,11 +24,7 @@ import {
   matchesCollectionCategory,
   applyProductFilters,
 } from "../utils";
-import {
-  ProductStore,
-  ProductStoreState,
-  initialStoreState,
-} from "./storeTypes";
+import { addVariationImage } from "../product-actions";
 
 export const useProductStore = create<ProductStore>()((set, get) => ({
   ...initialStoreState,
@@ -170,7 +168,6 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
     };
     currentProducts[productIndex] = updatedProduct;
 
-    // Update local state immediately
     set({
       products: currentProducts,
       filteredProducts: get().filteredProducts.map(p =>
@@ -220,29 +217,28 @@ export const useProductStore = create<ProductStore>()((set, get) => ({
   updateVariationImage: async (
     productId: string,
     variationId: string,
-    image: File
-  ) => {
+    file: File
+  ): Promise<UpdateStockResult> => {
     try {
-      const response = await addVariationImage(productId, variationId, image);
-      if (!response.success) {
-        throw new Error(response.error || "Failed to update image");
-      }
-
-      const productResponse = await getProduct(productId);
-      if (productResponse.success && productResponse.data) {
-        const currentProducts = [...get().products];
-        const productIndex = currentProducts.findIndex(p => p.id === productId);
-        if (productIndex !== -1) {
-          currentProducts[productIndex] = productResponse.data;
-          set({ products: currentProducts, error: null });
-          get().categorizeProducts(currentProducts);
-        }
-      }
-    } catch (error) {
-      set({
-        error:
-          error instanceof Error ? error.message : "Failed to update image",
+      const base64 = await new Promise<string>(resolve => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
       });
+
+      const response = await addVariationImage(
+        productId,
+        variationId,
+        base64,
+        file.type
+      );
+      if (response.success) {
+        await get().fetchProduct(productId);
+      }
+      return response;
+    } catch (error) {
+      console.error("Store error:", error);
+      return { success: false, error: "Failed to update image" };
     }
   },
 

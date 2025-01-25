@@ -163,6 +163,7 @@ export interface UpdateStockResult {
   success: boolean;
   message?: string;
   error?: string;
+  imageUrl?: string;
 }
 
 export interface ProductWithRelations {
@@ -189,3 +190,85 @@ export interface VariationStock {
   id: string;
   quantity: number;
 }
+
+// Store Types
+export interface ProductStoreState {
+  products: Product[];
+  filteredProducts: Product[];
+  paginatedProducts: Product[];
+  apparelProducts: Product[];
+  headwearProducts: Product[];
+  collectionProducts: Record<CollectionCategory, Product[]>;
+  currentCollection: CollectionType | null;
+  currentCategory: string | null;
+  filters: FilterState;
+  currentPage: number;
+  totalPages: number;
+  itemsPerPage: number;
+  totalItems: number;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface ProductStore extends ProductStoreState {
+  fetchAllProducts: () => Promise<void>;
+  fetchProducts: (
+    page?: number,
+    limit?: number,
+    search?: string
+  ) => Promise<void>;
+  fetchProduct: (productId: string) => Promise<void>;
+  updateProductStock: (
+    productId: string,
+    variations: VariationStock[]
+  ) => Promise<void>;
+  updateProductDynamicPricing: (
+    productId: string,
+    pricing: { id: string; from: string; to: string; amount: number }[]
+  ) => Promise<void>;
+  updateVariationImage: (
+    productId: string,
+    variationId: string,
+    image: File
+  ) => Promise<UpdateStockResult>;
+  deleteProduct: (productId: string) => Promise<void>;
+  setProducts: (products: Product[]) => void;
+  categorizeProducts: (products: Product[]) => void;
+  filterByPathname: (pathname: string) => void;
+  applyFilters: (filters: FilterState) => void;
+  reset: () => void;
+}
+
+export const initialStoreState: ProductStoreState = {
+  products: [],
+  filteredProducts: [],
+  paginatedProducts: [],
+  apparelProducts: [],
+  headwearProducts: [],
+  collectionProducts: {
+    "all-in-collections": [],
+    "camo-collection": [],
+    "winter-collection": [],
+    "baseball-collection": [],
+    "fashion-collection": [],
+    "sport-collection": [],
+    "industrial-collection": [],
+    "leisure-collection": [],
+    "kids-collection": [],
+    "african-collection": [],
+  },
+  currentCollection: null,
+  currentCategory: null,
+  filters: {
+    stockLevel: "all",
+    sizes: [],
+    colors: [],
+    types: [],
+  },
+  currentPage: 1,
+  totalPages: 1,
+  itemsPerPage: 10,
+  totalItems: 0,
+  isLoading: true,
+  error: null,
+};

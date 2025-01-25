@@ -3,8 +3,8 @@ import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Save, X } from "lucide-react";
-import { getStockBadgeColor } from "../../utils";
-import { formatZAR } from "./utils";
+import { formatZAR, getStockBadgeColor } from "../../utils";
+
 import { Product, Variation } from "../../types";
 
 interface EditableVariation extends Omit<Variation, "quantity"> {

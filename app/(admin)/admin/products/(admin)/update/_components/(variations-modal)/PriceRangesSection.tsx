@@ -3,8 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Edit2, Save, X } from "lucide-react";
 import type { Product, DynamicPricing } from "../../types";
-import { formatZAR, priceRangeConfigs } from "./utils";
 import { useUpdateDynamicPricing } from "../../_store/productHooks";
+import { formatZAR, priceRangeConfigs } from "../../utils";
 
 interface PriceRange {
   range: string;

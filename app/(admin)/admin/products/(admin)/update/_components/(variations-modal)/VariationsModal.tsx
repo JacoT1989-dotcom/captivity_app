@@ -30,6 +30,7 @@ import {
   useFetchProduct,
 } from "../../_store/productHooks";
 import PriceRangesSection from "./PriceRangesSection";
+import { updateVariationImagesForColor } from "../../product-actions";
 
 interface EditableVariation extends Omit<Variation, "quantity"> {
   quantity: string;
@@ -142,51 +143,38 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
   }, [filteredVariations, addDebugLog]);
 
   const handleColorImageUpload = async (color: string, file: File) => {
-    if (!product) {
-      addDebugLog("Error: No product available for image upload");
-      return;
-    }
-
-    addDebugLog(`Starting image upload for color: ${color}`);
-    addDebugLog(
-      `File details - Name: ${file.name}, Size: ${file.size}B, Type: ${file.type}`
-    );
-
+    if (!product) return;
     setProcessingImage(color);
 
     try {
       const colorVariations = product.variations.filter(v => v.color === color);
       addDebugLog(
-        `Found ${colorVariations.length} variations for color ${color}`
+        `Found ${colorVariations.length} variations to update for color ${color}`
       );
 
-      if (colorVariations.length === 0) {
-        throw new Error(`No variations found for color ${color}`);
+      const base64 = await new Promise<string>(resolve => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+
+      const result = await updateVariationImagesForColor(
+        product.id,
+        colorVariations,
+        base64,
+        file.type
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
-      // Update first variation
-      addDebugLog(
-        `Updating image for first variation (ID: ${colorVariations[0].id})`
-      );
-      await updateVariationImage(product.id, colorVariations[0].id, file);
-
-      // Update remaining variations
-      for (const variation of colorVariations.slice(1)) {
-        addDebugLog(
-          `Updating image for additional variation (ID: ${variation.id})`
-        );
-        await updateVariationImage(product.id, variation.id, file);
-      }
-
-      addDebugLog(
-        "All variations updated successfully, fetching updated product data"
-      );
       await fetchProduct(product.id);
-      addDebugLog("Product data refreshed successfully");
+      addDebugLog("Successfully updated all variations");
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      addDebugLog(`Error updating color group images: ${errorMessage}`);
+      addDebugLog(`Error updating images: ${errorMessage}`);
       console.error("Image upload error:", error);
     } finally {
       setProcessingImage(null);

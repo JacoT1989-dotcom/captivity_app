@@ -2,7 +2,6 @@
 
 import prisma from "@/lib/prisma";
 import { validateRequest } from "@/auth";
-import { del } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import {
@@ -10,50 +9,7 @@ import {
   ProductWithRelations,
   VariationStock,
   ProductsResponse,
-  ALLOWED_IMAGE_TYPES,
-  MAX_IMAGE_SIZE,
-  AllowedImageType,
 } from "./types";
-
-function validateImage(file: File): void {
-  if (!ALLOWED_IMAGE_TYPES.includes(file.type as AllowedImageType)) {
-    throw new Error(
-      `Invalid image type. Allowed types: ${ALLOWED_IMAGE_TYPES.join(", ")}`
-    );
-  }
-
-  if (file.size > MAX_IMAGE_SIZE) {
-    throw new Error(
-      `Image size must be less than ${MAX_IMAGE_SIZE / (1024 * 1024)}MB`
-    );
-  }
-}
-
-async function uploadImage(file: File, path: string): Promise<string> {
-  try {
-    validateImage(file);
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: file,
-      headers: {
-        "x-path": path,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to upload image");
-    }
-
-    const data = await response.json();
-    if (!data.url) {
-      throw new Error("Failed to get URL from blob storage");
-    }
-
-    return data.url;
-  } catch (error) {
-    throw error;
-  }
-}
 
 export async function getProduct(
   productId: string
@@ -194,75 +150,6 @@ export async function updateDynamicPricing(
         error instanceof Error
           ? error.message
           : "Failed to update dynamic pricing",
-    };
-  }
-}
-
-export async function addVariationImage(
-  productId: string,
-  variationId: string,
-  image: File
-): Promise<UpdateStockResult> {
-  try {
-    const { user } = await validateRequest();
-    if (!user) {
-      throw new Error("Unauthorized access");
-    }
-
-    const variation = await prisma.variation.findFirst({
-      where: {
-        id: variationId,
-        productId: productId,
-        product: {
-          userId: user.id,
-        },
-      },
-    });
-
-    if (!variation) {
-      throw new Error("Variation not found or unauthorized");
-    }
-
-    if (variation.variationImageURL) {
-      try {
-        const oldUrl = new URL(variation.variationImageURL);
-        const pathname = oldUrl.pathname;
-        await del(pathname);
-      } catch (deleteError) {
-        console.error("Error deleting old image:", deleteError);
-      }
-    }
-
-    const fileExt = image.name.split(".").pop() || "jpg";
-    const timestamp = Date.now();
-    const path = `products/variations/variation_${timestamp}_${variationId}.${fileExt}`;
-
-    const imageUrl = await uploadImage(image, path);
-
-    await prisma.variation.update({
-      where: {
-        id: variationId,
-      },
-      data: {
-        variationImageURL: imageUrl,
-      },
-    });
-
-    revalidatePath("/products");
-    revalidatePath("/admin/products");
-
-    return {
-      success: true,
-      message: "Variation image updated successfully",
-    };
-  } catch (error) {
-    console.error("Error updating variation image:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to update variation image",
     };
   }
 }
