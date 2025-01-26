@@ -15,13 +15,12 @@ import {
 import ColorImageUploader from "./ColorImageUploader";
 import { Product, Variation, VariationsModalProps } from "../../types";
 import { VariationCard } from "./VariationCard";
+import PriceRangesSection from "./PriceRangesSection";
 import {
   useUpdateStock,
   useProducts,
   useSetProducts,
-  useFetchProduct,
 } from "../../_store/productHooks";
-import PriceRangesSection from "./PriceRangesSection";
 
 interface EditableVariation extends Omit<Variation, "quantity"> {
   quantity: string;
@@ -41,18 +40,18 @@ interface GroupedVariations {
 const VariationsModal: React.FC<VariationsModalProps> = ({
   isOpen,
   onClose,
-  product,
+  product: initialProduct,
 }) => {
   const [selectedSize, setSelectedSize] = useState<string>("all");
   const [selectedColor, setSelectedColor] = useState<string>("all");
   const [editingVariation, setEditingVariation] =
     useState<EditableVariation | null>(null);
   const [debugLog, setDebugLog] = useState<string[]>([]);
+  const [product, setProduct] = useState<Product | null>(initialProduct);
 
   const updateStock = useUpdateStock();
   const products = useProducts();
   const setProducts = useSetProducts();
-  const fetchProduct = useFetchProduct();
 
   const addDebugLog = useCallback((message: string) => {
     const timestamp = new Date().toISOString();
@@ -61,14 +60,16 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
     setDebugLog(prev => [...prev, logMessage]);
   }, []);
 
+  // Update local product state when store changes
   useEffect(() => {
-    if (isOpen && product) {
-      addDebugLog(
-        `Modal opened for product: ${product.productName} (ID: ${product.id})`
-      );
-      addDebugLog(`Total variations: ${product.variations.length}`);
+    if (initialProduct) {
+      const updatedProduct = products.find(p => p.id === initialProduct.id);
+      if (updatedProduct) {
+        setProduct(updatedProduct);
+        addDebugLog("Product updated from store");
+      }
     }
-  }, [isOpen, product, addDebugLog]);
+  }, [products, initialProduct, addDebugLog]);
 
   const uniqueColors = useMemo<string[]>(() => {
     if (!product?.variations) {
@@ -132,6 +133,7 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
 
   const updateLocalProduct = useCallback(
     (updatedProduct: Product) => {
+      setProduct(updatedProduct);
       const newProducts = products.map(p =>
         p.id === updatedProduct.id ? updatedProduct : p
       );
@@ -141,36 +143,28 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
     [products, setProducts, addDebugLog]
   );
 
+  const handleEditVariation = useCallback((variation: Variation) => {
+    setEditingVariation({
+      ...variation,
+      quantity: variation.quantity.toString(),
+    });
+  }, []);
+
+  const handleEditingChange = useCallback(
+    (newEditingVariation: EditableVariation) => {
+      setEditingVariation(newEditingVariation);
+    },
+    []
+  );
+
   const handleSaveVariation = useCallback(
     async (variation: Variation) => {
-      if (!editingVariation || !product) {
-        addDebugLog("Error: Missing editing variation or product data");
-        return;
-      }
+      if (!editingVariation || !product) return;
 
       const updatedQuantity = parseInt(editingVariation.quantity);
-      if (isNaN(updatedQuantity)) {
-        addDebugLog("Error: Invalid quantity value");
-        return;
-      }
+      if (isNaN(updatedQuantity)) return;
 
       try {
-        addDebugLog(
-          `Saving variation ${variation.id} with quantity: ${updatedQuantity}`
-        );
-        setEditingVariation(null);
-
-        const updatedVariations = product.variations.map(v =>
-          v.id === variation.id ? { ...v, quantity: updatedQuantity } : v
-        );
-
-        const updatedProduct = {
-          ...product,
-          variations: updatedVariations,
-        } as Product;
-
-        updateLocalProduct(updatedProduct);
-
         await updateStock(product.id, [
           {
             id: variation.id,
@@ -178,41 +172,23 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
           },
         ]);
 
-        addDebugLog("Variation stock updated successfully");
+        const updatedProduct = {
+          ...product,
+          variations: product.variations.map(v =>
+            v.id === variation.id ? { ...v, quantity: updatedQuantity } : v
+          ),
+        };
+
+        updateLocalProduct(updatedProduct);
+        setEditingVariation(null);
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        addDebugLog(`Error updating stock: ${errorMessage}`);
-        console.error("Stock update error:", error);
-        setEditingVariation(editingVariation);
+        console.error("Error saving variation:", error);
       }
     },
-    [editingVariation, product, updateStock, updateLocalProduct, addDebugLog]
+    [editingVariation, product, updateStock, updateLocalProduct]
   );
 
-  const handleEditVariation = useCallback(
-    (variation: Variation) => {
-      if (!product) {
-        addDebugLog("Error: No product available for editing");
-        return;
-      }
-      addDebugLog(`Starting edit for variation: ${variation.id}`);
-      setEditingVariation({
-        ...variation,
-        quantity: variation.quantity.toString(),
-      });
-    },
-    [product, addDebugLog]
-  );
-
-  const handleEditingChange = useCallback(
-    (updatedVariation: EditableVariation) => {
-      addDebugLog(`Updating editing variation ${updatedVariation.id}`);
-      setEditingVariation(updatedVariation);
-    },
-    [addDebugLog]
-  );
-
+  // Reset states when modal closes
   useEffect(() => {
     if (!isOpen) {
       addDebugLog("Modal closing, resetting states");
@@ -286,16 +262,24 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
                       style={{ backgroundColor: color.toLowerCase() }}
                     />
                   </div>
-
                   <ColorImageUploader
                     color={color}
                     masterImage={colorGroup.masterImage}
                     product={product}
-                    onUpdateComplete={() => fetchProduct(product.id)}
                     addDebugLog={addDebugLog}
+                    onImageUpdate={newUrl => {
+                      const updatedProduct = {
+                        ...product,
+                        variations: product.variations.map(v =>
+                          v.color === color
+                            ? { ...v, variationImageURL: newUrl }
+                            : v
+                        ),
+                      };
+                      updateLocalProduct(updatedProduct);
+                    }}
                   />
                 </div>
-
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8 gap-3">
                   {Object.entries(colorGroup.sizes).map(
                     ([size, variations]) => {

@@ -344,6 +344,7 @@ export async function deleteProduct(
 }
 
 // Add to product-actions.ts
+// In product-actions.ts
 export async function updateVariationImagesForColor(
   productId: string,
   variations: { id: string }[],
@@ -373,11 +374,11 @@ export async function updateVariationImagesForColor(
       )
     );
 
-    revalidatePath("/products");
-    revalidatePath("/admin/products");
-    revalidatePath(`/products/${productId}`);
-
-    return { success: true, message: "Images updated successfully" };
+    return {
+      success: true,
+      message: "Images updated successfully",
+      imageUrl: blob.url, // Return the new image URL
+    };
   } catch (error) {
     return {
       success: false,

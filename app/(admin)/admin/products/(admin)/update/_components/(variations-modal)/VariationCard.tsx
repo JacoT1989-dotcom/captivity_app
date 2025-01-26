@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,20 +35,51 @@ export const VariationCard: React.FC<VariationCardProps> = ({
   onEditingChange,
 }) => {
   const isEditing = editingVariation?.id === variation.id;
+  const [currentImageUrl, setCurrentImageUrl] = useState(
+    variation.variationImageURL
+  );
+
+  useEffect(() => {
+    const handleImageUpdate = (event: CustomEvent) => {
+      const { productId, color: updatedColor, imageUrl } = event.detail;
+      if (productId === product.id && color === updatedColor) {
+        setCurrentImageUrl(imageUrl);
+      }
+    };
+
+    window.addEventListener(
+      "variationImageUpdated",
+      handleImageUpdate as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        "variationImageUpdated",
+        handleImageUpdate as EventListener
+      );
+    };
+  }, [product.id, color]);
+
+  // Update image URL when variation prop changes
+  useEffect(() => {
+    setCurrentImageUrl(variation.variationImageURL);
+  }, [variation.variationImageURL]);
 
   return (
     <div className="bg-white rounded-lg border p-2 space-y-2">
       <div className="relative aspect-square rounded-md overflow-hidden bg-gray-50">
         <Image
-          src={variation.variationImageURL || "/placeholder.png"}
+          src={currentImageUrl || "/placeholder.png"}
           alt={`${color} ${size}`}
           fill
           className="object-contain p-2"
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+          // Add key to force re-render when image changes
+          key={currentImageUrl}
         />
       </div>
 
       <div className="space-y-1.5">
+        {/* Rest of the component remains the same */}
         <div className="flex justify-between items-center text-xs">
           <span className="font-medium">Size:</span>
           <span>{size}</span>

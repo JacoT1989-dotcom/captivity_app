@@ -3,27 +3,29 @@ import { Button } from "@/components/ui/button";
 import { Edit2, ImageOff } from "lucide-react";
 import Image from "next/image";
 import { updateVariationImagesForColor } from "../../product-actions";
-import { Product, Variation } from "../../types";
+import { Product } from "../../types";
 
 interface ColorImageUploaderProps {
   color: string;
   masterImage?: string;
   product: Product;
-  onUpdateComplete: () => Promise<void>;
   addDebugLog: (message: string) => void;
+  onImageUpdate: (newUrl: string) => void;
 }
 
 const ColorImageUploader: React.FC<ColorImageUploaderProps> = ({
   color,
   masterImage,
   product,
-  onUpdateComplete,
   addDebugLog,
+  onImageUpdate,
 }) => {
   const [processingImage, setProcessingImage] = useState<boolean>(false);
+  const [currentImage, setCurrentImage] = useState<string>(masterImage || "");
 
   const handleColorImageUpload = async (file: File) => {
     setProcessingImage(true);
+    const previousImage = currentImage;
 
     try {
       const colorVariations = product.variations.filter(v => v.color === color);
@@ -37,6 +39,7 @@ const ColorImageUploader: React.FC<ColorImageUploaderProps> = ({
         reader.readAsDataURL(file);
       });
 
+      // Make the server request
       const result = await updateVariationImagesForColor(
         product.id,
         colorVariations,
@@ -44,13 +47,17 @@ const ColorImageUploader: React.FC<ColorImageUploaderProps> = ({
         file.type
       );
 
-      if (!result.success) {
-        throw new Error(result.error);
+      if (!result.success || !result.imageUrl) {
+        throw new Error(result.error || "Failed to get image URL from server");
       }
 
-      await onUpdateComplete();
+      // Update local state and notify parent
+      setCurrentImage(result.imageUrl);
+      onImageUpdate(result.imageUrl);
       addDebugLog("Successfully updated all variations");
     } catch (error) {
+      // Revert on error
+      setCurrentImage(previousImage);
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       addDebugLog(`Error updating images: ${errorMessage}`);
@@ -62,13 +69,14 @@ const ColorImageUploader: React.FC<ColorImageUploaderProps> = ({
 
   return (
     <div className="relative w-24 h-24 bg-gray-50 rounded-lg overflow-hidden border">
-      {masterImage ? (
+      {currentImage ? (
         <Image
-          src={masterImage}
+          src={currentImage}
           alt={`${color} master image`}
           fill
           className="object-contain p-2"
           sizes="96px"
+          key={currentImage}
         />
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -84,6 +92,7 @@ const ColorImageUploader: React.FC<ColorImageUploaderProps> = ({
         onChange={e => {
           const file = e.target.files?.[0];
           if (file) handleColorImageUpload(file);
+          e.target.value = "";
         }}
       />
       <Button
