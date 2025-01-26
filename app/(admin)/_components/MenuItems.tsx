@@ -162,10 +162,6 @@ export function useMenuItems() {
                 name: "Stock History",
                 href: "/admin/warehouse/inventory/history",
               },
-              {
-                name: "Adjustments",
-                href: "/admin/warehouse/inventory/adjustments",
-              },
             ],
           },
           {
