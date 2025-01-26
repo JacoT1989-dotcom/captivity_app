@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   useApplyFilters,
@@ -10,6 +10,7 @@ import {
   useFilters,
   useIsLoading,
   usePagination,
+  useSetProducts,
 } from "../_store/productHooks";
 import { FilterState, Product } from "../types";
 import ProductFilters from "./ProductFilters";
@@ -24,6 +25,7 @@ const ProductsStockLevel = () => {
   const isLoading = useIsLoading();
   const applyFilters = useApplyFilters();
   const filters = useFilters();
+  const setProducts = useSetProducts();
   const { currentPage, totalPages, itemsPerPage } = usePagination();
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -47,91 +49,97 @@ const ProductsStockLevel = () => {
     fetchAllProducts();
   }, [fetchAllProducts]);
 
-  const handleSort = (key: string) => {
-    setSortConfig({
+  const handleSort = useCallback((key: string) => {
+    setSortConfig(prev => ({
       key,
-      direction:
-        sortConfig.key === key && sortConfig.direction === "asc"
-          ? "desc"
-          : "asc",
-    });
-  };
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+    }));
+  }, []);
 
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-    applyFilters({
-      ...filters,
-      searchTerm: term || "",
-    });
-  };
-
-  const handleDelete = async (productId: string) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      await deleteProduct(productId);
-    }
-  };
-
-  const handleFilterChange = (value: FilterState["stockLevel"]) => {
-    applyFilters({
-      ...filters,
-      stockLevel: value,
-    });
-  };
-
-  const handleCategoryChange = (
-    value: string,
-    type: "headwear" | "apparel" | "collections"
-  ) => {
-    if (type === "headwear") {
-      setSelectedHeadwear(value);
-      setSelectedApparel("all-in-apparel");
-      setSelectedCollection("all-in-collections");
-    } else if (type === "apparel") {
-      setSelectedApparel(value);
-      setSelectedHeadwear("all-in-headwear");
-      setSelectedCollection("all-in-collections");
-    } else if (type === "collections") {
-      setSelectedCollection(value);
-      setSelectedHeadwear("all-in-headwear");
-      setSelectedApparel("all-in-apparel");
-    }
-
-    if (value.startsWith("all-in-")) {
+  const handleSearch = useCallback(
+    (term: string) => {
+      setSearchTerm(term);
       applyFilters({
         ...filters,
-        types: [type],
+        searchTerm: term || "",
       });
-      return;
-    }
+    },
+    [applyFilters, filters]
+  );
 
-    let filterValue = value;
-
-    if (type === "headwear") {
-      filterValue = value.replace("headwear-", "").replace("-headwear", "");
-    }
-
-    if (type === "apparel") {
-      filterValue = value
-        .replace("apparel-", "")
-        .replace("-apparel", "")
-        .replace("t-shirts", "tshirts");
-
-      if (value === "new-in-apparel") {
-        filterValue = "new";
+  const handleDelete = useCallback(
+    async (productId: string) => {
+      if (window.confirm("Are you sure you want to delete this product?")) {
+        await deleteProduct(productId);
       }
-    }
+    },
+    [deleteProduct]
+  );
 
-    if (type === "collections") {
-      filterValue = value.replace("-collection", "");
-    }
+  const handleFilterChange = useCallback(
+    (value: FilterState["stockLevel"]) => {
+      applyFilters({
+        ...filters,
+        stockLevel: value,
+      });
+    },
+    [applyFilters, filters]
+  );
 
-    applyFilters({
-      ...filters,
-      types: [type, filterValue],
-    });
-  };
+  const handleCategoryChange = useCallback(
+    (value: string, type: "headwear" | "apparel" | "collections") => {
+      if (type === "headwear") {
+        setSelectedHeadwear(value);
+        setSelectedApparel("all-in-apparel");
+        setSelectedCollection("all-in-collections");
+      } else if (type === "apparel") {
+        setSelectedApparel(value);
+        setSelectedHeadwear("all-in-headwear");
+        setSelectedCollection("all-in-collections");
+      } else if (type === "collections") {
+        setSelectedCollection(value);
+        setSelectedHeadwear("all-in-headwear");
+        setSelectedApparel("all-in-apparel");
+      }
 
-  const clearFilters = () => {
+      if (value.startsWith("all-in-")) {
+        applyFilters({
+          ...filters,
+          types: [type],
+        });
+        return;
+      }
+
+      let filterValue = value;
+
+      if (type === "headwear") {
+        filterValue = value.replace("headwear-", "").replace("-headwear", "");
+      }
+
+      if (type === "apparel") {
+        filterValue = value
+          .replace("apparel-", "")
+          .replace("-apparel", "")
+          .replace("t-shirts", "tshirts");
+
+        if (value === "new-in-apparel") {
+          filterValue = "new";
+        }
+      }
+
+      if (type === "collections") {
+        filterValue = value.replace("-collection", "");
+      }
+
+      applyFilters({
+        ...filters,
+        types: [type, filterValue],
+      });
+    },
+    [applyFilters, filters]
+  );
+
+  const clearFilters = useCallback(() => {
     setSelectedHeadwear("all-in-headwear");
     setSelectedApparel("all-in-apparel");
     setSelectedCollection("all-in-collections");
@@ -143,16 +151,35 @@ const ProductsStockLevel = () => {
       types: [],
       searchTerm: "",
     });
-  };
+  }, [applyFilters]);
 
-  const handleViewVariations = (product: Product) => {
+  const handleViewVariations = useCallback((product: Product) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleItemsPerPageChange = (value: number) => {
-    fetchProducts(1, value);
-  };
+  const handleModalClose = useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
+
+  const handleProductUpdate = useCallback(
+    (updatedProduct: Product) => {
+      // Update the product in the paginated list
+      const updatedProducts = paginatedProducts.map(p =>
+        p.id === updatedProduct.id ? updatedProduct : p
+      );
+      setProducts(updatedProducts);
+      setSelectedProduct(updatedProduct);
+    },
+    [paginatedProducts, setProducts]
+  );
+
+  const handleItemsPerPageChange = useCallback(
+    (value: number) => {
+      fetchProducts(1, value);
+    },
+    [fetchProducts]
+  );
 
   return (
     <div className="p-4 max-w-6xl mx-auto">
@@ -201,11 +228,9 @@ const ProductsStockLevel = () => {
 
       <VariationsModal
         isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedProduct(null);
-        }}
+        onClose={handleModalClose}
         product={selectedProduct}
+        onProductUpdate={handleProductUpdate}
       />
     </div>
   );

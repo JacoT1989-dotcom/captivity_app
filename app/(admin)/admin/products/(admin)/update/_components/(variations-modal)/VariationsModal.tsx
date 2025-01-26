@@ -46,6 +46,7 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
   const [selectedColor, setSelectedColor] = useState<string>("all");
   const [editingVariation, setEditingVariation] =
     useState<EditableVariation | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [debugLog, setDebugLog] = useState<string[]>([]);
   const [product, setProduct] = useState<Product | null>(initialProduct);
 
@@ -60,7 +61,7 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
     setDebugLog(prev => [...prev, logMessage]);
   }, []);
 
-  // Update local product state when store changes
+  // Keep product in sync with store updates
   useEffect(() => {
     if (initialProduct) {
       const updatedProduct = products.find(p => p.id === initialProduct.id);
@@ -131,18 +132,6 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
     return result;
   }, [filteredVariations, addDebugLog]);
 
-  const updateLocalProduct = useCallback(
-    (updatedProduct: Product) => {
-      setProduct(updatedProduct);
-      const newProducts = products.map(p =>
-        p.id === updatedProduct.id ? updatedProduct : p
-      );
-      setProducts(newProducts);
-      addDebugLog("Local product state updated");
-    },
-    [products, setProducts, addDebugLog]
-  );
-
   const handleEditVariation = useCallback((variation: Variation) => {
     setEditingVariation({
       ...variation,
@@ -164,6 +153,7 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
       const updatedQuantity = parseInt(editingVariation.quantity);
       if (isNaN(updatedQuantity)) return;
 
+      setIsUpdating(true);
       try {
         await updateStock(product.id, [
           {
@@ -179,30 +169,46 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
           ),
         };
 
-        updateLocalProduct(updatedProduct);
+        setProduct(updatedProduct);
         setEditingVariation(null);
       } catch (error) {
         console.error("Error saving variation:", error);
+      } finally {
+        setIsUpdating(false);
       }
     },
-    [editingVariation, product, updateStock, updateLocalProduct]
+    [editingVariation, product, updateStock]
   );
 
-  // Reset states when modal closes
-  useEffect(() => {
-    if (!isOpen) {
-      addDebugLog("Modal closing, resetting states");
-      setSelectedSize("all");
-      setSelectedColor("all");
-      setEditingVariation(null);
-      setDebugLog([]);
+  const updateLocalProduct = useCallback(
+    (updatedProduct: Product) => {
+      setProduct(updatedProduct);
+      const newProducts = products.map(p =>
+        p.id === updatedProduct.id ? updatedProduct : p
+      );
+      setProducts(newProducts);
+      addDebugLog("Local product state updated");
+    },
+    [products, setProducts, addDebugLog]
+  );
+
+  const handleModalClose = useCallback(() => {
+    if (!isUpdating) {
+      onClose();
+      // Reset states after a short delay to prevent UI flashing
+      setTimeout(() => {
+        setSelectedSize("all");
+        setSelectedColor("all");
+        setEditingVariation(null);
+        setDebugLog([]);
+      }, 300);
     }
-  }, [isOpen, addDebugLog]);
+  }, [onClose, isUpdating]);
 
   if (!product) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleModalClose}>
       <DialogContent className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-[1800px] h-[90vh] md:h-[80vh] flex flex-col">
         <DialogHeader className="px-4 py-3 border-b sticky top-0 bg-white z-10">
           <div className="space-y-4 flex justify-between">
@@ -311,5 +317,3 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
 };
 
 export default VariationsModal;
-
-//

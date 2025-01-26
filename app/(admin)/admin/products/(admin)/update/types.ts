@@ -137,6 +137,7 @@ export interface VariationsModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: Product | null;
+  onProductUpdate: (updatedProduct: Product) => void;
 }
 
 export interface PriceRangesSectionProps {
