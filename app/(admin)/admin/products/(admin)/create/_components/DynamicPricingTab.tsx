@@ -1,5 +1,5 @@
 import React from "react";
-import { Control } from "react-hook-form";
+import { Control, useFormContext } from "react-hook-form";
 import {
   FormControl,
   FormField,
@@ -15,6 +15,9 @@ interface DynamicPricingTabProps {
 }
 
 const DynamicPricingTab: React.FC<DynamicPricingTabProps> = ({ control }) => {
+  const { watch } = useFormContext<ProductFormData>();
+  const sellingPrice = watch("sellingPrice");
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -58,7 +61,16 @@ const DynamicPricingTab: React.FC<DynamicPricingTabProps> = ({ control }) => {
               <FormItem className="flex-1">
                 <FormLabel>Price</FormLabel>
                 <FormControl>
-                  <Input {...field} type="number" step="0.01" min="0" />
+                  <Input 
+                    {...field} 
+                    type="number" 
+                    step="0.01" 
+                    min="0"
+                    // Disable the first range if it's tied to selling price
+                    readOnly={index === 0}
+                    // Show selling price in the first range
+                    value={index === 0 ? sellingPrice || '' : field.value}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -74,6 +86,11 @@ const DynamicPricingTab: React.FC<DynamicPricingTabProps> = ({ control }) => {
           />
         </div>
       ))}
+
+      {/* Add helper text to explain the first range */}
+      <p className="text-sm text-muted-foreground mt-2">
+        The price for quantities 1-24 is automatically set to match the selling price.
+      </p>
     </div>
   );
 };

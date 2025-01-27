@@ -1,5 +1,5 @@
-import React from "react";
-import { Control } from "react-hook-form";
+import React, { useEffect } from "react";
+import { Control, useFormContext } from "react-hook-form";
 import {
   FormControl,
   FormDescription,
@@ -67,7 +67,6 @@ const categoryOptions = {
     { value: "african-collection", label: "African Collection" },
   ],
 };
-//
 
 // Flatten all options into a single array for searching
 const allOptions = [
@@ -77,6 +76,20 @@ const allOptions = [
 ];
 
 const BasicInfoTab: React.FC<BasicInfoTabProps> = ({ control }) => {
+  const { watch, setValue } = useFormContext<ProductFormData>();
+
+  // Watch the selling price
+  const sellingPrice = watch("sellingPrice");
+
+  // Effect to update first dynamic pricing tier when selling price changes
+  useEffect(() => {
+    if (sellingPrice > 0) {
+      setValue(`dynamicPricing.0.amount`, sellingPrice.toString(), {
+        shouldValidate: true,
+      });
+    }
+  }, [sellingPrice, setValue]);
+
   return (
     <div className="space-y-4">
       <FormField
@@ -86,7 +99,7 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({ control }) => {
           <FormItem>
             <FormLabel>Product Name</FormLabel>
             <FormControl>
-              <Input {...field} />
+              <Input placeholder="Enter product name" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -237,7 +250,11 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({ control }) => {
           <FormItem>
             <FormLabel>Description</FormLabel>
             <FormControl>
-              <Textarea {...field} />
+              <Textarea
+                placeholder="Enter product description"
+                className="min-h-[100px]"
+                {...field}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -254,10 +271,19 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({ control }) => {
               <Input
                 type="number"
                 step="0.01"
+                min="0"
+                placeholder="0.00"
                 {...field}
-                onChange={e => field.onChange(parseFloat(e.target.value))}
+                onChange={e => {
+                  const value = parseFloat(e.target.value);
+                  field.onChange(isNaN(value) ? 0 : value);
+                }}
               />
             </FormControl>
+            <FormDescription>
+              This price will automatically set the base price for quantities
+              1-24
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
