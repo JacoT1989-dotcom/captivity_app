@@ -89,7 +89,7 @@ function isMainCategory(category: string): category is MainCategory {
 // Function to get valid dynamic pricing
 const getValidDynamicPricing = (dynamicPricing: DynamicPricing[]) => {
   return dynamicPricing
-    .filter(pricing => pricing.type === 'fixed_price')
+    .filter(pricing => pricing.type === "fixed_price")
     .sort((a, b) => {
       const fromA = parseInt(a.from);
       const fromB = parseInt(b.from);
@@ -121,8 +121,8 @@ export async function getAllCategories(): Promise<CategoryActionResult> {
             productId: true,
           },
           orderBy: {
-            from: 'asc'
-          }
+            from: "asc",
+          },
         },
         featuredImage: true,
         variations: {
@@ -140,13 +140,6 @@ export async function getAllCategories(): Promise<CategoryActionResult> {
         },
       },
     });
-
-    // Log Activ-T Long Sleeve dynamic pricing
-    const activT = products.find(p => p.productName === "Activ-T Long Sleeve");
-    if (activT) {
-      const validPricing = getValidDynamicPricing(activT.dynamicPricing);
-      console.log("Activ-T Long Sleeve Dynamic Pricing:", validPricing);
-    }
 
     const allCategories = products.flatMap(product => product.category);
     const uniqueCategories = _.uniq(allCategories);
@@ -223,12 +216,15 @@ export async function getAllCategories(): Promise<CategoryActionResult> {
     console.error("Error fetching categories and products:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "An unexpected error occurred",
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
     };
   }
 }
 
-export async function getProduct(productId: string): Promise<PrismaProduct | null> {
+export async function getProduct(
+  productId: string
+): Promise<PrismaProduct | null> {
   try {
     const product = await prisma.product.findUnique({
       where: { id: productId },
@@ -253,8 +249,8 @@ export async function getProduct(productId: string): Promise<PrismaProduct | nul
             productId: true,
           },
           orderBy: {
-            from: 'asc'
-          }
+            from: "asc",
+          },
         },
         featuredImage: true,
         variations: {
@@ -272,11 +268,6 @@ export async function getProduct(productId: string): Promise<PrismaProduct | nul
         },
       },
     });
-
-    if (product?.productName === "Activ-T Long Sleeve") {
-      const validPricing = getValidDynamicPricing(product.dynamicPricing);
-      console.log("Retrieved Activ-T Long Sleeve Dynamic Pricing:", validPricing);
-    }
 
     return product;
   } catch (error) {
@@ -312,20 +303,6 @@ export async function updateDynamicPricing(
         })
       )
     );
-
-    // Fetch and log updated pricing if it's Activ-T Long Sleeve
-    const updatedProduct = await prisma.product.findUnique({
-      where: { id: productId },
-      select: {
-        productName: true,
-        dynamicPricing: true
-      }
-    });
-
-    if (updatedProduct?.productName === "Activ-T Long Sleeve") {
-      const validPricing = getValidDynamicPricing(updatedProduct.dynamicPricing);
-      console.log("Updated Activ-T Long Sleeve Dynamic Pricing:", validPricing);
-    }
 
     return true;
   } catch (error) {
