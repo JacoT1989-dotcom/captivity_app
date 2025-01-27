@@ -74,6 +74,13 @@ export interface EditModalProps {
   onUpdate: (id: string, formData: FormData) => Promise<void>;
 }
 
+export interface ContentProps {
+  currentSlide: number;
+  slidesPerView: number;
+  onNext: () => void;
+  onPrev: () => void;
+}
+
 // Type guards
 export function isHighlightedProduct(
   product: Product | HighlightedProduct
@@ -94,3 +101,44 @@ export function isStaticProduct(
 
 // For the products data structure in tabs
 export type ProductsRecord = Record<string, Product[]>;
+
+// Let me break down this TypeScript type definition:
+
+// Record<K, T> is a utility type in TypeScript that creates an object type where:
+
+// K represents the keys (property names)
+// T represents the type of values those properties will hold
+
+// The syntax K extends keyof any means K must be a valid object property key type (string, number, or symbol).
+// Here's a practical example:
+// typescriptCopy// Creates a type where all keys are strings and all values are numbers
+// type NumberRecord = Record<string, number>;
+
+// // This is equivalent to:
+// type NumberRecord = {
+//     [key: string]: number;
+// }
+
+// // Example usage:
+// const scores: NumberRecord = {
+//     "john": 85,
+//     "mary": 92,
+//     "bob": 78
+// };
+
+// // Another example with specific keys
+// type UserRoles = Record<"admin" | "user" | "guest", boolean>;
+
+// // This creates a type equivalent to:
+// type UserRoles = {
+//     admin: boolean;
+//     user: boolean;
+//     guest: boolean;
+// }
+
+// const permissions: UserRoles = {
+//     admin: true,
+//     user: true,
+//     guest: false
+// };
+// It's particularly useful when you want to create a dictionary or map-like object where you know the type of values but the keys could vary (within the constraints of K).

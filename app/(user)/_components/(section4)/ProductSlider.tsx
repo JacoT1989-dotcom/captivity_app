@@ -19,6 +19,34 @@ interface ProductSliderProps {
   onAddNew?: () => void;
 }
 
+// StarRating component
+const StarRating = ({ rating = 0 }: { rating: number }) => {
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5;
+  const emptyStars = 5 - Math.ceil(rating);
+
+  return (
+    <div className="flex">
+      {/* Full stars */}
+      {[...Array(fullStars)].map((_, i) => (
+        <span key={`full-${i}`} className="text-yellow-400">
+          ★
+        </span>
+      ))}
+
+      {/* Half star */}
+      {hasHalfStar && <span className="text-yellow-400">★</span>}
+
+      {/* Empty stars */}
+      {[...Array(emptyStars)].map((_, i) => (
+        <span key={`empty-${i}`} className="text-gray-300">
+          ★
+        </span>
+      ))}
+    </div>
+  );
+};
+
 export function ProductSlider({
   products,
   currentSlide,
@@ -33,9 +61,6 @@ export function ProductSlider({
   const session = useSession();
   const isEditor = session?.user?.role === "EDITOR";
 
-  console.log("ProductSlider isEditor:", isEditor); // Debug log
-  console.log("ProductSlider onAddNew exists:", !!onAddNew); // Debug log
-
   // Calculate empty slots
   const emptySlots = Math.max(0, MAX_PRODUCTS - products.length);
   const emptySlotArray = Array.from({ length: emptySlots }).map((_, index) => ({
@@ -46,11 +71,9 @@ export function ProductSlider({
   const allSlots = [...products, ...emptySlotArray];
 
   const handleAddClick = (e: React.MouseEvent) => {
-    console.log("Add button clicked"); // Debug log
     e.preventDefault();
     e.stopPropagation();
     if (onAddNew) {
-      console.log("Calling onAddNew"); // Debug log
       onAddNew();
     }
   };
@@ -149,15 +172,7 @@ export function ProductSlider({
                           </span>
                         )}
                       </div>
-                      <div className="flex">
-                        {Array.from({
-                          length: Math.floor(item.rating || 0),
-                        }).map((_, i) => (
-                          <span key={i} className="text-yellow-400">
-                            ★
-                          </span>
-                        ))}
-                      </div>
+                      <StarRating rating={item.rating || 0} />
                     </div>
                   </CardContent>
                 </Card>

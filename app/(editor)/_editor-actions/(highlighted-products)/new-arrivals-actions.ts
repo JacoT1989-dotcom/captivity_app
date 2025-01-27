@@ -28,12 +28,6 @@ export async function uploadNewArrival(
     validateFileUpload(file);
     validateProductData(title, price, position, rating);
 
-    const userSettings = await prisma.userSettings.upsert({
-      where: { userId: user.id },
-      update: {},
-      create: { userId: user.id },
-    });
-
     const fileExt = file.name.split(".").pop() || "jpg";
     const path = `products/new-arrivals/${user.id}_${Date.now()}.${fileExt}`;
 

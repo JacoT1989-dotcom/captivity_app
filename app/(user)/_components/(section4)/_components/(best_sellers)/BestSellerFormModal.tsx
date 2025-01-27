@@ -12,19 +12,48 @@ interface BestSellerFormModalProps {
   error?: string | null;
 }
 
+const initialFormState = {
+  title: "",
+  price: "",
+  rating: "0",
+  selectedFile: null as File | null,
+  previewUrl: null as string | null,
+};
+
 export function BestSellerFormModal({
   isOpen,
   onClose,
   onSubmit,
   error: externalError,
 }: BestSellerFormModalProps) {
-  const [title, setTitle] = useState("");
-  const [price, setPrice] = useState("");
-  const [rating, setRating] = useState("0");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [title, setTitle] = useState(initialFormState.title);
+  const [price, setPrice] = useState(initialFormState.price);
+  const [rating, setRating] = useState(initialFormState.rating);
+  const [selectedFile, setSelectedFile] = useState(
+    initialFormState.selectedFile
+  );
+  const [previewUrl, setPreviewUrl] = useState(initialFormState.previewUrl);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Reset form when modal is opened/closed
+  useEffect(() => {
+    if (!isOpen) {
+      // Clean up previous preview URL
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+
+      // Reset all form fields
+      setTitle(initialFormState.title);
+      setPrice(initialFormState.price);
+      setRating(initialFormState.rating);
+      setSelectedFile(initialFormState.selectedFile);
+      setPreviewUrl(initialFormState.previewUrl);
+      setError(null);
+      setIsUploading(false);
+    }
+  }, [isOpen, previewUrl]);
 
   useEffect(() => {
     if (externalError) {
@@ -32,14 +61,6 @@ export function BestSellerFormModal({
       setIsUploading(false);
     }
   }, [externalError]);
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
 
   const handleFileSelect = useCallback(
     (file: File) => {
@@ -55,6 +76,7 @@ export function BestSellerFormModal({
         return;
       }
 
+      // Clean up previous preview URL
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
@@ -64,6 +86,10 @@ export function BestSellerFormModal({
     },
     [previewUrl]
   );
+
+  const handleClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
 
   const handleSubmit = async () => {
     if (!selectedFile || !title || !price) {
@@ -82,7 +108,7 @@ export function BestSellerFormModal({
       formData.append("rating", rating);
 
       await onSubmit(formData);
-      onClose();
+      handleClose();
     } catch (error) {
       console.error("Upload error:", error);
       setError(
@@ -94,7 +120,7 @@ export function BestSellerFormModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
         <div className="w-full bg-gray-50 rounded-lg overflow-hidden">
           <div className="h-full flex flex-col">
@@ -218,7 +244,7 @@ export function BestSellerFormModal({
             <div className="p-6 border-t bg-white">
               <div className="flex justify-end gap-3">
                 <button
-                  onClick={onClose}
+                  onClick={handleClose}
                   disabled={isUploading}
                   className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
