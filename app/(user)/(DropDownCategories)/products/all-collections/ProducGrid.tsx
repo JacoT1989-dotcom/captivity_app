@@ -33,6 +33,21 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
     }).format(price);
   };
 
+  const getBasePrice = (product: StoreProduct): number => {
+    // Find the dynamic pricing for range 1-24 (base price)
+    const basePricing = product.dynamicPricing.find(
+      pricing => pricing.from === "1" && pricing.to === "24"
+    );
+
+    // If we find the base pricing, use its amount, otherwise fall back to selling price
+    if (basePricing) {
+      return parseFloat(basePricing.amount);
+    }
+
+    // Fallback to selling price if no dynamic pricing found
+    return product.sellingPrice;
+  };
+
   const getTotalStock = (variations: StoreProduct["variations"]): number => {
     return variations.reduce(
       (total, variation) => total + variation.quantity,
@@ -105,7 +120,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                 {product.productName}
               </h3>
               <p className="mt-2 text-base sm:text-lg font-bold text-foreground text-center">
-                {formatPrice(product.sellingPrice)}
+                {formatPrice(getBasePrice(product))}
               </p>
 
               {/* Color Variants */}
@@ -185,5 +200,3 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
 };
 
 export default ProductGrid;
-
-// grid
