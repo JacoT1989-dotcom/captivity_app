@@ -18,6 +18,7 @@ interface PriceRange {
 
 interface EditablePriceRange extends PriceRange {
   editedPrice: string;
+  isStandardRange: boolean;
 }
 
 interface PriceRangesSectionProps {
@@ -38,22 +39,54 @@ export const PriceRangesSection: React.FC<PriceRangesSectionProps> = ({
 
   useEffect(() => {
     if (product?.dynamicPricing) {
-      const ranges = product.dynamicPricing
-        .filter((pricing: DynamicPricing) =>
-          priceRangeConfigs.some(
-            config => config.from === pricing.from && config.to === pricing.to
-          )
-        )
-        .map((pricing: DynamicPricing) => ({
-          range:
-            priceRangeConfigs.find(
-              c => c.from === pricing.from && c.to === pricing.to
-            )?.label || `${pricing.from}-${pricing.to} items`,
-          quantity: { from: pricing.from, to: pricing.to },
-          price: parseFloat(pricing.amount),
-          id: pricing.id,
-          editedPrice: pricing.amount,
-        }))
+      // Create a set of valid starting points from priceRangeConfigs
+      const validStartPoints = new Set(
+        priceRangeConfigs.map(config => config.from)
+      );
+
+      // Group pricing by their starting points
+      const pricingByStart = product.dynamicPricing.reduce(
+        (acc, pricing) => {
+          if (validStartPoints.has(pricing.from)) {
+            acc[pricing.from] = acc[pricing.from] || [];
+            acc[pricing.from].push(pricing);
+          }
+          return acc;
+        },
+        {} as Record<string, DynamicPricing[]>
+      );
+
+      // Filter and transform the pricing data
+      const ranges = priceRangeConfigs
+        .map(config => {
+          const pricings = pricingByStart[config.from] || [];
+          if (pricings.length === 0) return null;
+
+          // Try to find an exact match first
+          let pricing = pricings.find(p => p.to === config.to);
+
+          // If no exact match is found, look for a custom range
+          if (!pricing && config.from === "601") {
+            pricing = pricings[0]; // Use the custom range for 601+
+          } else if (!pricing) {
+            pricing = pricings.find(p => p.to === config.to);
+          }
+
+          if (!pricing) return null;
+
+          return {
+            range:
+              config.from === "601"
+                ? `${pricing.from}-${pricing.to} items` // Use actual range for 601+
+                : config.label,
+            quantity: { from: pricing.from, to: pricing.to },
+            price: parseFloat(pricing.amount),
+            id: pricing.id,
+            editedPrice: pricing.amount,
+            isStandardRange: config.to === pricing.to,
+          };
+        })
+        .filter((range): range is EditablePriceRange => range !== null)
         .sort((a, b) => parseInt(a.quantity.from) - parseInt(b.quantity.from));
 
       setEditablePriceRanges(ranges);
@@ -137,7 +170,11 @@ export const PriceRangesSection: React.FC<PriceRangesSectionProps> = ({
               key={range.id}
               className="flex items-center justify-between text-sm gap-2"
             >
-              <span className="text-gray-600">{range.range}</span>
+              <span
+                className={`text-gray-600 ${!range.isStandardRange ? "italic" : ""}`}
+              >
+                {range.range}
+              </span>
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
@@ -177,7 +214,11 @@ export const PriceRangesSection: React.FC<PriceRangesSectionProps> = ({
             key={range.id}
             className="flex items-center justify-between text-sm"
           >
-            <span className="text-gray-600">{range.range}</span>
+            <span
+              className={`text-gray-600 ${!range.isStandardRange ? "italic" : ""}`}
+            >
+              {range.range}
+            </span>
             <span className="font-medium text-gray-900">
               {formatZAR(parseFloat(range.editedPrice))}
             </span>
