@@ -68,11 +68,7 @@ export function ProductCard({
             )}
           </div>
           <div className="flex">
-            {Array.from({ length: Math.floor(rating) }).map((_, i) => (
-              <span key={i} className="text-yellow-400">
-                ★
-              </span>
-            ))}
+            <span className="text-yellow-400">★★★★★</span>
           </div>
         </div>
       </CardContent>
