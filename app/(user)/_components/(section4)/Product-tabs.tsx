@@ -7,8 +7,8 @@ import { ProductSlider } from "./ProductSlider";
 import { Product, HighlightedProduct } from "./types";
 import { useHighlightedProductsData } from "@/app/(editor)/_editor-store/highlighted-products-store";
 import { useSession } from "@/app/SessionProvider";
-import { BestSellerFormModal } from "./_components/BestSellerFormModal";
-import { BestSellerEditModal } from "./_components/BestSellerEditModal";
+import { BestSellerFormModal } from "./_components/(best_sellers)/BestSellerFormModal";
+import { BestSellerEditModal } from "./_components/(best_sellers)/BestSellerEditModal";
 
 const staticProducts: Record<string, Product[]> = {
   "new-arrivals": [

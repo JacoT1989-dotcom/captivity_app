@@ -1,10 +1,10 @@
 import { useState, useCallback } from "react";
 import { useSession } from "@/app/SessionProvider";
 import { useHighlightedProductsData } from "@/app/(editor)/_editor-store/highlighted-products-store";
-import { BestSellerFormModal } from "./BestSellerFormModal";
+import type { BestSellersContentProps, HighlightedProduct } from "../../types";
+import { ProductSlider } from "../../ProductSlider";
 import { BestSellerEditModal } from "./BestSellerEditModal";
-import type { BestSellersContentProps, HighlightedProduct } from "../types";
-import { ProductSlider } from "../ProductSlider";
+import { BestSellerFormModal } from "./BestSellerFormModal";
 
 export function BestSellersContent({
   currentSlide,
