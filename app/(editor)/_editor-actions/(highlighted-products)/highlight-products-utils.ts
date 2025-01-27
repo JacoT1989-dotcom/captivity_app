@@ -2,7 +2,6 @@
 
 import type { NewArrival, BestSeller, OnSaleProduct } from "@prisma/client";
 import prisma from "@/lib/prisma";
-import { cache } from "react";
 import { validateRequest } from "@/auth";
 
 export interface HighlightProductActionResult {
@@ -16,24 +15,8 @@ export interface HighlightProductActionResult {
 const MAX_FILE_SIZE = 6 * 1024 * 1024; // 6MB
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-// Cache frequently accessed user settings
-async function getCachedUserSettings(userId: string) {
-  "use server";
-
-  return prisma.userSettings.findUnique({
-    where: { userId },
-    include: {
-      NewArrival: true,
-      BestSeller: true,
-      OnSaleProduct: true,
-    },
-  });
-}
-
 // Utility function to validate file uploads
 async function validateFileUpload(file: File) {
-  "use server";
-
   if (!file || !file.size) {
     throw new Error("No file provided");
   }
@@ -57,8 +40,6 @@ async function validateProductData(
   rating?: number,
   salePrice?: number
 ) {
-  "use server";
-
   if (!title?.trim()) throw new Error("Product title is required");
   if (isNaN(price) || price <= 0) throw new Error("Invalid price value");
   if (isNaN(position)) throw new Error("Invalid position value");
@@ -74,8 +55,6 @@ async function validateProductData(
 
 // Function to get all highlighted products - now allows public access
 async function getHighlightedProducts(): Promise<HighlightProductActionResult> {
-  "use server";
-
   try {
     let user;
     try {
@@ -149,9 +128,4 @@ async function getHighlightedProducts(): Promise<HighlightProductActionResult> {
   }
 }
 
-export {
-  getCachedUserSettings,
-  validateFileUpload,
-  validateProductData,
-  getHighlightedProducts,
-};
+export { validateFileUpload, validateProductData, getHighlightedProducts };
