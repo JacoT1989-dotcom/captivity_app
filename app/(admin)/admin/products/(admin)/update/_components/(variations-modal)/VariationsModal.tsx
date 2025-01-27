@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useState, useMemo } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+  useMemo,
+  useRef,
+} from "react";
 import {
   Dialog,
   DialogContent,
@@ -41,75 +47,72 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
   isOpen,
   onClose,
   product: initialProduct,
+  onProductUpdate,
 }) => {
   const [selectedSize, setSelectedSize] = useState<string>("all");
   const [selectedColor, setSelectedColor] = useState<string>("all");
   const [editingVariation, setEditingVariation] =
     useState<EditableVariation | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [debugLog, setDebugLog] = useState<string[]>([]);
   const [product, setProduct] = useState<Product | null>(initialProduct);
+  const updateStateRef = useRef(false);
+  const updateTimeoutRef = useRef<NodeJS.Timeout>();
 
   const updateStock = useUpdateStock();
   const products = useProducts();
-  const setProducts = useSetProducts();
 
-  const addDebugLog = useCallback((message: string) => {
-    const timestamp = new Date().toISOString();
-    const logMessage = `${timestamp}: ${message}`;
-    console.log(`[VariationsModal Debug] ${message}`);
-    setDebugLog(prev => [...prev, logMessage]);
-  }, []);
+  // Prevent modal from closing during updates
+  useEffect(() => {
+    if (isUpdating) {
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = "";
+      };
+      window.addEventListener("beforeunload", handleBeforeUnload);
+      return () =>
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+    }
+  }, [isUpdating]);
 
   // Keep product in sync with store updates
   useEffect(() => {
-    if (initialProduct) {
+    if (initialProduct && isOpen) {
       const updatedProduct = products.find(p => p.id === initialProduct.id);
-      if (updatedProduct) {
+      if (updatedProduct && !updateStateRef.current) {
         setProduct(updatedProduct);
-        addDebugLog("Product updated from store");
       }
     }
-  }, [products, initialProduct, addDebugLog]);
+  }, [products, initialProduct, isOpen]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const uniqueColors = useMemo<string[]>(() => {
-    if (!product?.variations) {
-      addDebugLog("No variations found in product");
-      return [];
-    }
-    const colors = Array.from(
-      new Set(product.variations.map(v => v.color))
-    ).sort();
-    addDebugLog(`Found unique colors: ${colors.join(", ")}`);
-    return colors;
-  }, [product?.variations, addDebugLog]);
+    if (!product?.variations) return [];
+    return Array.from(new Set(product.variations.map(v => v.color))).sort();
+  }, [product?.variations]);
 
   const uniqueSizes = useMemo<string[]>(() => {
-    if (!product?.variations) {
-      addDebugLog("No variations found for sizes");
-      return [];
-    }
-    const sizes = Array.from(
-      new Set(product.variations.map(v => v.size))
-    ).sort();
-    addDebugLog(`Found unique sizes: ${sizes.join(", ")}`);
-    return sizes;
-  }, [product?.variations, addDebugLog]);
+    if (!product?.variations) return [];
+    return Array.from(new Set(product.variations.map(v => v.size))).sort();
+  }, [product?.variations]);
 
   const filteredVariations = useMemo<Variation[]>(() => {
     if (!product?.variations) return [];
-
-    const filtered = product.variations.filter(variation => {
+    return product.variations.filter(variation => {
       const matchesSize =
         selectedSize === "all" || variation.size === selectedSize;
       const matchesColor =
         selectedColor === "all" || variation.color === selectedColor;
       return matchesSize && matchesColor;
     });
-
-    addDebugLog(`Filtered variations: ${filtered.length} matches found`);
-    return filtered;
-  }, [product?.variations, selectedSize, selectedColor, addDebugLog]);
+  }, [product?.variations, selectedSize, selectedColor]);
 
   const groupedVariations = useMemo<GroupedVariations>(() => {
     const result: GroupedVariations = {};
@@ -125,12 +128,8 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
       }
       result[variation.color].sizes[variation.size].push(variation);
     });
-
-    addDebugLog(
-      `Grouped variations by color: ${Object.keys(result).length} color groups`
-    );
     return result;
-  }, [filteredVariations, addDebugLog]);
+  }, [filteredVariations]);
 
   const handleEditVariation = useCallback((variation: Variation) => {
     setEditingVariation({
@@ -154,6 +153,12 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
       if (isNaN(updatedQuantity)) return;
 
       setIsUpdating(true);
+      updateStateRef.current = true;
+
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+
       try {
         await updateStock(product.id, [
           {
@@ -170,46 +175,73 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
         };
 
         setProduct(updatedProduct);
+        onProductUpdate(updatedProduct);
         setEditingVariation(null);
       } catch (error) {
         console.error("Error saving variation:", error);
       } finally {
-        setIsUpdating(false);
+        updateTimeoutRef.current = setTimeout(() => {
+          updateStateRef.current = false;
+          setIsUpdating(false);
+        }, 100);
       }
     },
-    [editingVariation, product, updateStock]
+    [editingVariation, product, updateStock, onProductUpdate]
   );
 
   const updateLocalProduct = useCallback(
     (updatedProduct: Product) => {
+      updateStateRef.current = true;
       setProduct(updatedProduct);
-      const newProducts = products.map(p =>
-        p.id === updatedProduct.id ? updatedProduct : p
-      );
-      setProducts(newProducts);
-      addDebugLog("Local product state updated");
+      onProductUpdate(updatedProduct);
+      updateTimeoutRef.current = setTimeout(() => {
+        updateStateRef.current = false;
+      }, 100);
     },
-    [products, setProducts, addDebugLog]
+    [onProductUpdate]
   );
 
   const handleModalClose = useCallback(() => {
-    if (!isUpdating) {
-      onClose();
-      // Reset states after a short delay to prevent UI flashing
-      setTimeout(() => {
-        setSelectedSize("all");
-        setSelectedColor("all");
-        setEditingVariation(null);
-        setDebugLog([]);
-      }, 300);
+    if (isUpdating || updateStateRef.current) {
+      return;
     }
+    onClose();
   }, [onClose, isUpdating]);
+
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open && (isUpdating || updateStateRef.current)) {
+        return;
+      }
+      if (!open) {
+        handleModalClose();
+      }
+    },
+    [handleModalClose, isUpdating]
+  );
 
   if (!product) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleModalClose}>
-      <DialogContent className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-[1800px] h-[90vh] md:h-[80vh] flex flex-col">
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-[1800px] h-[90vh] md:h-[80vh] flex flex-col"
+        onPointerDownOutside={e => {
+          if (isUpdating || updateStateRef.current) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={e => {
+          if (isUpdating || updateStateRef.current) {
+            e.preventDefault();
+          }
+        }}
+        onEscapeKeyDown={e => {
+          if (isUpdating || updateStateRef.current) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader className="px-4 py-3 border-b sticky top-0 bg-white z-10">
           <div className="space-y-4 flex justify-between">
             <div className="flex items-center justify-between">
@@ -272,7 +304,6 @@ const VariationsModal: React.FC<VariationsModalProps> = ({
                     color={color}
                     masterImage={colorGroup.masterImage}
                     product={product}
-                    addDebugLog={addDebugLog}
                     onImageUpdate={newUrl => {
                       const updatedProduct = {
                         ...product,

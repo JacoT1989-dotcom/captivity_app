@@ -9,7 +9,6 @@ interface ColorImageUploaderProps {
   color: string;
   masterImage?: string;
   product: Product;
-  addDebugLog: (message: string) => void;
   onImageUpdate: (newUrl: string) => void;
 }
 
@@ -17,7 +16,6 @@ const ColorImageUploader: React.FC<ColorImageUploaderProps> = ({
   color,
   masterImage,
   product,
-  addDebugLog,
   onImageUpdate,
 }) => {
   const [processingImage, setProcessingImage] = useState<boolean>(false);
@@ -29,9 +27,6 @@ const ColorImageUploader: React.FC<ColorImageUploaderProps> = ({
 
     try {
       const colorVariations = product.variations.filter(v => v.color === color);
-      addDebugLog(
-        `Found ${colorVariations.length} variations to update for color ${color}`
-      );
 
       const base64 = await new Promise<string>(resolve => {
         const reader = new FileReader();
@@ -54,14 +49,9 @@ const ColorImageUploader: React.FC<ColorImageUploaderProps> = ({
       // Update local state and notify parent
       setCurrentImage(result.imageUrl);
       onImageUpdate(result.imageUrl);
-      addDebugLog("Successfully updated all variations");
     } catch (error) {
       // Revert on error
       setCurrentImage(previousImage);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      addDebugLog(`Error updating images: ${errorMessage}`);
-      console.error("Image upload error:", error);
     } finally {
       setProcessingImage(false);
     }

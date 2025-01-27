@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   useApplyFilters,
@@ -37,6 +37,11 @@ const ProductsStockLevel = () => {
     useState<string>("all-in-apparel");
   const [selectedCollection, setSelectedCollection] =
     useState<string>("all-in-collections");
+
+  const isUpdatingRef = useRef(false);
+  const modalCloseTimeoutRef = useRef<NodeJS.Timeout>();
+  const updateTimeoutRef = useRef<NodeJS.Timeout>();
+
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
@@ -48,6 +53,18 @@ const ProductsStockLevel = () => {
   useEffect(() => {
     fetchAllProducts();
   }, [fetchAllProducts]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (modalCloseTimeoutRef.current) {
+        clearTimeout(modalCloseTimeoutRef.current);
+      }
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSort = useCallback((key: string) => {
     setSortConfig(prev => ({
@@ -159,19 +176,53 @@ const ProductsStockLevel = () => {
   }, []);
 
   const handleModalClose = useCallback(() => {
+    if (isUpdatingRef.current) {
+      return;
+    }
+
+    // Clear any existing timeouts
+    if (modalCloseTimeoutRef.current) {
+      clearTimeout(modalCloseTimeoutRef.current);
+    }
+
     setIsModalOpen(false);
+
+    // Delay clearing selected product to prevent UI flicker
+    modalCloseTimeoutRef.current = setTimeout(() => {
+      setSelectedProduct(null);
+    }, 300);
   }, []);
 
   const handleProductUpdate = useCallback(
     (updatedProduct: Product) => {
-      // Update the product in the paginated list
+      isUpdatingRef.current = true;
+
+      // Clear any existing timeouts
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+      if (modalCloseTimeoutRef.current) {
+        clearTimeout(modalCloseTimeoutRef.current);
+      }
+
+      // Update both the paginated list and selected product
       const updatedProducts = paginatedProducts.map(p =>
         p.id === updatedProduct.id ? updatedProduct : p
       );
+
       setProducts(updatedProducts);
       setSelectedProduct(updatedProduct);
+
+      // Use a timeout to prevent immediate state updates from closing modal
+      updateTimeoutRef.current = setTimeout(async () => {
+        try {
+          await fetchProducts(currentPage, itemsPerPage);
+        } finally {
+          isUpdatingRef.current = false;
+        }
+      }, 100);
     },
-    [paginatedProducts, setProducts]
+    [paginatedProducts, setProducts, fetchProducts, currentPage, itemsPerPage]
   );
 
   const handleItemsPerPageChange = useCallback(
