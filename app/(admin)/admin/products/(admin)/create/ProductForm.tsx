@@ -1,4 +1,4 @@
-"use client";
+"use client"
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +13,7 @@ import DynamicPricingTab from "./_components/DynamicPricingTab";
 import VariationsTab from "./_components/VariationsTab";
 import FeaturedImageTab from "./_components/FeaturedImageTab";
 import { createProduct } from "./actions";
+import { toast } from "sonner";
 
 const PRESET_RANGES = [
   { from: "1", to: "24" },
@@ -88,16 +89,29 @@ const ProductForm = () => {
         formData.append("featuredImage.large", data.featuredImage.large);
       }
 
-      // Add dynamic pricing
+      // Add dynamic pricing - ensure all required fields are present
       data.dynamicPricing.forEach((price, index) => {
+        if (!price.from || !price.to || !price.amount) {
+          throw new Error("Please fill in all pricing fields");
+        }
         formData.append(`dynamicPricing.${index}.from`, price.from);
         formData.append(`dynamicPricing.${index}.to`, price.to);
         formData.append(`dynamicPricing.${index}.type`, price.type);
         formData.append(`dynamicPricing.${index}.amount`, price.amount);
       });
 
+      // Validate variations
+      if (!data.variations.length) {
+        throw new Error("At least one variation is required");
+      }
+
       // Add variations
       data.variations.forEach((variation, vIndex) => {
+        // Validate variation fields
+        if (!variation.name || !variation.sizes.length) {
+          throw new Error("Please fill in all variation details");
+        }
+
         formData.append(`variations.${vIndex}.name`, variation.name);
         formData.append(`variations.${vIndex}.color`, variation.color || "");
 
@@ -114,8 +128,12 @@ const ProductForm = () => {
           );
         }
 
-        // Add sizes for each variation
+        // Validate and add sizes for each variation
         variation.sizes.forEach((size, sIndex) => {
+          if (!size.size || !size.sku) {
+            throw new Error("Please fill in all size details");
+          }
+
           formData.append(
             `variations.${vIndex}.sizes.${sIndex}.size`,
             size.size
@@ -137,14 +155,18 @@ const ProductForm = () => {
       const result = await createProduct(formData);
 
       if (result.success) {
-        alert("Product created successfully");
+        toast.success("Product created successfully");
         form.reset();
+        // Optional: Redirect to products list
+        // window.location.href = "/products";
       } else {
-        alert(result.error || "Failed to create product");
+        toast.error(result.error || "Failed to create product");
       }
     } catch (error) {
-      alert("An unexpected error occurred");
-      console.error(error);
+      console.error("Submit error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create product"
+      );
     } finally {
       setIsSubmitting(false);
     }
