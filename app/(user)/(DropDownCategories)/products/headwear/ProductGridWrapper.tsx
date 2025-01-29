@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import {
   useCategoryError,
@@ -62,13 +62,16 @@ export default function ProductGridWrapper() {
 
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [currentPage, setCurrentPage] = useState(1);
-
   const hasColorSelected = filters.colors.length > 0;
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   useEffect(() => {
     if (initialized && pathname) {
       filterProductsByPath(pathname);
-      setCurrentPage(1);
     }
   }, [pathname, filterProductsByPath, initialized]);
 
@@ -80,6 +83,25 @@ export default function ProductGridWrapper() {
     sortProducts(value);
     setCurrentPage(1);
   };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const getFilteredVariations = useCallback(() => {
+    if (!filteredProducts) return [];
+
+    return filteredProducts.flatMap(product => {
+      return product.variations.filter(variation => {
+        const matchesColor =
+          filters.colors.length === 0 ||
+          filters.colors.includes(variation.color);
+        const matchesSize =
+          filters.sizes.length === 0 || filters.sizes.includes(variation.size);
+        return matchesColor && matchesSize;
+      });
+    });
+  }, [filteredProducts, filters.colors, filters.sizes]);
 
   const renderControls = (
     startIndex: number,
@@ -134,18 +156,14 @@ export default function ProductGridWrapper() {
     );
   };
 
-  const renderPagination = (
-    currentPage: number,
-    totalPages: number,
-    setCurrentPage: (page: number) => void
-  ) => {
+  const renderPagination = (currentPage: number, totalPages: number) => {
     if (totalPages <= 1) return null;
 
     return (
       <div className="flex justify-center items-center gap-2 py-8">
         <div className="inline-flex items-center rounded-lg bg-white p-1 shadow-sm border border-gray-200">
           <button
-            onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+            onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
             disabled={currentPage === 1}
             className="w-20 px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -160,7 +178,7 @@ export default function ProductGridWrapper() {
 
           <button
             onClick={() =>
-              setCurrentPage(Math.min(currentPage + 1, totalPages))
+              handlePageChange(Math.min(currentPage + 1, totalPages))
             }
             disabled={currentPage === totalPages}
             className="w-20 px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -203,20 +221,19 @@ export default function ProductGridWrapper() {
     );
   }
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-
   if (hasColorSelected) {
-    const variations = filteredProducts.flatMap(product => {
-      return product.variations.filter(variation => {
-        const matchesColor =
-          filters.colors.length === 0 ||
-          filters.colors.includes(variation.color);
-        const matchesSize =
-          filters.sizes.length === 0 || filters.sizes.includes(variation.size);
-        return matchesColor && matchesSize;
-      });
-    });
+    const allMatchingVariations = getFilteredVariations();
+    const totalItems = allMatchingVariations.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
 
+    // Get the current page's variations
+    const paginatedVariations = allMatchingVariations.slice(
+      startIndex,
+      startIndex + itemsPerPage
+    );
+
+    // Create products lookup for the variations grid
     const productsLookup = filteredProducts.reduce<ProductLookup>(
       (acc, product) => {
         acc[product.id] = {
@@ -230,13 +247,6 @@ export default function ProductGridWrapper() {
       {}
     );
 
-    const totalItems = variations.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const paginatedVariations = variations.slice(
-      startIndex,
-      startIndex + itemsPerPage
-    );
-
     return (
       <div className="w-full space-y-6">
         {renderControls(startIndex, totalItems, itemsPerPage, true)}
@@ -246,14 +256,16 @@ export default function ProductGridWrapper() {
             products={productsLookup}
           />
         </div>
-        {renderPagination(currentPage, totalPages, setCurrentPage)}
+        {renderPagination(currentPage, totalPages)}
       </div>
     );
   }
 
+  // Handle regular product view
   const transformedProducts = transformProducts(filteredProducts);
   const totalItems = transformedProducts.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedProducts = transformedProducts.slice(
     startIndex,
     startIndex + itemsPerPage
@@ -265,7 +277,7 @@ export default function ProductGridWrapper() {
       <div className="w-full relative">
         <ProductGrid products={paginatedProducts} key={currentPage} />
       </div>
-      {renderPagination(currentPage, totalPages, setCurrentPage)}
+      {renderPagination(currentPage, totalPages)}
     </div>
   );
 }
