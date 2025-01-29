@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import type { ProductLookup } from "./types";
 
 interface PricingRangesProps {
@@ -10,58 +10,63 @@ const PricingRanges: React.FC<PricingRangesProps> = ({
   dynamicPricing,
   sellingPrice,
 }) => {
-  const desiredRanges = [
-    { from: "1", to: "24" },
-    { from: "25", to: "100" },
-    { from: "101", to: "600" },
-    { from: "601", to: "20000" },
-  ];
+  // Get filtered and sorted pricing ranges
+  const filteredPricing = useMemo(() => {
+    if (!dynamicPricing?.length) return [];
 
-  const getPriceForRange = (from: string, to: string): number => {
-    if (!dynamicPricing?.length) {
-      return sellingPrice;
-    }
+    // Standard ranges to match exactly
+    const standardRanges = [
+      { from: "1", to: "24" },
+      { from: "25", to: "100" },
+      { from: "101", to: "600" },
+    ];
 
-    // First, look for exact range match
-    const exactMatch = dynamicPricing.find(
-      p => p.from === from && p.to === to && p.type === "fixed_price"
+    // Get standard ranges first (exact matches only)
+    const standardPricing = dynamicPricing.filter(pricing =>
+      standardRanges.some(
+        range =>
+          range.from === pricing.from &&
+          range.to === pricing.to &&
+          pricing.type === "fixed_price"
+      )
     );
 
-    if (exactMatch) {
-      return parseFloat(exactMatch.amount);
-    }
-
-    // Sort pricing rules by specificity (smaller ranges first)
-    const sortedPricing = [...dynamicPricing].sort((a, b) => {
-      const rangeA = parseInt(a.to) - parseInt(a.from);
-      const rangeB = parseInt(b.to) - parseInt(b.from);
-      return rangeA - rangeB;
-    });
-
-    // Find the most specific applicable fixed price rule
-    const applicableRule = sortedPricing.find(
-      p =>
-        parseInt(p.from) <= parseInt(from) &&
-        parseInt(p.to) >= parseInt(to) &&
-        p.type === "fixed_price"
+    // Get the 601+ range
+    const bulkRange = dynamicPricing.find(
+      pricing => Number(pricing.from) >= 601 && pricing.type === "fixed_price"
     );
 
-    return applicableRule ? parseFloat(applicableRule.amount) : sellingPrice;
-  };
+    // Combine and sort
+    return [...standardPricing, ...(bulkRange ? [bulkRange] : [])].sort(
+      (a, b) => Number(a.from) - Number(b.from)
+    );
+  }, [dynamicPricing]);
 
   const formatPrice = (price: number): string => {
     return `R${price.toFixed(2)}`;
   };
 
+  // If no dynamic pricing, show default price for all ranges
+  if (!filteredPricing.length) {
+    return (
+      <div className="grid grid-cols-2 gap-y-5 gap-x-2 text-sm">
+        <div className="font-medium text-gray-700">Quantity</div>
+        <div className="font-medium text-gray-700">Price</div>
+        <div className="text-gray-600">1+</div>
+        <div className="text-gray-600">{formatPrice(sellingPrice)}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 gap-y-5 gap-x-2 text-sm">
       <div className="font-medium text-gray-700">Quantity</div>
       <div className="font-medium text-gray-700">Price</div>
-      {desiredRanges.map(range => (
-        <React.Fragment key={`${range.from}-${range.to}`}>
-          <div className="text-gray-600">{`${range.from} - ${range.to}`}</div>
+      {filteredPricing.map(pricing => (
+        <React.Fragment key={pricing.id}>
+          <div className="text-gray-600">{`${pricing.from} - ${pricing.to}`}</div>
           <div className="text-gray-600">
-            {formatPrice(getPriceForRange(range.from, range.to))}
+            {formatPrice(parseFloat(pricing.amount))}
           </div>
         </React.Fragment>
       ))}
