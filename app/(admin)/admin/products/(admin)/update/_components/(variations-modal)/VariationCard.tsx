@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Save, X, Loader2 } from "lucide-react";
-import { formatZAR, getStockBadgeColor } from "../../utils";
+import { formatZAR, getStockBadgeColor, priceRangeConfigs } from "../../utils";
 import { Product, Variation } from "../../types";
 
 interface EditableVariation extends Omit<Variation, "quantity"> {
@@ -35,6 +35,27 @@ export const VariationCard: React.FC<VariationCardProps> = ({
 }) => {
   const isEditing = editingVariation?.id === variation.id;
   const [isSaving, setIsSaving] = useState(false);
+
+  const filteredDynamicPricing = useMemo(() => {
+    // Get standard ranges first
+    const standardRanges = product.dynamicPricing.filter(
+      pricing =>
+        Number(pricing.from) < 601 &&
+        priceRangeConfigs.some(
+          config => config.from === pricing.from && config.to === pricing.to
+        )
+    );
+
+    // Get the 601+ range
+    const bulkRange = product.dynamicPricing.find(
+      pricing => Number(pricing.from) >= 601
+    );
+
+    // Combine and sort
+    return [...standardRanges, ...(bulkRange ? [bulkRange] : [])].sort(
+      (a, b) => Number(a.from) - Number(b.from)
+    );
+  }, [product]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -131,7 +152,7 @@ export const VariationCard: React.FC<VariationCardProps> = ({
 
             <div className="space-y-1">
               <div className="text-xs font-medium">Dynamic Pricing:</div>
-              {product.dynamicPricing.map(pricing => (
+              {filteredDynamicPricing.map(pricing => (
                 <div
                   key={pricing.id}
                   className="flex justify-between items-center text-xs"
