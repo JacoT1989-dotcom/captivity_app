@@ -29,18 +29,11 @@ const ProductGrid = ({ products }: ProductGridProps) => {
   };
 
   const getBasePrice = (product: StoreProduct) => {
-    // Find the dynamic pricing for range 1-24 (base price)
     const basePricing = product.dynamicPricing.find(
       pricing => pricing.from === "1" && pricing.to === "24"
     );
 
-    // If we find the base pricing, use its amount, otherwise fall back to selling price
-    if (basePricing) {
-      return parseFloat(basePricing.amount);
-    }
-
-    // Fallback to selling price if no dynamic pricing found
-    return product.sellingPrice;
+    return basePricing ? parseFloat(basePricing.amount) : product.sellingPrice;
   };
 
   const getTotalStock = (variations: StoreProduct["variations"]) => {
@@ -107,7 +100,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
               </div>
             </div>
 
-            <div className="p-3 sm:p-4">
+            <div className="p-3 sm:p-4 flex flex-col">
               <h3 className="text-base sm:text-lg font-semibold text-foreground line-clamp-1 hover:line-clamp-none text-center">
                 {product.productName}
               </h3>
@@ -115,43 +108,53 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                 {formatPrice(getBasePrice(product))}
               </p>
 
-              <div className="mt-2 flex flex-wrap justify-center items-center gap-2">
-                {Array.from(new Set(product.variations.map(v => v.color)))
-                  .slice(0, 3)
-                  .map(color => (
-                    <div
-                      key={color}
-                      className="transform scale-90 cursor-pointer"
-                    >
-                      <ColorSwatch
-                        color={color}
-                        isSelected={false}
-                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                          e.stopPropagation();
-                          handleColorDialogOpen(product, e);
-                        }}
-                        showCheckmark={false}
-                      />
-                    </div>
-                  ))}
-                {Array.from(new Set(product.variations.map(v => v.color)))
-                  .length > 3 && (
-                  <Button
-                    onClick={e => handleColorDialogOpen(product, e)}
-                    variant="default"
-                    className="h-6 px-2 text-xs"
-                  >
-                    +
+              {/* Fixed Height Color Variants Container */}
+              <div className="h-[3.25rem] mt-2">
+                <div className="flex flex-col items-center gap-1">
+                  {/* Color swatches row */}
+                  <div className="flex justify-center gap-1">
                     {Array.from(new Set(product.variations.map(v => v.color)))
-                      .length - 3}{" "}
-                    more
-                  </Button>
-                )}
+                      .slice(0, 3)
+                      .map(color => (
+                        <div
+                          key={color}
+                          className="transform scale-75 cursor-pointer"
+                        >
+                          <ColorSwatch
+                            color={color}
+                            isSelected={false}
+                            onClick={(
+                              e: React.MouseEvent<HTMLButtonElement>
+                            ) => {
+                              e.stopPropagation();
+                              handleColorDialogOpen(product, e);
+                            }}
+                            showCheckmark={false}
+                          />
+                        </div>
+                      ))}
+                  </div>
+
+                  {/* More button - will wrap to next line */}
+                  {Array.from(new Set(product.variations.map(v => v.color)))
+                    .length > 3 && (
+                    <Button
+                      onClick={e => handleColorDialogOpen(product, e)}
+                      variant="default"
+                      className="h-5 px-1.5 text-xs min-w-[3.5rem]"
+                    >
+                      +
+                      {Array.from(new Set(product.variations.map(v => v.color)))
+                        .length - 3}{" "}
+                      more
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <Button
                 onClick={() => setSelectedProduct(product)}
-                className="w-full mt-3 sm:mt-4"
+                className="w-full mt-5 sm:mt-4"
                 variant="secondary"
               >
                 View More

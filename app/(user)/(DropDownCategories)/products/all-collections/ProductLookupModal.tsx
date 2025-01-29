@@ -1,70 +1,48 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import {
-  useCurrentPricing,
-  useEffectivePrice,
-} from "./_store/all-collections-store";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Product } from "./_store/types";
-
-interface ProductLookup {
-  id: string;
-  productName: string;
-  sellingPrice: number;
-  dynamicPricing: {
-    id: string;
-    from: string;
-    to: string;
-    type: string;
-    amount: string;
-    productId: string;
-  }[];
-}
-
-interface Variation {
-  id: string;
-  name: string;
-  color: string;
-  size: string;
-  sku: string;
-  sku2: string;
-  variationImageURL: string;
-  quantity: number;
-  productId: string;
-}
-
-interface ColorVariation {
-  color: string;
-  variations: Variation[];
-}
-
-interface ProductVariations {
-  variations: ColorVariation[];
-}
+import { ColorDisplay } from "./ColorBackground";
 
 interface ProductLookupModalProps {
   isOpen: boolean;
   onClose: () => void;
   productId: string | null;
-  product: ProductLookup | undefined;
-  productVariations: ProductVariations | undefined;
+  product: Product | undefined;
+  productVariations:
+    | {
+        variations: Array<{
+          color: string;
+          variations: Array<{
+            id: string;
+            name: string;
+            color: string;
+            size: string;
+            sku: string;
+            sku2: string;
+            variationImageURL: string;
+            quantity: number;
+            productId: string;
+          }>;
+        }>;
+      }
+    | undefined;
 }
 
-interface PricingRange {
-  from: string;
-  to: string;
-}
-
+// PricingRanges component
 const PricingRanges: React.FC<{
-  dynamicPricing: ProductLookup["dynamicPricing"];
+  dynamicPricing: Array<{
+    from: string;
+    to: string;
+    amount: string;
+  }>;
   sellingPrice: number;
   productId: string;
 }> = ({ dynamicPricing, sellingPrice }) => {
-  console.log("💰 Dynamic Pricing Data:", dynamicPricing);
-
   const desiredRanges = [
     { from: "1", to: "24" },
     { from: "25", to: "100" },
@@ -73,35 +51,22 @@ const PricingRanges: React.FC<{
   ];
 
   const getPriceForRange = (from: string, to: string) => {
-    if (!dynamicPricing?.length) {
-      return sellingPrice;
-    }
+    if (!dynamicPricing?.length) return sellingPrice;
 
-    // Find matching price rules for this range
     const applicablePricing = dynamicPricing.filter(pricing => {
       const pricingStart = parseInt(pricing.from);
       const pricingEnd = parseInt(pricing.to);
       const rangeStart = parseInt(from);
       const rangeEnd = parseInt(to);
-
-      // Check if the ranges overlap
       return pricingStart <= rangeEnd && pricingEnd >= rangeStart;
     });
 
-    if (applicablePricing.length === 0) {
-      return sellingPrice;
-    }
+    if (!applicablePricing.length) return sellingPrice;
 
-    // Get the most specific (smallest range) pricing rule
     const bestPricing = applicablePricing.reduce((best, current) => {
       const currentRange = parseInt(current.to) - parseInt(current.from);
       const bestRange = parseInt(best.to) - parseInt(best.from);
       return currentRange < bestRange ? current : best;
-    });
-
-    console.log(`🏷️ Price calculation for range ${from}-${to}:`, {
-      appliedPricing: bestPricing,
-      originalPrice: sellingPrice,
     });
 
     return parseFloat(bestPricing.amount);
@@ -132,6 +97,7 @@ const PricingRanges: React.FC<{
   );
 };
 
+// Main ProductLookupModal component
 const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
   isOpen,
   onClose,
@@ -139,18 +105,14 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
   product,
   productVariations,
 }) => {
-  console.log("🔄 ProductLookupModal Rendered:", {
-    productId,
-    productPricing: product?.dynamicPricing,
-    timestamp: new Date().toISOString(),
-  });
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
-  const [currentVariation, setCurrentVariation] = useState<Variation | null>(
-    null
-  );
+  const [currentVariation, setCurrentVariation] = useState<
+    Product["variations"][0] | null
+  >(null);
 
+  // Initialize selections when modal opens
   useEffect(() => {
     if (isOpen && productId && productVariations) {
       const firstAvailableVariation =
@@ -164,6 +126,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
     }
   }, [isOpen, productId, productVariations]);
 
+  // Update current variation when selections change
   useEffect(() => {
     if (selectedColor && selectedSize && productVariations) {
       const colorVariation = productVariations.variations.find(
@@ -176,9 +139,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
     }
   }, [selectedColor, selectedSize, productVariations]);
 
-  if (!productId || !product || !productVariations) {
-    return null;
-  }
+  if (!productId || !product || !productVariations) return null;
 
   const allColors = productVariations.variations.map(v => v.color);
   const allSizes = Array.from(
@@ -193,46 +154,17 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
     productVariations.variations.find(v => v.color === selectedColor)
       ?.variations || [];
 
-  const getCurrentImage = (): string => {
-    if (selectedColor && selectedSize) {
-      const colorVariation = productVariations.variations.find(
-        v => v.color === selectedColor
-      );
-      const sizeVariation = colorVariation?.variations.find(
-        v => v.size === selectedSize
-      );
-      if (sizeVariation?.variationImageURL)
-        return sizeVariation.variationImageURL;
+  const getCurrentImage = () => {
+    if (currentVariation?.variationImageURL) {
+      return currentVariation.variationImageURL;
     }
-
-    if (selectedSize) {
-      const variationWithSize = productVariations.variations.find(colorVar =>
-        colorVar.variations.some(v => v.size === selectedSize)
-      );
-      const sizeVariation = variationWithSize?.variations.find(
-        v => v.size === selectedSize
-      );
-      if (sizeVariation?.variationImageURL)
-        return sizeVariation.variationImageURL;
-    }
-
-    if (selectedColor) {
-      const colorVariation = productVariations.variations.find(
-        v => v.color === selectedColor
-      );
-      if (colorVariation?.variations[0]?.variationImageURL) {
-        return colorVariation.variations[0].variationImageURL;
-      }
-    }
-
-    return (
-      productVariations.variations[0]?.variations[0]?.variationImageURL || ""
-    );
+    return product.featuredImage?.large || "";
   };
 
   return (
     <Dialog open={isOpen}>
       <DialogContent className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-7xl h-[90vh] md:h-auto">
+        {/* Header */}
         <div className="flex items-center justify-between p-3 border-b rounded-md bg-white sticky top-0 z-10">
           <h2 className="text-lg font-semibold text-red-600">
             {product.productName}
@@ -245,8 +177,10 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
           </button>
         </div>
 
+        {/* Content */}
         <div className="overflow-y-auto md:overflow-hidden h-[calc(100%-3.5rem)]">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 p-4">
+            {/* Product Image */}
             <div className="lg:col-span-2">
               <div className="aspect-square relative rounded-lg overflow-hidden bg-gray-50 border">
                 <Image
@@ -260,31 +194,30 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
               </div>
             </div>
 
+            {/* Product Options */}
             <div className="lg:col-span-2 space-y-8">
-              <div className="bg-white rounded-lg border p-2 space-y-6">
+              <div className="bg-white rounded-lg border p-4 space-y-6">
+                {/* Color Selection */}
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1.5">
+                  <label className="block text-sm text-gray-600 mb-2">
                     Colour:
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {allColors.map(color => (
-                      <button
+                      <ColorDisplay
                         key={color}
+                        color={color}
+                        isSelected={selectedColor === color}
                         onClick={() => setSelectedColor(color)}
-                        className={`w-8 h-8 rounded-md border transition-all ${
-                          selectedColor === color
-                            ? "ring-2 ring-red-600 ring-offset-1"
-                            : "hover:opacity-80"
-                        }`}
-                        style={{ backgroundColor: color.toLowerCase() }}
-                        title={color}
+                        size="md"
                       />
                     ))}
                   </div>
                 </div>
 
+                {/* Size Selection */}
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1.5">
+                  <label className="block text-sm text-gray-600 mb-2">
                     Size:
                   </label>
                   <div className="flex flex-wrap gap-1.5">
@@ -303,13 +236,14 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                         <button
                           key={size}
                           onClick={() => setSelectedSize(size)}
-                          className={`min-w-[44px] px-3 py-1.5 text-sm border rounded-md transition-colors ${
+                          className={cn(
+                            "min-w-[44px] px-3 py-1.5 text-sm border rounded-md transition-colors",
                             selectedSize === size
                               ? "bg-red-600 text-white border-red-600"
                               : isAvailable
                                 ? "hover:bg-gray-50"
                                 : "opacity-50 cursor-not-allowed bg-gray-50"
-                          }`}
+                          )}
                           disabled={!isAvailable}
                         >
                           {size}
@@ -319,8 +253,9 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                   </div>
                 </div>
 
+                {/* Quantity Selection */}
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1.5">
+                  <label className="block text-sm text-gray-600 mb-2">
                     Quantity:
                   </label>
                   <div className="flex items-center gap-3">
@@ -361,15 +296,16 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                         +
                       </button>
                     </div>
-                    <div className="text-sm text-yellow-600">
-                      {currentVariation
-                        ? `${currentVariation.quantity} in stock`
-                        : ""}
-                    </div>
+                    {currentVariation && (
+                      <div className="text-sm text-yellow-600">
+                        {currentVariation.quantity} in stock
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
+              {/* Add to Cart Button */}
               <Button
                 className="w-full py-2.5 bg-red-600 text-white rounded-md hover:bg-red-700 
                           transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -380,6 +316,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
               </Button>
             </div>
 
+            {/* Pricing Table */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg border p-3">
                 <PricingRanges
