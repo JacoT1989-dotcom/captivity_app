@@ -1,68 +1,26 @@
+// VariationsGrid.tsx
 import React, { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import ProductLookupModal from "./ProductLookupModal";
 import { useCategoryStore } from "./_store/all-collections-store";
-import type { Product } from "./_store/types";
+import type { Product, Variation } from "./_store/types";
 
-// Define JSON value types
-type JsonPrimitive = string | number | boolean | null;
-type JsonValue = JsonPrimitive | JsonObject | JsonArray;
-type JsonObject = { [key: string]: JsonValue };
-type JsonArray = JsonValue[];
-
-interface ProductLookup {
+// Define simplified product lookup type that matches what's passed from parent
+interface SimplifiedProductLookup {
   [key: string]: {
     id: string;
     productName: string;
     sellingPrice: number;
-    dynamicPricing: {
+    dynamicPricing: Array<{
       id: string;
       from: string;
       to: string;
       type: string;
       amount: string;
       productId: string;
-    }[];
-    userId: string;
-    category: string[];
-    description: string;
-    isPublished: boolean;
-    createdAt: string;
-    updatedAt: string;
-    reviews: JsonValue[];
-    featuredImage?: {
-      id: string;
-      thumbnail: string;
-      small: string;
-      medium: string;
-      large: string;
-      productId: string;
-    } | null;
-    variations: Array<{
-      id: string;
-      name: string;
-      color: string;
-      size: string;
-      sku: string;
-      sku2: string;
-      variationImageURL: string;
-      quantity: number;
-      productId: string;
     }>;
   };
-}
-
-interface Variation {
-  id: string;
-  name: string;
-  color: string;
-  size: string;
-  sku: string;
-  sku2: string;
-  variationImageURL: string;
-  quantity: number;
-  productId: string;
 }
 
 interface ColorVariation {
@@ -78,8 +36,30 @@ interface ProductVariations {
 
 interface VariationsGridProps {
   variations: Variation[];
-  products: ProductLookup;
+  products: SimplifiedProductLookup;
 }
+
+const getFullProduct = (
+  baseProduct: SimplifiedProductLookup[string],
+  productId: string,
+  variations: Variation[]
+): Product => {
+  return {
+    id: baseProduct.id,
+    productName: baseProduct.productName,
+    sellingPrice: baseProduct.sellingPrice,
+    dynamicPricing: baseProduct.dynamicPricing,
+    variations: variations.filter(v => v.productId === productId),
+    userId: "",
+    category: [],
+    description: "",
+    isPublished: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    reviews: [],
+    featuredImage: null,
+  };
+};
 
 const VariationsGrid: React.FC<VariationsGridProps> = ({
   variations,
@@ -95,7 +75,7 @@ const VariationsGrid: React.FC<VariationsGridProps> = ({
     }).format(price);
   };
 
-  // Group all variations by product
+  // Group variations by product
   const groupedByProduct = variations.reduce<Record<string, Variation[]>>(
     (acc, variation) => {
       if (!acc[variation.productId]) {
@@ -107,7 +87,7 @@ const VariationsGrid: React.FC<VariationsGridProps> = ({
     {}
   );
 
-  // Create the product variations structure for the modal
+  // Create product variations structure for modal
   const productVariations = Object.entries(
     groupedByProduct
   ).reduce<ProductVariations>((acc, [productId, productVars]) => {
@@ -115,7 +95,7 @@ const VariationsGrid: React.FC<VariationsGridProps> = ({
       variations: [],
     };
 
-    // First group by color
+    // Group by color
     const colorGroups = productVars.reduce<Record<string, Variation[]>>(
       (colors, variation) => {
         if (!colors[variation.color]) {
@@ -130,7 +110,6 @@ const VariationsGrid: React.FC<VariationsGridProps> = ({
     // Sort sizes within each color group
     Object.values(colorGroups).forEach(variations => {
       variations.sort((a, b) => {
-        // Convert size strings to numbers if possible
         const sizeA = parseFloat(a.size) || a.size;
         const sizeB = parseFloat(b.size) || b.size;
 
@@ -141,7 +120,7 @@ const VariationsGrid: React.FC<VariationsGridProps> = ({
       });
     });
 
-    // Create color variations array with sorted variations
+    // Create color variations array
     acc[productId].variations = Object.entries(colorGroups).map(
       ([color, vars]) => ({
         color,
@@ -186,12 +165,9 @@ const VariationsGrid: React.FC<VariationsGridProps> = ({
           const product = products[productId];
           if (!product) return null;
 
-          // Get unique colors for this product
           const uniqueColors = [...new Set(productVars.map(v => v.color))];
           const displayColors = uniqueColors.slice(0, 2);
           const remainingColorCount = Math.max(0, uniqueColors.length - 2);
-
-          // Use the first variation for display
           const displayVariation = productVars[0];
 
           return (
@@ -209,6 +185,10 @@ const VariationsGrid: React.FC<VariationsGridProps> = ({
                     className="object-cover"
                     sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                     priority
+                    onError={e => {
+                      const imgElement = e.target as HTMLImageElement;
+                      imgElement.src = "/placeholder.jpg";
+                    }}
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
@@ -285,17 +265,11 @@ const VariationsGrid: React.FC<VariationsGridProps> = ({
         productId={selectedProduct}
         product={
           selectedProduct
-            ? ({
-                ...products[selectedProduct],
-                createdAt: new Date(products[selectedProduct].createdAt),
-                updatedAt: new Date(products[selectedProduct].updatedAt),
-                featuredImage: products[selectedProduct].featuredImage || null,
-                reviews: products[selectedProduct].reviews.map(review => ({
-                  ...(review as any),
-                  createdAt: new Date((review as any).createdAt),
-                  updatedAt: new Date((review as any).updatedAt),
-                })),
-              } as Product)
+            ? getFullProduct(
+                products[selectedProduct],
+                selectedProduct,
+                variations
+              )
             : undefined
         }
         productVariations={
