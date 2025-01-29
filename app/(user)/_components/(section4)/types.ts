@@ -1,4 +1,5 @@
 // types.ts
+
 // Session types
 export interface User {
   id: string;
@@ -31,6 +32,15 @@ export interface HighlightedProduct extends BaseProduct {
   updatedAt: Date;
 }
 
+// Empty slot type for product grid
+export interface EmptySlot {
+  isEmpty: true;
+  id: string;
+}
+
+// Union type for all possible slot types
+export type SlotType = Product | HighlightedProduct | EmptySlot;
+
 // Component Props
 export interface BestSellersContentProps {
   currentSlide: number;
@@ -51,7 +61,7 @@ export interface ProductSliderProps {
   onPrev: () => void;
   onEdit?: (product: HighlightedProduct) => void;
   onRemove?: (id: string) => Promise<void>;
-  onAddNew?: () => void; // Add this line
+  onAddNew?: () => void;
 }
 
 export interface ProductCardProps {
@@ -81,12 +91,42 @@ export interface ContentProps {
   onPrev: () => void;
 }
 
+export interface FormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (formData: FormData) => Promise<void>;
+  error?: string | null;
+}
+
+// Store types
+export interface HighlightedProductsState {
+  newArrivals: HighlightedProduct[];
+  bestSellers: HighlightedProduct[];
+  onSaleProducts: HighlightedProduct[];
+  isLoading: boolean;
+  error: string | null;
+  initialized: boolean;
+}
+
+export interface HighlightProductActionResult {
+  success: boolean;
+  newArrivals?: HighlightedProduct[];
+  bestSellers?: HighlightedProduct[];
+  onSaleProducts?: HighlightedProduct[];
+  error?: string;
+}
+
 // Type guards
+export function isEmptySlot(item: any): item is EmptySlot {
+  return item && item.isEmpty === true && typeof item.id === "string";
+}
+
 export function isHighlightedProduct(
-  product: Product | HighlightedProduct
+  product: Product | HighlightedProduct | EmptySlot
 ): product is HighlightedProduct {
   return (
-    typeof product.id === "string" &&
+    !isEmptySlot(product) &&
+    typeof (product as any).id === "string" &&
     "position" in product &&
     "createdAt" in product &&
     "updatedAt" in product
@@ -94,51 +134,86 @@ export function isHighlightedProduct(
 }
 
 export function isStaticProduct(
-  product: Product | HighlightedProduct
+  product: Product | HighlightedProduct | EmptySlot
 ): product is Product {
-  return typeof product.id === "number" && !("position" in product);
+  return (
+    !isEmptySlot(product) &&
+    typeof (product as any).id === "number" &&
+    !("position" in product)
+  );
 }
+
+// Constants
+export const MAX_PRODUCTS = 8;
+export const SLIDES_PER_VIEW = 4;
 
 // For the products data structure in tabs
 export type ProductsRecord = Record<string, Product[]>;
 
-// Let me break down this TypeScript type definition:
+// Form data types
+export interface ProductFormData {
+  title: string;
+  price: number;
+  rating: number;
+  image: File | null;
+  position?: number;
+  salePrice?: number;
+}
 
-// Record<K, T> is a utility type in TypeScript that creates an object type where:
+// File validation types
+export interface FileValidationResult {
+  valid: boolean;
+  error?: string;
+}
 
-// K represents the keys (property names)
-// T represents the type of values those properties will hold
+// API Response types
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
 
-// The syntax K extends keyof any means K must be a valid object property key type (string, number, or symbol).
-// Here's a practical example:
-// typescriptCopy// Creates a type where all keys are strings and all values are numbers
-// type NumberRecord = Record<string, number>;
+// User Settings types
+export interface UserSettings {
+  userId: string;
+  NewArrival: HighlightedProduct[];
+  BestSeller: HighlightedProduct[];
+  OnSaleProduct: HighlightedProduct[];
+}
 
-// // This is equivalent to:
-// type NumberRecord = {
-//     [key: string]: number;
-// }
+// Upload types
+export interface UploadResponse {
+  url: string;
+  success: boolean;
+  error?: string;
+}
 
-// // Example usage:
-// const scores: NumberRecord = {
-//     "john": 85,
-//     "mary": 92,
-//     "bob": 78
-// };
+// Filter and Sort types
+export interface ProductFilters {
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
+  search?: string;
+}
 
-// // Another example with specific keys
-// type UserRoles = Record<"admin" | "user" | "guest", boolean>;
+export type SortOrder = "asc" | "desc";
+export type SortField = "price" | "rating" | "createdAt" | "position";
 
-// // This creates a type equivalent to:
-// type UserRoles = {
-//     admin: boolean;
-//     user: boolean;
-//     guest: boolean;
-// }
+export interface SortOptions {
+  field: SortField;
+  order: SortOrder;
+}
 
-// const permissions: UserRoles = {
-//     admin: true,
-//     user: true,
-//     guest: false
-// };
-// It's particularly useful when you want to create a dictionary or map-like object where you know the type of values but the keys could vary (within the constraints of K).
+// Pagination types
+export interface PaginationOptions {
+  page: number;
+  limit: number;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  totalPages: number;
+  hasMore: boolean;
+}

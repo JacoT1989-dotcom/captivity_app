@@ -1,16 +1,18 @@
 "use client";
-
 import * as React from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { TabNavigation } from "./TabNavigation";
 import { ProductSlider } from "./ProductSlider";
-import { Product, HighlightedProduct } from "./types";
+import type { Product, HighlightedProduct } from "./types";
 import { useHighlightedProductsData } from "@/app/(editor)/_editor-store/highlighted-products-store";
 import { useSession } from "@/app/SessionProvider";
 import { BestSellerFormModal } from "./_components/(best_sellers)/BestSellerFormModal";
 import { BestSellerEditModal } from "./_components/(best_sellers)/BestSellerEditModal";
 import { NewArrivalFormModal } from "./_components/(new_arrivals)/NewArrivalFormModal";
 import { NewArrivalEditModal } from "./_components/(new_arrivals)/NewArrivalEditModal";
+
+const MAX_PRODUCTS = 8;
+const SLIDES_PER_VIEW = 4;
 
 const staticProducts: Record<string, Product[]> = {
   "on-sale": [
@@ -22,7 +24,6 @@ const staticProducts: Record<string, Product[]> = {
       image: "/placeholder.png?height=600&width=400",
       rating: 4,
     },
-    // ... other on-sale products
   ],
 };
 
@@ -34,7 +35,6 @@ export function ProductTabs() {
   const [editingProduct, setEditingProduct] =
     React.useState<HighlightedProduct | null>(null);
   const [showAddForm, setShowAddForm] = React.useState(false);
-  const slidesPerView = 4;
 
   const {
     newArrivals,
@@ -48,27 +48,25 @@ export function ProductTabs() {
     removeBestSeller,
   } = useHighlightedProductsData();
 
-  const handleNextSlide = () => {
-    const currentProducts = (() => {
-      switch (activeTab) {
-        case "new-arrivals":
-          return newArrivals;
-        case "best-sellers":
-          return bestSellers;
-        default:
-          return staticProducts[activeTab] || [];
+  const handleNextSlide = React.useCallback(() => {
+    setCurrentSlide(prev => {
+      const totalSlots = MAX_PRODUCTS;
+      const maxSlides = Math.ceil(totalSlots / SLIDES_PER_VIEW) - 1;
+      // Allow sliding if there are empty slots available
+      const currentProducts =
+        activeTab === "new-arrivals" ? newArrivals.length : bestSellers.length;
+      if (currentProducts < MAX_PRODUCTS || prev < maxSlides) {
+        return Math.min(prev + 1, maxSlides);
       }
-    })();
+      return prev;
+    });
+  }, [activeTab, newArrivals.length, bestSellers.length]);
 
-    setCurrentSlide(prev =>
-      Math.min(prev + 1, Math.max(0, currentProducts.length - slidesPerView))
-    );
-  };
-
-  const handlePrevSlide = () => {
+  const handlePrevSlide = React.useCallback(() => {
     setCurrentSlide(prev => Math.max(prev - 1, 0));
-  };
+  }, []);
 
+  // Reset slide when changing tabs
   React.useEffect(() => {
     setCurrentSlide(0);
   }, [activeTab]);
@@ -86,11 +84,26 @@ export function ProductTabs() {
           await uploadBestSeller(formData);
         }
         setShowAddForm(false);
+
+        // If we're on the first slide and it's full, move to the next slide
+        const products =
+          activeTab === "new-arrivals" ? newArrivals : bestSellers;
+        if (currentSlide === 0 && products.length >= SLIDES_PER_VIEW) {
+          handleNextSlide();
+        }
       } catch (error) {
         console.error("Upload error:", error);
       }
     },
-    [activeTab, uploadNewArrival, uploadBestSeller]
+    [
+      activeTab,
+      uploadNewArrival,
+      uploadBestSeller,
+      newArrivals,
+      bestSellers,
+      currentSlide,
+      handleNextSlide,
+    ]
   );
 
   const handleUpdate = React.useCallback(
@@ -117,11 +130,31 @@ export function ProductTabs() {
         } else if (activeTab === "best-sellers") {
           await removeBestSeller(id);
         }
+
+        // If current slide is empty after removal, go back one slide
+        const products =
+          activeTab === "new-arrivals" ? newArrivals : bestSellers;
+        const productsInCurrentSlide = products.slice(
+          currentSlide * SLIDES_PER_VIEW,
+          (currentSlide + 1) * SLIDES_PER_VIEW
+        );
+
+        if (productsInCurrentSlide.length === 1 && currentSlide > 0) {
+          handlePrevSlide();
+        }
       } catch (error) {
         console.error("Remove error:", error);
       }
     },
-    [activeTab, removeNewArrival, removeBestSeller]
+    [
+      activeTab,
+      removeNewArrival,
+      removeBestSeller,
+      newArrivals,
+      bestSellers,
+      currentSlide,
+      handlePrevSlide,
+    ]
   );
 
   const renderTabContent = (tabKey: string) => {
@@ -133,7 +166,7 @@ export function ProductTabs() {
           <ProductSlider
             products={products}
             currentSlide={currentSlide}
-            slidesPerView={slidesPerView}
+            slidesPerView={SLIDES_PER_VIEW}
             onNext={handleNextSlide}
             onPrev={handlePrevSlide}
             onEdit={
@@ -145,7 +178,7 @@ export function ProductTabs() {
             onAddNew={isEditor ? handleAddNew : undefined}
           />
 
-          {isEditor && (
+          {isEditor && showAddForm && (
             <>
               {tabKey === "new-arrivals" ? (
                 <NewArrivalFormModal
@@ -162,15 +195,35 @@ export function ProductTabs() {
               )}
             </>
           )}
+
+          {isEditor && editingProduct && (
+            <>
+              {tabKey === "new-arrivals" ? (
+                <NewArrivalEditModal
+                  isOpen={!!editingProduct}
+                  onClose={() => setEditingProduct(null)}
+                  product={editingProduct}
+                  onUpdate={handleUpdate}
+                />
+              ) : (
+                <BestSellerEditModal
+                  isOpen={!!editingProduct}
+                  onClose={() => setEditingProduct(null)}
+                  product={editingProduct}
+                  onUpdate={handleUpdate}
+                />
+              )}
+            </>
+          )}
         </>
       );
     }
 
     return (
       <ProductSlider
-        products={staticProducts[tabKey]}
+        products={staticProducts[tabKey] || []}
         currentSlide={currentSlide}
-        slidesPerView={slidesPerView}
+        slidesPerView={SLIDES_PER_VIEW}
         onNext={handleNextSlide}
         onPrev={handlePrevSlide}
       />
@@ -193,35 +246,13 @@ export function ProductTabs() {
         >
           <TabNavigation activeTab={activeTab} />
 
-          {[...Object.keys(staticProducts), "new-arrivals", "best-sellers"].map(
-            key => (
-              <TabsContent key={key} value={key} className="relative">
-                {renderTabContent(key)}
-              </TabsContent>
-            )
-          )}
+          {["new-arrivals", "best-sellers", "on-sale"].map(key => (
+            <TabsContent key={key} value={key} className="relative">
+              {renderTabContent(key)}
+            </TabsContent>
+          ))}
         </Tabs>
       </div>
-
-      {editingProduct && isEditor && (
-        <>
-          {activeTab === "new-arrivals" ? (
-            <NewArrivalEditModal
-              isOpen={!!editingProduct}
-              onClose={() => setEditingProduct(null)}
-              product={editingProduct}
-              onUpdate={handleUpdate}
-            />
-          ) : (
-            <BestSellerEditModal
-              isOpen={!!editingProduct}
-              onClose={() => setEditingProduct(null)}
-              product={editingProduct}
-              onUpdate={handleUpdate}
-            />
-          )}
-        </>
-      )}
 
       <div className="container mx-auto px-4 mt-8">
         <div className="h-px bg-gray-200" />
