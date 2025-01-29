@@ -1,10 +1,12 @@
 import React from "react";
 
 interface DynamicPricing {
+  id: string;
   from: string;
   to: string;
-  amount: string;
   type: string;
+  amount: string;
+  productId: string;
 }
 
 interface PricingRangesProps {
@@ -27,26 +29,30 @@ const PricingRanges: React.FC<PricingRangesProps> = ({
   const getPriceForRange = (from: string, to: string) => {
     if (!dynamicPricing?.length) return sellingPrice;
 
-    const applicablePricing = dynamicPricing.filter(pricing => {
-      const pricingStart = parseInt(pricing.from);
-      const pricingEnd = parseInt(pricing.to);
-      const rangeStart = parseInt(from);
-      const rangeEnd = parseInt(to);
-      return pricingStart <= rangeEnd && pricingEnd >= rangeStart;
+    // Find the applicable pricing rule for this range
+    const applicablePricing = dynamicPricing.find(pricing => {
+      const rangeFrom = parseInt(from);
+      const rangeTo = parseInt(to);
+      const pricingFrom = parseInt(pricing.from);
+      const pricingTo = parseInt(pricing.to);
+
+      return rangeFrom >= pricingFrom && rangeTo <= pricingTo;
     });
 
-    if (!applicablePricing.length) return sellingPrice;
+    if (!applicablePricing) return sellingPrice;
 
-    const bestPricing = applicablePricing.reduce((best, current) => {
-      const currentRange = parseInt(current.to) - parseInt(current.from);
-      const bestRange = parseInt(best.to) - parseInt(best.from);
-      return currentRange < bestRange ? current : best;
-    });
+    // If it's a fixed price, use the amount directly
+    if (applicablePricing.type === "fixed_price") {
+      return parseFloat(applicablePricing.amount);
+    }
 
-    if (bestPricing.type === "percentage") {
-      return sellingPrice * (1 - parseFloat(bestPricing.amount) / 100);
-    } else if (bestPricing.type === "fixed") {
-      return sellingPrice - parseFloat(bestPricing.amount);
+    // For other types (percentage or fixed discount)
+    if (applicablePricing.type === "percentage") {
+      const discountPercentage = parseFloat(applicablePricing.amount);
+      return sellingPrice * (1 - discountPercentage / 100);
+    } else if (applicablePricing.type === "fixed") {
+      const discountAmount = parseFloat(applicablePricing.amount);
+      return sellingPrice - discountAmount;
     }
 
     return sellingPrice;
@@ -65,14 +71,16 @@ const PricingRanges: React.FC<PricingRangesProps> = ({
     <div className="grid grid-cols-2 gap-y-5 gap-x-2 text-sm">
       <div className="font-medium text-gray-700">Quantity</div>
       <div className="font-medium text-gray-700">Price</div>
-      {desiredRanges.map(range => (
-        <React.Fragment key={`${range.from}-${range.to}`}>
-          <div className="text-gray-600">{`${range.from} - ${range.to}`}</div>
-          <div className="text-gray-600">
-            {formatPrice(getPriceForRange(range.from, range.to))}
-          </div>
-        </React.Fragment>
-      ))}
+      {desiredRanges.map(range => {
+        const price = getPriceForRange(range.from, range.to);
+
+        return (
+          <React.Fragment key={`${range.from}-${range.to}`}>
+            <div className="text-gray-600">{`${range.from} - ${range.to}`}</div>
+            <div className="text-gray-600">{formatPrice(price)}</div>
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 };

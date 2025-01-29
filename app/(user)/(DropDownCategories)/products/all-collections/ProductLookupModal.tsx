@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { Product } from "./_store/types";
@@ -106,6 +111,13 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
   return (
     <Dialog open={isOpen}>
       <DialogContent className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-7xl h-[90vh] md:h-auto">
+        <DialogTitle className="sr-only">
+          {product.productName} - Product Details
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          Select color, size, and quantity for {product.productName}
+        </DialogDescription>
+
         <div className="flex items-center justify-between p-3 border-b rounded-md bg-white sticky top-0 z-10">
           <h2 className="text-lg font-semibold text-red-600">
             {product.productName}
@@ -113,6 +125,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
           <button
             onClick={onClose}
             className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Close dialog"
           >
             <X className="h-4 w-4" />
           </button>
