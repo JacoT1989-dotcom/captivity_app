@@ -33,16 +33,21 @@ interface ProductLookupModalProps {
     | undefined;
 }
 
-// PricingRanges component
-const PricingRanges: React.FC<{
+interface PricingRangesProps {
   dynamicPricing: Array<{
     from: string;
     to: string;
     amount: string;
+    type: string;
   }>;
   sellingPrice: number;
   productId: string;
-}> = ({ dynamicPricing, sellingPrice }) => {
+}
+
+const PricingRanges: React.FC<PricingRangesProps> = ({
+  dynamicPricing,
+  sellingPrice,
+}) => {
   const desiredRanges = [
     { from: "1", to: "24" },
     { from: "25", to: "100" },
@@ -69,7 +74,13 @@ const PricingRanges: React.FC<{
       return currentRange < bestRange ? current : best;
     });
 
-    return parseFloat(bestPricing.amount);
+    if (bestPricing.type === "percentage") {
+      return sellingPrice * (1 - parseFloat(bestPricing.amount) / 100);
+    } else if (bestPricing.type === "fixed") {
+      return sellingPrice - parseFloat(bestPricing.amount);
+    }
+
+    return sellingPrice;
   };
 
   const formatPrice = (price: number) => {
@@ -97,7 +108,6 @@ const PricingRanges: React.FC<{
   );
 };
 
-// Main ProductLookupModal component
 const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
   isOpen,
   onClose,
@@ -112,17 +122,36 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
     Product["variations"][0] | null
   >(null);
 
-  // Initialize selections when modal opens
+  // Reset state when modal opens with new product
   useEffect(() => {
     if (isOpen && productId && productVariations) {
-      const firstAvailableVariation =
-        productVariations.variations[0]?.variations.find(v => v.quantity > 0);
-      if (firstAvailableVariation) {
-        setSelectedColor(productVariations.variations[0].color);
-        setSelectedSize(firstAvailableVariation.size);
-        setQuantity(1);
-        setCurrentVariation(firstAvailableVariation);
+      // Find first color with available stock
+      const firstColorWithStock = productVariations.variations.find(colorVar =>
+        colorVar.variations.some(v => v.quantity > 0)
+      );
+
+      if (firstColorWithStock) {
+        setSelectedColor(firstColorWithStock.color);
+
+        // Find first size with stock in this color
+        const firstSizeWithStock = firstColorWithStock.variations.find(
+          v => v.quantity > 0
+        );
+        if (firstSizeWithStock) {
+          setSelectedSize(firstSizeWithStock.size);
+          setCurrentVariation(firstSizeWithStock);
+        }
+      } else {
+        // If no stock, just select first color and size
+        setSelectedColor(productVariations.variations[0]?.color || "");
+        setSelectedSize(
+          productVariations.variations[0]?.variations[0]?.size || ""
+        );
+        setCurrentVariation(
+          productVariations.variations[0]?.variations[0] || null
+        );
       }
+      setQuantity(1);
     }
   }, [isOpen, productId, productVariations]);
 
@@ -136,23 +165,37 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
         v => v.size === selectedSize
       );
       setCurrentVariation(variation || null);
+
+      // Reset quantity if current variation has less stock than selected quantity
+      if (variation && variation.quantity < quantity) {
+        setQuantity(Math.max(1, variation.quantity));
+      }
     }
-  }, [selectedColor, selectedSize, productVariations]);
+  }, [selectedColor, selectedSize, productVariations, quantity]);
 
   if (!productId || !product || !productVariations) return null;
 
   const allColors = productVariations.variations.map(v => v.color);
+
+  // Get all sizes for the current color
+  const selectedColorVariations =
+    productVariations.variations.find(v => v.color === selectedColor)
+      ?.variations || [];
+
+  // Get all unique sizes across all colors
   const allSizes = Array.from(
     new Set(
       productVariations.variations.flatMap(colorVar =>
         colorVar.variations.map(v => v.size)
       )
     )
-  ).sort();
-
-  const selectedColorVariations =
-    productVariations.variations.find(v => v.color === selectedColor)
-      ?.variations || [];
+  ).sort((a, b) => {
+    // Convert to numbers if possible for natural sorting
+    const numA = parseFloat(a);
+    const numB = parseFloat(b);
+    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+    return a.localeCompare(b);
+  });
 
   const getCurrentImage = () => {
     if (currentVariation?.variationImageURL) {
@@ -208,7 +251,23 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                         key={color}
                         color={color}
                         isSelected={selectedColor === color}
-                        onClick={() => setSelectedColor(color)}
+                        onClick={() => {
+                          setSelectedColor(color);
+                          // Reset size when changing color
+                          const colorVariation =
+                            productVariations.variations.find(
+                              v => v.color === color
+                            );
+                          const firstAvailableSize =
+                            colorVariation?.variations.find(
+                              v => v.quantity > 0
+                            )?.size;
+                          setSelectedSize(
+                            firstAvailableSize ||
+                              colorVariation?.variations[0]?.size ||
+                              ""
+                          );
+                        }}
                         size="md"
                       />
                     ))}
@@ -222,20 +281,15 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                   </label>
                   <div className="flex flex-wrap gap-1.5">
                     {allSizes.map(size => {
-                      const isAvailable = selectedColor
-                        ? selectedColorVariations.some(
-                            v => v.size === size && v.quantity > 0
-                          )
-                        : productVariations.variations.some(colorVar =>
-                            colorVar.variations.some(
-                              v => v.size === size && v.quantity > 0
-                            )
-                          );
+                      const isAvailable = selectedColorVariations.some(
+                        v => v.size === size && v.quantity > 0
+                      );
 
                       return (
                         <button
                           key={size}
                           onClick={() => setSelectedSize(size)}
+                          disabled={!isAvailable}
                           className={cn(
                             "min-w-[44px] px-3 py-1.5 text-sm border rounded-md transition-colors",
                             selectedSize === size
@@ -244,7 +298,6 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                                 ? "hover:bg-gray-50"
                                 : "opacity-50 cursor-not-allowed bg-gray-50"
                           )}
-                          disabled={!isAvailable}
                         >
                           {size}
                         </button>
@@ -292,6 +345,10 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                           }
                         }}
                         className="px-3 py-1.5 hover:bg-gray-50 transition-colors border-l"
+                        disabled={
+                          !currentVariation ||
+                          quantity >= currentVariation.quantity
+                        }
                       >
                         +
                       </button>

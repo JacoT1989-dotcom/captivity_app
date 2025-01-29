@@ -3,6 +3,13 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import ProductLookupModal from "./ProductLookupModal";
 import { useCategoryStore } from "./_store/all-collections-store";
+import type { Product } from "./_store/types";
+
+// Define JSON value types
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | JsonObject | JsonArray;
+type JsonObject = { [key: string]: JsonValue };
+type JsonArray = JsonValue[];
 
 interface ProductLookup {
   [key: string]: {
@@ -17,6 +24,32 @@ interface ProductLookup {
       amount: string;
       productId: string;
     }[];
+    userId: string;
+    category: string[];
+    description: string;
+    isPublished: boolean;
+    createdAt: string;
+    updatedAt: string;
+    reviews: JsonValue[];
+    featuredImage?: {
+      id: string;
+      thumbnail: string;
+      small: string;
+      medium: string;
+      large: string;
+      productId: string;
+    } | null;
+    variations: Array<{
+      id: string;
+      name: string;
+      color: string;
+      size: string;
+      sku: string;
+      sku2: string;
+      variationImageURL: string;
+      quantity: number;
+      productId: string;
+    }>;
   };
 }
 
@@ -43,12 +76,14 @@ interface ProductVariations {
   };
 }
 
-const VariationsGrid = ({
-  variations,
-  products,
-}: {
+interface VariationsGridProps {
   variations: Variation[];
   products: ProductLookup;
+}
+
+const VariationsGrid: React.FC<VariationsGridProps> = ({
+  variations,
+  products,
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const { filters } = useCategoryStore();
@@ -80,7 +115,7 @@ const VariationsGrid = ({
       variations: [],
     };
 
-    // Group by color for this product
+    // First group by color
     const colorGroups = productVars.reduce<Record<string, Variation[]>>(
       (colors, variation) => {
         if (!colors[variation.color]) {
@@ -92,7 +127,21 @@ const VariationsGrid = ({
       {}
     );
 
-    // Create color variations array
+    // Sort sizes within each color group
+    Object.values(colorGroups).forEach(variations => {
+      variations.sort((a, b) => {
+        // Convert size strings to numbers if possible
+        const sizeA = parseFloat(a.size) || a.size;
+        const sizeB = parseFloat(b.size) || b.size;
+
+        if (typeof sizeA === "number" && typeof sizeB === "number") {
+          return sizeA - sizeB;
+        }
+        return String(sizeA).localeCompare(String(sizeB));
+      });
+    });
+
+    // Create color variations array with sorted variations
     acc[productId].variations = Object.entries(colorGroups).map(
       ([color, vars]) => ({
         color,
@@ -234,7 +283,21 @@ const VariationsGrid = ({
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
         productId={selectedProduct}
-        product={selectedProduct ? products[selectedProduct] : undefined}
+        product={
+          selectedProduct
+            ? ({
+                ...products[selectedProduct],
+                createdAt: new Date(products[selectedProduct].createdAt),
+                updatedAt: new Date(products[selectedProduct].updatedAt),
+                featuredImage: products[selectedProduct].featuredImage || null,
+                reviews: products[selectedProduct].reviews.map(review => ({
+                  ...(review as any),
+                  createdAt: new Date((review as any).createdAt),
+                  updatedAt: new Date((review as any).updatedAt),
+                })),
+              } as Product)
+            : undefined
+        }
         productVariations={
           selectedProduct ? productVariations[selectedProduct] : undefined
         }
