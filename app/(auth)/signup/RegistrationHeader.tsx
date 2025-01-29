@@ -2,7 +2,7 @@ const RegistrationHeader = () => {
   return (
     <>
       <div className="bg-gray-800 text-white p-4 mb-6">
-        <h1 className="text-xl font-bold">REGISTRATION FORM</h1>
+        <h1 className="text-xl font-bold text-center">REGISTRATION FORM</h1>
       </div>
 
       <div className="mb-6">
