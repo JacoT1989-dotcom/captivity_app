@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useCallback } from "react";
 import { useSession } from "@/app/SessionProvider";
 import { CollectionBase } from "./CollectionBase";
@@ -40,13 +39,13 @@ export function TshirtCollection() {
 
   if (isLoading) {
     return (
-      <div className="h-[500px] md:h-full md:col-span-6 bg-gray-100 animate-pulse rounded-lg" />
+      <div className="h-[400px] w-full md:col-span-6 md:h-full bg-gray-100 animate-pulse rounded-lg" />
     );
   }
 
   if (showUploadControls && isEditor) {
     return (
-      <div className="h-[500px] md:h-full md:col-span-6">
+      <div className="h-[400px] w-full md:col-span-6 md:h-full">
         <CollectionUploadControls
           onUpload={handleUploadComplete}
           onCancel={() => setShowUploadControls(false)}
@@ -60,7 +59,7 @@ export function TshirtCollection() {
 
   if (!tshirtCollection && isEditor) {
     return (
-      <div className="h-[500px] md:h-full md:col-span-6">
+      <div className="h-[400px] w-full md:col-span-6 md:h-full">
         <div
           onClick={() => setShowUploadControls(true)}
           className="relative w-full h-full flex flex-col items-center justify-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer group hover:bg-gray-100 hover:border-gray-300 transition-all duration-300"
@@ -102,7 +101,7 @@ export function TshirtCollection() {
   if (!tshirtCollection) return null;
 
   return (
-    <div className="h-[500px] md:h-full md:col-span-6 relative group">
+    <div className="h-[300px] w-full md:col-span-6 md:h-full relative group">
       <CollectionBase
         title={tshirtCollection.title}
         image={tshirtCollection.image}

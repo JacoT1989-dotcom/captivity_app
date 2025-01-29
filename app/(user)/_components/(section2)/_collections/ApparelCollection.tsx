@@ -39,13 +39,13 @@ export function ApparelCollection() {
 
   if (isLoading) {
     return (
-      <div className="h-[400px] md:col-span-6 bg-gray-100 animate-pulse rounded-lg" />
+      <div className="h-[400px] w-full md:h-[400px] md:col-span-6 bg-gray-100 animate-pulse rounded-lg" />
     );
   }
 
   if (showUploadControls && isEditor) {
     return (
-      <div className="h-[400px] md:col-span-6">
+      <div className="h-[400px] w-full md:h-[400px] md:col-span-6">
         <CollectionUploadControls
           onUpload={handleUploadComplete}
           onCancel={() => setShowUploadControls(false)}
@@ -59,7 +59,7 @@ export function ApparelCollection() {
 
   if (!apparelCollection && isEditor) {
     return (
-      <div className="h-[400px] md:col-span-6">
+      <div className="h-[400px] w-full md:h-[400px] md:col-span-6">
         <div
           onClick={() => setShowUploadControls(true)}
           className="relative w-full h-full flex flex-col items-center justify-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer group hover:bg-gray-100 hover:border-gray-300 transition-all duration-300"
@@ -101,7 +101,7 @@ export function ApparelCollection() {
   if (!apparelCollection) return null;
 
   return (
-    <div className="h-[400px] md:col-span-6 relative group">
+    <div className="h-[300px] w-full md:h-[400px] md:col-span-6 relative group">
       <CollectionBase
         title={apparelCollection.title}
         image={apparelCollection.image}
@@ -119,5 +119,3 @@ export function ApparelCollection() {
     </div>
   );
 }
-
-export default ApparelCollection;
