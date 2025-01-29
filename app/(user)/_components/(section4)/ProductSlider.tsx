@@ -7,7 +7,8 @@ import { isHighlightedProduct } from "./types";
 import type { Product, HighlightedProduct, EmptySlot } from "./types";
 
 const MAX_PRODUCTS = 8;
-const SLIDES_PER_VIEW = 4;
+const DESKTOP_SLIDES_PER_VIEW = 4;
+const MOBILE_SLIDES_PER_VIEW = 2;
 
 interface ProductSliderProps {
   products: (Product | HighlightedProduct)[];
@@ -23,18 +24,30 @@ interface ProductSliderProps {
 export function ProductSlider({
   products,
   currentSlide,
-  slidesPerView,
   onNext,
   onPrev,
   onEdit,
   onRemove,
   onAddNew,
 }: ProductSliderProps) {
-  // Calculate empty slots needed
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  const slidesPerView = isMobile
+    ? MOBILE_SLIDES_PER_VIEW
+    : DESKTOP_SLIDES_PER_VIEW;
   const emptySlots = Math.max(0, MAX_PRODUCTS - products.length);
   const hasEmptySlots = products.length < MAX_PRODUCTS;
 
-  // Create array of all slots (products + empty)
   const allSlots = React.useMemo(() => {
     const slots: (Product | HighlightedProduct | EmptySlot)[] = [...products];
     for (let i = 0; i < emptySlots; i++) {
@@ -46,12 +59,13 @@ export function ProductSlider({
     return slots;
   }, [products, emptySlots]);
 
-  // Get current visible slots
-  const startIdx = currentSlide * SLIDES_PER_VIEW;
-  const currentSlots = allSlots.slice(startIdx, startIdx + SLIDES_PER_VIEW);
-
-  // Calculate if we can slide more
-  const hasNextSlide = startIdx + SLIDES_PER_VIEW < allSlots.length;
+  const startIdx = currentSlide * slidesPerView;
+  const currentSlots = allSlots.slice(startIdx, startIdx + slidesPerView);
+  // Calculate total number of possible slides
+  const totalProducts = allSlots.length;
+  const maxSlideIndex = Math.ceil(totalProducts / slidesPerView) - 1;
+  const hasNextSlide = currentSlide < maxSlideIndex;
+  const totalSlides = Math.ceil(allSlots.length / slidesPerView);
 
   const handleAddClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -63,7 +77,7 @@ export function ProductSlider({
 
   return (
     <div className="relative">
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         {currentSlots.map((item, index) => {
           if ("isEmpty" in item) {
             return (
@@ -76,8 +90,8 @@ export function ProductSlider({
                     <CardContent className="p-0 h-full">
                       <div className="aspect-square relative flex items-center justify-center">
                         <div className="flex flex-col items-center justify-center gap-2 text-gray-400 group-hover:text-gray-600 transition-colors">
-                          <Plus className="w-8 h-8" />
-                          <span className="text-sm font-medium">
+                          <Plus className="w-6 h-6 md:w-8 md:h-8" />
+                          <span className="text-xs md:text-sm font-medium text-center">
                             Add Product ({products.length}/{MAX_PRODUCTS})
                           </span>
                         </div>
@@ -102,7 +116,7 @@ export function ProductSlider({
                       alt={item.title}
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 25vw"
                     />
                     {canEdit && (
                       <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -129,22 +143,22 @@ export function ProductSlider({
                       </div>
                     )}
                   </div>
-                  <div className="pt-4 space-y-2">
-                    <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
+                  <div className="pt-2 md:pt-4 space-y-1 md:space-y-2">
+                    <h3 className="text-xs md:text-sm font-medium text-gray-900 line-clamp-2">
                       {item.title}
                     </h3>
                     <div className="flex items-center gap-2">
                       {"salePrice" in item ? (
                         <>
-                          <span className="text-sm font-medium text-red-600">
+                          <span className="text-xs md:text-sm font-medium text-red-600">
                             R{item.salePrice?.toFixed(2)}
                           </span>
-                          <span className="text-sm text-gray-500 line-through decoration-gray-500">
+                          <span className="text-xs md:text-sm text-gray-500 line-through decoration-gray-500">
                             R{item.price.toFixed(2)}
                           </span>
                         </>
                       ) : (
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-xs md:text-sm font-medium text-gray-900">
                           R{item.price.toFixed(2)}
                         </span>
                       )}
@@ -153,11 +167,11 @@ export function ProductSlider({
                       {[...Array(5)].map((_, i) => (
                         <span
                           key={i}
-                          className={
+                          className={`text-xs md:text-sm ${
                             i < Math.floor(item.rating)
                               ? "text-yellow-400"
                               : "text-gray-300"
-                          }
+                          }`}
                         >
                           ★
                         </span>
@@ -171,46 +185,71 @@ export function ProductSlider({
         })}
       </div>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute -left-4 top-1/2 -translate-y-1/2 rounded-full bg-white shadow-lg hidden md:flex"
-        onClick={onPrev}
-        disabled={currentSlide === 0}
-      >
-        <ChevronLeft className="h-6 w-6" />
-      </Button>
+      <div className="flex items-center justify-between mt-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex items-center gap-2 md:hidden"
+          onClick={onPrev}
+          disabled={currentSlide === 0}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          <span>Previous</span>
+        </Button>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute -right-4 top-1/2 -translate-y-1/2 rounded-full bg-white shadow-lg hidden md:flex"
-        onClick={onNext}
-        disabled={!hasNextSlide}
-      >
-        <ChevronRight className="h-6 w-6" />
-      </Button>
+        <div className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full bg-white shadow-lg"
+            onClick={onPrev}
+            disabled={currentSlide === 0}
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </Button>
+        </div>
 
-      {/* Mobile Navigation Dots */}
-      <div className="flex justify-center gap-2 mt-4 md:hidden">
-        {Array.from({
-          length: Math.ceil(allSlots.length / SLIDES_PER_VIEW),
-        }).map((_, i) => (
-          <button
-            key={i}
-            className={`w-2 h-2 rounded-full transition-colors ${
-              i === currentSlide ? "bg-gray-800" : "bg-gray-300"
-            }`}
-            onClick={() => {
-              const newSlide = i;
-              if (newSlide < currentSlide) {
-                onPrev();
-              } else if (newSlide > currentSlide) {
-                onNext();
-              }
-            }}
-          />
-        ))}
+        <div className="flex justify-center gap-2 flex-1 md:hidden">
+          {Array.from({ length: totalSlides }).map((_, i) => (
+            <button
+              key={i}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                i === currentSlide ? "bg-gray-800" : "bg-gray-300"
+              }`}
+              onClick={() => {
+                const newSlide = i;
+                if (newSlide < currentSlide) {
+                  onPrev();
+                } else if (newSlide > currentSlide) {
+                  onNext();
+                }
+              }}
+            />
+          ))}
+        </div>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex items-center gap-2 md:hidden"
+          onClick={onNext}
+          disabled={!hasNextSlide}
+        >
+          <span>Next</span>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+
+        <div className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full bg-white shadow-lg"
+            onClick={onNext}
+            disabled={!hasNextSlide}
+          >
+            <ChevronRight className="h-6 w-6" />
+          </Button>
+        </div>
       </div>
     </div>
   );
