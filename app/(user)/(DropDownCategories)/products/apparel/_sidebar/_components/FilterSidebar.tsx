@@ -32,13 +32,6 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   );
   const sidebarRef = useRef<HTMLDivElement>(null);
 
-  const hasActiveFilters =
-    selectedFilters.stockLevel !== "all" ||
-    selectedFilters.sizes.length > 0 ||
-    selectedFilters.colors.length > 0 ||
-    (selectedFilters.types.length > 0 &&
-      !isTypeFromURL(selectedFilters.types[0]));
-
   function isTypeFromURL(type: string): boolean {
     if (!pathname) return false;
     const pathParts = pathname.split("/");
@@ -98,15 +91,13 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
     <>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-foreground">Filters</h2>
-        {hasActiveFilters && (
-          <button
-            onClick={handleClearAllFilters}
-            className="flex items-center px-3 py-1.5 text-sm font-medium text-destructive-foreground bg-destructive hover:bg-destructive/90 rounded-md transition-colors"
-          >
-            <Trash2 className="w-4 h-4 mr-1.5" />
-            Clear
-          </button>
-        )}
+        <button
+          onClick={handleClearAllFilters}
+          className="flex items-center px-3 py-1.5 text-sm font-medium text-destructive-foreground bg-destructive hover:bg-destructive/90 rounded-md transition-colors"
+        >
+          <Trash2 className="w-4 h-4 mr-1.5" />
+          Clear
+        </button>
       </div>
 
       <div className="border-t border-border" />
@@ -167,15 +158,13 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                   Filters
                 </h2>
                 <div className="flex items-center gap-2">
-                  {hasActiveFilters && (
-                    <button
-                      onClick={handleClearAllFilters}
-                      className="flex items-center px-3 py-1.5 text-sm font-medium text-destructive-foreground bg-destructive hover:bg-destructive/90 rounded-md transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4 mr-1.5" />
-                      Clear
-                    </button>
-                  )}
+                  <button
+                    onClick={handleClearAllFilters}
+                    className="flex items-center px-3 py-1.5 text-sm font-medium text-destructive-foreground bg-destructive hover:bg-destructive/90 rounded-md transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1.5" />
+                    Clear
+                  </button>
                   <button onClick={toggleSidebar} className="p-2">
                     <X className="w-6 h-6 text-foreground" />
                   </button>
