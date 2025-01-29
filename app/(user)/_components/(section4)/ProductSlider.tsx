@@ -93,10 +93,10 @@ export function ProductSlider({
           const canEdit = onEdit && isHighlighted;
 
           return (
-            <div key={item.id} className="aspect-square">
-              <Card className="h-full group cursor-pointer overflow-visible border-none shadow-none">
-                <CardContent className="p-0">
-                  <div className="relative aspect-square overflow-hidden rounded-lg">
+            <div key={item.id} className="aspect-square flex flex-col">
+              <Card className="flex-1 group cursor-pointer overflow-visible border-none shadow-none bg-transparent">
+                <CardContent className="p-0 h-full flex flex-col">
+                  <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-100">
                     <Image
                       src={item.image}
                       alt={item.title}
@@ -129,7 +129,7 @@ export function ProductSlider({
                       </div>
                     )}
                   </div>
-                  <div className="mt-4 space-y-2 bg-white relative z-10">
+                  <div className="pt-4 space-y-2">
                     <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
                       {item.title}
                     </h3>
@@ -211,12 +211,6 @@ export function ProductSlider({
             }}
           />
         ))}
-      </div>
-
-      {/* Debug info - can be removed in production */}
-      <div className="absolute bottom-0 left-0 text-xs text-gray-500">
-        Slide {currentSlide + 1}/{Math.ceil(allSlots.length / SLIDES_PER_VIEW)}{" "}
-        • Products: {products.length}/{MAX_PRODUCTS} • Empty: {emptySlots}
       </div>
     </div>
   );
