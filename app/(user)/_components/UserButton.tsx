@@ -2,8 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { Check, LogOutIcon, Monitor, Moon, Sun, UserIcon } from "lucide-react";
-import { useTheme } from "next-themes";
-import Link from "next/link";
 import { useState } from "react";
 import UserAvatar from "./UserAvatar";
 import { logout } from "@/app/(auth)/actions";
@@ -12,11 +10,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 import { Loader2 } from "lucide-react";
@@ -28,7 +22,6 @@ interface UserButtonProps {
 
 export default function UserButton({ className }: UserButtonProps) {
   const session = useSession();
-  const { theme, setTheme } = useTheme();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
