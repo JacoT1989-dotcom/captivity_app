@@ -2,16 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 type SortOption = {
-  value:
-    | "relevance"
-    | "code-asc"
-    | "code-desc"
-    | "name-asc"
-    | "name-desc"
-    | "stock-asc"
-    | "stock-desc"
-    | "price-asc"
-    | "price-desc";
+  value: "relevance" | "stock-asc" | "stock-desc" | "price-asc" | "price-desc";
   label: string;
 };
 
@@ -28,10 +19,6 @@ const ProductSortFilter: React.FC<ProductSortFilterProps> = ({
 
   const sortOptions: SortOption[] = [
     { value: "relevance", label: "Sort By" },
-    { value: "code-asc", label: "Code A-Z" },
-    { value: "code-desc", label: "Code Z-A" },
-    { value: "name-asc", label: "Name A-Z" },
-    { value: "name-desc", label: "Name Z-A" },
     { value: "stock-asc", label: "Stock - Low to High" },
     { value: "stock-desc", label: "Stock - High to Low" },
     { value: "price-asc", label: "Price - Low to High" },

@@ -160,14 +160,6 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ category }) => {
         return [...products].sort((a, b) => a.sellingPrice - b.sellingPrice);
       case "price-desc":
         return [...products].sort((a, b) => b.sellingPrice - a.sellingPrice);
-      case "name-asc":
-        return [...products].sort((a, b) =>
-          a.productName.localeCompare(b.productName)
-        );
-      case "name-desc":
-        return [...products].sort((a, b) =>
-          b.productName.localeCompare(a.productName)
-        );
       default:
         return products;
     }

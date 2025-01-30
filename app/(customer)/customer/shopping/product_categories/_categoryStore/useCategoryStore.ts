@@ -5,10 +5,6 @@ import { fetchCategoryProducts } from "../_categoryActions/actions";
 
 export type SortValue =
   | "relevance"
-  | "code-asc"
-  | "code-desc"
-  | "name-asc"
-  | "name-desc"
   | "stock-asc"
   | "stock-desc"
   | "price-asc"
@@ -141,22 +137,6 @@ export const useCategoryStore = create<CategoryState & CategoryActions>()(
       let sortedProducts = [...allProducts];
 
       switch (sortBy) {
-        case "code-asc":
-          sortedProducts.sort((a, b) => a.id.localeCompare(b.id));
-          break;
-        case "code-desc":
-          sortedProducts.sort((a, b) => b.id.localeCompare(a.id));
-          break;
-        case "name-asc":
-          sortedProducts.sort((a, b) =>
-            a.productName.localeCompare(b.productName)
-          );
-          break;
-        case "name-desc":
-          sortedProducts.sort((a, b) =>
-            b.productName.localeCompare(a.productName)
-          );
-          break;
         case "stock-asc":
           sortedProducts.sort((a, b) => {
             const aStock = a.variations.reduce((sum, v) => sum + v.quantity, 0);
