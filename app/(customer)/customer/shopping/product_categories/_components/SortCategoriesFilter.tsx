@@ -54,7 +54,7 @@ const ProductSortFilter: React.FC<ProductSortFilterProps> = ({
       </Button>
 
       {isOpen && (
-        <div className="absolute z-10 mt-2 w-full min-w-[200px] rounded-lg bg-background p-2 shadow-2xl  max-h-[300px] overflow-y-scroll">
+        <div className="absolute z-10 mt-2 w-full min-w-[200px] rounded-lg bg-background p-2 shadow-2xl  max-h-[300px]">
           <div className="flex flex-col gap-2">
             {sortOptions.map(option => (
               <button

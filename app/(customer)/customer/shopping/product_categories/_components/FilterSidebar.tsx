@@ -2,13 +2,43 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useFilterStore } from "../../../_store/useFilterStore";
 import { COLOR_MAPPINGS } from "./ColorMapping";
 import { ProductWithRelations } from "../types";
 import { Variation } from "@prisma/client";
+import { motion, AnimatePresence } from "framer-motion";
+
+const dropdownVariants = {
+  hidden: {
+    opacity: 0,
+    y: -10,
+    scale: 0.95,
+    transition: {
+      duration: 0.2,
+    },
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -10,
+    scale: 0.95,
+    transition: {
+      duration: 0.2,
+    },
+  },
+};
 
 const COLLECTIONS = [
   "Winter",
@@ -205,41 +235,71 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ products = [] }) => {
             variant="outline"
             role="combobox"
             aria-expanded={categoryOpen}
-            className="w-full justify-between bg-background px-4 py-2 shadow-2xl shadow-black transition-transform duration-300 hover:scale-95"
+            className={cn(
+              "w-full justify-between bg-background/80 backdrop-blur-sm px-4 py-3",
+              "border border-border/50 shadow-lg",
+              "transition-all duration-300 hover:scale-[0.98] hover:shadow-xl",
+              "group relative overflow-hidden",
+              categoryOpen && "ring-2 ring-primary"
+            )}
             onClick={() => setCategoryOpen(!categoryOpen)}
           >
-            {selectedCollection ?? "Select collection..."}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            <span className="relative z-10">
+              {selectedCollection ?? "Select collection..."}
+            </span>
+            <motion.div
+              animate={{ rotate: categoryOpen ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 group-hover:opacity-100" />
+            </motion.div>
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
           </Button>
-          {categoryOpen && (
-            <div className="absolute z-50 w-full mt-2 bg-background border rounded-md shadow-lg">
-              <input
-                type="text"
-                placeholder="Search categories..."
-                className="w-full px-4 py-2 border-b"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-              <div className="max-h-[300px] overflow-y-auto">
-                {filteredCollections.map(collection => (
-                  <button
-                    key={collection}
-                    onClick={() => handleCollectionChange(collection)}
-                    className={cn(
-                      "flex w-full items-center px-4 py-2 hover:bg-muted",
-                      selectedCollection === collection &&
-                        "bg-primary text-primary-foreground"
-                    )}
-                  >
-                    {collection}
-                    {selectedCollection === collection && (
-                      <Check className="ml-auto h-4 w-4" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          <AnimatePresence>
+            {categoryOpen && (
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                variants={dropdownVariants}
+                className="absolute z-50 w-full mt-2 bg-background/80 backdrop-blur-sm border rounded-lg shadow-lg overflow-hidden"
+              >
+                <input
+                  type="text"
+                  placeholder="Search categories..."
+                  className="w-full px-4 py-3 border-b bg-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+                <motion.div
+                  className="max-h-[300px] overflow-y-auto"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  {filteredCollections.map((collection, index) => (
+                    <motion.button
+                      key={collection}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      onClick={() => handleCollectionChange(collection)}
+                      className={cn(
+                        "flex w-full items-center px-4 py-3 hover:bg-muted/50 transition-colors",
+                        selectedCollection === collection &&
+                          "bg-primary text-primary-foreground"
+                      )}
+                    >
+                      {collection}
+                      {selectedCollection === collection && (
+                        <Check className="ml-auto h-4 w-4" />
+                      )}
+                    </motion.button>
+                  ))}
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -249,17 +309,23 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ products = [] }) => {
         <div className="relative">
           <Button
             variant="outline"
-            className="w-full justify-between bg-background px-4 py-2 shadow-2xl shadow-black transition-transform duration-300 hover:scale-95"
+            className={cn(
+              "w-full justify-between bg-background/80 backdrop-blur-sm px-4 py-3",
+              "border border-border/50 shadow-2xl shadow-black",
+              "transition-all duration-300 hover:scale-95 hover:shadow-xl",
+              "group relative overflow-hidden",
+              isColorOpen && "ring-2 ring-primary"
+            )}
             onClick={() => setIsColorOpen(!isColorOpen)}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 relative z-10">
               {selectedColors.length > 0 ? (
-                <div className="flex items-center gap-1">
-                  <div className="flex -space-x-1">
+                <div className="flex items-center gap-2">
+                  <div className="flex -space-x-2">
                     {selectedColors.slice(0, 3).map(color => (
                       <div
                         key={color}
-                        className="h-4 w-4 rounded-full ring-2 ring-white"
+                        className="h-5 w-5 rounded-full ring-2 ring-background shadow-sm"
                         style={getSwatchStyle(color)}
                       />
                     ))}
@@ -272,43 +338,125 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ products = [] }) => {
                 "Select colors..."
               )}
             </div>
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            <motion.div
+              animate={{ rotate: isColorOpen ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 group-hover:opacity-100" />
+            </motion.div>
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
           </Button>
-          {isColorOpen && (
-            <div className="absolute z-50 w-full mt-2 p-4 bg-background border rounded-md shadow-lg max-h-[300px] overflow-y-auto">
-              <div className="grid grid-cols-6 gap-2">
-                {availableColors.map(colorOption => (
-                  <button
-                    key={colorOption}
-                    onClick={() => toggleColor(colorOption)}
-                    className={cn(
-                      "group relative",
-                      !hasAvailableSizesForColor(colorOption) && "opacity-50"
-                    )}
-                    title={colorOption
-                      .split("_")
-                      .map(
-                        word =>
-                          word.charAt(0).toUpperCase() +
-                          word.slice(1).toLowerCase()
-                      )
-                      .join(" ")}
+
+          <AnimatePresence>
+            {isColorOpen && (
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                variants={{
+                  hidden: {
+                    opacity: 0,
+                    y: -10,
+                    scale: 0.95,
+                  },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    transition: {
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 24,
+                    },
+                  },
+                  exit: {
+                    opacity: 0,
+                    y: -10,
+                    scale: 0.95,
+                    transition: { duration: 0.2 },
+                  },
+                }}
+                className="absolute z-50 w-full mt-2 bg-background/80 backdrop-blur-sm border rounded-lg shadow-lg overflow-hidden"
+              >
+                <div className="p-4 max-h-[300px] overflow-y-auto">
+                  <motion.div
+                    className="grid grid-cols-6 gap-3"
+                    variants={{
+                      visible: {
+                        transition: {
+                          staggerChildren: 0.05,
+                        },
+                      },
+                    }}
                   >
-                    <div
-                      className={`h-6 w-6 rounded-full transition-all duration-200 hover:scale-110
-                        ${selectedColors.includes(colorOption) ? "ring-2 ring-blue-500 ring-offset-2" : ""}`}
-                      style={getSwatchStyle(colorOption)}
-                    />
-                    {selectedColors.includes(colorOption) && (
-                      <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-3 h-3 flex items-center justify-center text-[10px]">
-                        ✓
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+                    {availableColors.map(colorOption => (
+                      <motion.button
+                        key={colorOption}
+                        variants={{
+                          hidden: { opacity: 0, scale: 0.8 },
+                          visible: { opacity: 1, scale: 1 },
+                        }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => toggleColor(colorOption)}
+                        className={cn(
+                          "group relative aspect-square",
+                          !hasAvailableSizesForColor(colorOption) &&
+                            "opacity-50"
+                        )}
+                        title={colorOption
+                          .split("_")
+                          .map(
+                            word =>
+                              word.charAt(0).toUpperCase() +
+                              word.slice(1).toLowerCase()
+                          )
+                          .join(" ")}
+                      >
+                        <div
+                          className={cn(
+                            "w-full h-full rounded-full transition-all duration-200",
+                            "shadow-md hover:shadow-lg",
+                            selectedColors.includes(colorOption) &&
+                              "ring-2 ring-primary ring-offset-2",
+                            "group-hover:scale-105"
+                          )}
+                          style={getSwatchStyle(colorOption)}
+                        />
+                        <AnimatePresence>
+                          {selectedColors.includes(colorOption) && (
+                            <motion.div
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              exit={{ scale: 0, opacity: 0 }}
+                              className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center text-[10px] shadow-lg"
+                            >
+                              <Check className="h-3 w-3" />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          whileHover={{ opacity: 1, y: 0 }}
+                          className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs px-2 py-1 rounded-md bg-background/80 backdrop-blur-sm border shadow-lg"
+                        >
+                          {colorOption
+                            .split("_")
+                            .map(
+                              word =>
+                                word.charAt(0).toUpperCase() +
+                                word.slice(1).toLowerCase()
+                            )
+                            .join(" ")}
+                        </motion.div>
+                      </motion.button>
+                    ))}
+                  </motion.div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -319,86 +467,235 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ products = [] }) => {
           <Button
             variant="outline"
             role="combobox"
-            className="w-full justify-between bg-background shadow-2xl shadow-black transition-transform duration-300 hover:scale-95"
+            className={cn(
+              "w-full justify-between bg-background/80 backdrop-blur-sm px-4 py-3",
+              "border border-border/50 shadow-2xl shadow-black",
+              "transition-all duration-300 hover:scale-95 hover:shadow-xl",
+              "group relative overflow-hidden",
+              isSizeOpen && "ring-2 ring-primary"
+            )}
             onClick={() => setIsSizeOpen(!isSizeOpen)}
           >
-            {selectedSizes.length > 0
-              ? `${selectedSizes.length} sizes selected`
-              : "Select sizes..."}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            <span className="relative z-10">
+              {selectedSizes.length > 0 ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex -space-x-1">
+                    {selectedSizes.slice(0, 3).map(size => (
+                      <div
+                        key={size}
+                        className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium"
+                      >
+                        {size}
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-sm font-medium">
+                    {selectedSizes.length} selected
+                  </span>
+                </div>
+              ) : (
+                "Select sizes..."
+              )}
+            </span>
+            <motion.div
+              animate={{ rotate: isSizeOpen ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 group-hover:opacity-100" />
+            </motion.div>
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
           </Button>
-          {isSizeOpen && (
-            <div className="absolute z-50 w-full mt-2 bg-background border rounded-md shadow-lg">
-              <div className="max-h-[300px] overflow-y-auto p-2">
-                {availableSizes.map(sizeOption => (
-                  <button
-                    key={sizeOption}
-                    onClick={() => toggleSize(sizeOption)}
-                    className={cn(
-                      "flex w-full items-center justify-between px-4 py-2 rounded-md",
-                      selectedSizes.includes(sizeOption)
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-muted",
-                      !hasAvailableColorsForSize(sizeOption) && "opacity-50"
-                    )}
-                  >
-                    {sizeOption}
-                    {selectedSizes.includes(sizeOption) && (
-                      <Check className="h-4 w-4" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+
+          <AnimatePresence>
+            {isSizeOpen && (
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                variants={{
+                  hidden: {
+                    opacity: 0,
+                    y: -10,
+                    scale: 0.95,
+                    transition: {
+                      duration: 0.2,
+                    },
+                  },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    transition: {
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 24,
+                    },
+                  },
+                  exit: {
+                    opacity: 0,
+                    y: -10,
+                    scale: 0.95,
+                    transition: {
+                      duration: 0.2,
+                    },
+                  },
+                }}
+                className="absolute z-50 w-full mt-2 bg-background/80 backdrop-blur-sm border rounded-lg shadow-lg overflow-hidden"
+              >
+                <div className="max-h-[300px] overflow-y-auto p-2">
+                  {availableSizes.map((sizeOption, index) => (
+                    <motion.button
+                      key={sizeOption}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      onClick={() => toggleSize(sizeOption)}
+                      className={cn(
+                        "flex w-full items-center justify-between px-4 py-3",
+                        "rounded-md transition-colors",
+                        "hover:bg-muted/50",
+                        selectedSizes.includes(sizeOption) &&
+                          "bg-primary text-primary-foreground",
+                        !hasAvailableColorsForSize(sizeOption) && "opacity-50"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={cn(
+                            "h-6 w-6 rounded-full flex items-center justify-center text-sm",
+                            selectedSizes.includes(sizeOption)
+                              ? "bg-primary-foreground/20 text-primary-foreground"
+                              : "bg-muted text-muted-foreground"
+                          )}
+                        >
+                          {sizeOption}
+                        </div>
+                        <span className="font-medium">{sizeOption}</span>
+                      </div>
+                      {selectedSizes.includes(sizeOption) && (
+                        <Check className="h-4 w-4 shrink-0" />
+                      )}
+                    </motion.button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
       {/* Active Filters */}
-      {(selectedColors.length > 0 || selectedSizes.length > 0) && (
-        <div className="mt-4 space-y-2">
-          <h3 className="text-sm font-medium">Active Filters:</h3>
-          <div className="flex flex-wrap gap-2">
-            {selectedColors.map(color => (
-              <Button
-                key={color}
-                variant="secondary"
-                size="sm"
-                onClick={() => toggleColor(color)}
-                className="flex items-center gap-1"
+      <AnimatePresence>
+        {(selectedColors.length > 0 || selectedSizes.length > 0) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="mt-4 space-y-2"
+          >
+            <motion.h3
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-sm font-medium flex items-center gap-2"
+            >
+              Active Filters
+              <span className="px-2 py-1 bg-primary/10 rounded-full text-xs">
+                {selectedColors.length + selectedSizes.length}
+              </span>
+            </motion.h3>
+
+            <div className="flex flex-wrap gap-2">
+              {selectedColors.map((color, index) => (
+                <motion.div
+                  key={color}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => toggleColor(color)}
+                    className="group flex items-center gap-2 px-3 py-1 bg-background hover:bg-background/80 border shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105"
+                  >
+                    <div
+                      className="h-4 w-4 rounded-full ring-1 ring-border/50"
+                      style={getSwatchStyle(color)}
+                    />
+                    <span className="text-sm">
+                      {color
+                        .split("_")
+                        .map(
+                          word =>
+                            word.charAt(0).toUpperCase() +
+                            word.slice(1).toLowerCase()
+                        )
+                        .join(" ")}
+                    </span>
+                    <motion.div
+                      whileHover={{ rotate: 180 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-muted-foreground group-hover:text-foreground"
+                    >
+                      <X className="h-3 w-3" />
+                    </motion.div>
+                  </Button>
+                </motion.div>
+              ))}
+
+              {selectedSizes.map((size, index) => (
+                <motion.div
+                  key={size}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ delay: (selectedColors.length + index) * 0.05 }}
+                >
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => toggleSize(size)}
+                    className="group flex items-center gap-2 px-3 py-1 bg-background hover:bg-background/80 border shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105"
+                  >
+                    <span className="h-4 w-4 flex items-center justify-center rounded-full bg-primary/10 text-xs font-medium">
+                      {size}
+                    </span>
+                    <span className="text-sm">Size</span>
+                    <motion.div
+                      whileHover={{ rotate: 180 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-muted-foreground group-hover:text-foreground"
+                    >
+                      <X className="h-3 w-3" />
+                    </motion.div>
+                  </Button>
+                </motion.div>
+              ))}
+            </div>
+
+            {(selectedColors.length > 0 || selectedSizes.length > 0) && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mt-2"
               >
-                <div
-                  className="h-3 w-3 rounded-full"
-                  style={getSwatchStyle(color)}
-                />
-                <span className="ml-1">
-                  {color
-                    .split("_")
-                    .map(
-                      word =>
-                        word.charAt(0).toUpperCase() +
-                        word.slice(1).toLowerCase()
-                    )
-                    .join(" ")}
-                </span>
-                <ChevronsUpDown className="h-3 w-3 ml-1" />
-              </Button>
-            ))}
-            {selectedSizes.map(size => (
-              <Button
-                key={size}
-                variant="secondary"
-                size="sm"
-                onClick={() => toggleSize(size)}
-                className="flex items-center gap-1"
-              >
-                Size: {size}
-                <ChevronsUpDown className="h-3 w-3 ml-1" />
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    selectedColors.forEach(toggleColor);
+                    selectedSizes.forEach(toggleSize);
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Clear all filters
+                </Button>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

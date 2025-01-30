@@ -22,6 +22,7 @@ import ProductCard from "./ProductCardColorPicker";
 import { ReviewData } from "../types";
 import { getFavorites } from "../../../favourites/action";
 import { useFavoriteStore } from "../../../favourites/_favoritesStore";
+import ScrollIndicator from "./ScrollIndicator";
 
 interface EnhancedProduct extends Omit<ProductWithRelations, "reviews"> {
   displayCategory?: string;
@@ -350,6 +351,10 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ category }) => {
           </div>
         </>
       )}
+      <ScrollIndicator
+        totalProducts={filteredAndSortedProducts.length}
+        currentlyVisible={paginationData.endIndex}
+      />
     </div>
   );
 };

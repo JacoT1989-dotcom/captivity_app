@@ -93,5 +93,6 @@ export default async function SearchResults({
         )}
       </div>
     </ScrollArea>
+ 
   );
 }
