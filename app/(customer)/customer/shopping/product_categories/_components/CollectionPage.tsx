@@ -22,6 +22,7 @@ import ProductCard from "./ProductCardColorPicker";
 import { ReviewData } from "../types";
 import { getFavorites } from "../../../favourites/action";
 import { useFavoriteStore } from "../../../favourites/_favoritesStore";
+import ScrollIndicator from "./ScrollIndicator";
 
 interface EnhancedProduct extends Omit<ProductWithRelations, "reviews"> {
   displayCategory?: string;
@@ -160,14 +161,6 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ category }) => {
         return [...products].sort((a, b) => a.sellingPrice - b.sellingPrice);
       case "price-desc":
         return [...products].sort((a, b) => b.sellingPrice - a.sellingPrice);
-      case "name-asc":
-        return [...products].sort((a, b) =>
-          a.productName.localeCompare(b.productName)
-        );
-      case "name-desc":
-        return [...products].sort((a, b) =>
-          b.productName.localeCompare(a.productName)
-        );
       default:
         return products;
     }
@@ -358,6 +351,10 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ category }) => {
           </div>
         </>
       )}
+      <ScrollIndicator
+        totalProducts={filteredAndSortedProducts.length}
+        currentlyVisible={paginationData.endIndex}
+      />
     </div>
   );
 };
