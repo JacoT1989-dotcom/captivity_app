@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useCategoryStore } from "../_store/all-collections-store";
 
@@ -20,88 +20,88 @@ export const SizeFilter: React.FC<SizeFilterProps> = ({
   const pathname = usePathname() || "";
   const { products, filters } = useCategoryStore();
 
-  // Get products that match the current pathname
-  const getPathMatchedProducts = () => {
+  // Get collection from pathname
+  const getCollectionFromPath = useMemo(() => {
     const pathParts = pathname.split("/").filter(Boolean);
     const isCollectionPath = pathParts[1] === "all-collections";
-    const specificCollection = pathParts[2];
+    return isCollectionPath ? pathParts[2] : null;
+  }, [pathname]);
 
-    if (!isCollectionPath) return products;
+  // Get products filtered by collection and current filters
+  const filteredProducts = useMemo(() => {
+    const collection = getCollectionFromPath;
 
     return products.filter(product => {
-      if (!product.category || product.category.length === 0) {
-        return false;
-      }
+      // Skip if no category
+      if (!product.category || product.category.length === 0) return false;
 
-      if (
-        !specificCollection ||
-        specificCollection === "all-collections" ||
-        specificCollection === "all-in-collections"
-      ) {
-        return true;
-      }
-
-      return product.category.some(cat => {
-        const normalizedCat = normalizeString(cat);
-        const normalizedType = normalizeString(specificCollection);
-        return (
-          normalizedCat === normalizedType ||
-          normalizedCat === normalizedType.replace("-collection", "") ||
-          normalizedCat.includes(normalizedType.replace("-collection", ""))
-        );
-      });
-    });
-  };
-
-  // Get available sizes with counts for the current path
-  const getSizeCounts = () => {
-    const sizeCounts = new Map<string, number>();
-    const pathMatchedProducts = getPathMatchedProducts();
-
-    pathMatchedProducts.forEach(product => {
-      // Check if product matches current type filter
-      const matchesType =
-        !filters.types.length ||
-        filters.types[0] === "all-in-collections" ||
-        filters.types[0] === "all-collections" ||
+      // Check collection match
+      const matchesCollection =
+        !collection ||
+        collection === "all-collections" ||
+        collection === "all-in-collections" ||
         product.category.some(cat => {
           const normalizedCat = normalizeString(cat);
-          return filters.types.some(type => {
-            const normalizedType = normalizeString(type);
-            return normalizedCat.includes(
-              normalizedType.replace("-collection", "")
-            );
-          });
+          const normalizedCollection = collection
+            ? normalizeString(collection.replace("-collection", ""))
+            : "";
+          return (
+            normalizedCollection === "" ||
+            normalizedCat === normalizedCollection ||
+            normalizedCat === normalizedCollection + "collection" ||
+            normalizedCat.includes(normalizedCollection)
+          );
         });
 
-      if (!matchesType) return;
+      if (!matchesCollection) return false;
 
-      // Count sizes from variations that match current color filters
+      // Check if matches current color filters
+      const matchesColors =
+        filters.colors.length === 0 ||
+        product.variations.some(v => filters.colors.includes(v.color));
+
+      return matchesColors;
+    });
+  }, [products, getCollectionFromPath, filters.colors]);
+
+  // Calculate available sizes and their counts
+  const { availableSizes, sizeCounts } = useMemo(() => {
+    const sizeMap = new Map<string, number>();
+    const availableSizeSet = new Set<string>();
+
+    filteredProducts.forEach(product => {
       product.variations.forEach(variation => {
+        if (!variation.size) return;
+
+        // Check if variation matches current color filters
         const matchesColor =
           filters.colors.length === 0 ||
           filters.colors.includes(variation.color);
 
-        if (matchesColor && variation.size) {
-          const currentCount = sizeCounts.get(variation.size) || 0;
-          sizeCounts.set(variation.size, currentCount + 1);
+        if (matchesColor) {
+          const currentCount = sizeMap.get(variation.size) || 0;
+          sizeMap.set(variation.size, currentCount + 1);
+          availableSizeSet.add(variation.size);
         }
       });
     });
 
-    return sizeCounts;
-  };
+    return {
+      availableSizes: Array.from(availableSizeSet),
+      sizeCounts: sizeMap,
+    };
+  }, [filteredProducts, filters.colors]);
 
-  const sizeCounts = getSizeCounts();
-
-  // Filter options to only show sizes that are available
-  const availableOptions = options.filter(option =>
-    sizeCounts.has(option.value)
+  // Filter options to only show available sizes
+  const filteredOptions = options.filter(option =>
+    availableSizes.includes(option.value)
   );
+
+  if (filteredOptions.length === 0) return null;
 
   return (
     <div className="grid grid-cols-2 gap-2">
-      {availableOptions.map(option => (
+      {filteredOptions.map(option => (
         <label key={option.value} className="inline-flex items-center">
           <input
             type="checkbox"
@@ -114,7 +114,7 @@ export const SizeFilter: React.FC<SizeFilterProps> = ({
           <span className="ml-2 text-sm text-gray-600">
             {option.label}
             <span className="ml-1 text-xs text-gray-400">
-              ({sizeCounts.get(option.value)})
+              ({sizeCounts.get(option.value) || 0})
             </span>
           </span>
         </label>
