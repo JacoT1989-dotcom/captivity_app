@@ -11,25 +11,12 @@ import { BestSellerFormModal } from "./_components/(best_sellers)/BestSellerForm
 import { BestSellerEditModal } from "./_components/(best_sellers)/BestSellerEditModal";
 import { NewArrivalFormModal } from "./_components/(new_arrivals)/NewArrivalFormModal";
 import { NewArrivalEditModal } from "./_components/(new_arrivals)/NewArrivalEditModal";
+import { OnSaleFormModal } from "./_components/(on_sale)/OnSaleFormModal";
+import { OnSaleEditModal } from "./_components/(on_sale)/OnSaleEditModal";
 
 const MAX_PRODUCTS = 8;
 const DESKTOP_SLIDES_PER_VIEW = 4;
 const MOBILE_SLIDES_PER_VIEW = 2;
-
-// Static products for the "On Sale" tab
-const staticProducts: Record<string, Product[]> = {
-  "on-sale": [
-    {
-      id: 9,
-      title: "Summer Dress",
-      price: 79.99,
-      salePrice: 59.99,
-      image: "/placeholder.png?height=600&width=400",
-      rating: 4,
-    },
-    // Add more static products as needed
-  ],
-};
 
 export function ProductTabs() {
   const session = useSession();
@@ -58,6 +45,7 @@ export function ProductTabs() {
   const {
     newArrivals,
     bestSellers,
+    onSaleProducts,
     isLoading,
     error,
     uploadNewArrival,
@@ -66,22 +54,25 @@ export function ProductTabs() {
     uploadBestSeller,
     updateBestSeller,
     removeBestSeller,
+    uploadOnSaleProduct,
+    updateOnSaleProduct,
+    removeOnSaleProduct,
   } = useHighlightedProductsData();
 
   const handleNextSlide = React.useCallback(() => {
     setCurrentSlide(prev => {
-      const totalProducts =
+      const products =
         activeTab === "new-arrivals"
-          ? newArrivals.length
+          ? newArrivals
           : activeTab === "best-sellers"
-            ? bestSellers.length
-            : MAX_PRODUCTS;
+            ? bestSellers
+            : onSaleProducts;
 
       const maxSlideIndex =
-        Math.ceil(Math.max(totalProducts, MAX_PRODUCTS) / slidesPerView) - 1;
+        Math.ceil(Math.max(products.length, MAX_PRODUCTS) / slidesPerView) - 1;
       return Math.min(prev + 1, maxSlideIndex);
     });
-  }, [activeTab, newArrivals.length, bestSellers.length, slidesPerView]);
+  }, [activeTab, newArrivals, bestSellers, onSaleProducts, slidesPerView]);
 
   const handlePrevSlide = React.useCallback(() => {
     setCurrentSlide(prev => Math.max(prev - 1, 0));
@@ -103,12 +94,19 @@ export function ProductTabs() {
           await uploadNewArrival(formData);
         } else if (activeTab === "best-sellers") {
           await uploadBestSeller(formData);
+        } else if (activeTab === "on-sale") {
+          await uploadOnSaleProduct(formData);
         }
         setShowAddForm(false);
 
         // If we're on the first slide and it's full, move to the next slide
         const products =
-          activeTab === "new-arrivals" ? newArrivals : bestSellers;
+          activeTab === "new-arrivals"
+            ? newArrivals
+            : activeTab === "best-sellers"
+              ? bestSellers
+              : onSaleProducts;
+
         if (currentSlide === 0 && products.length >= slidesPerView) {
           handleNextSlide();
         }
@@ -120,8 +118,10 @@ export function ProductTabs() {
       activeTab,
       uploadNewArrival,
       uploadBestSeller,
+      uploadOnSaleProduct,
       newArrivals,
       bestSellers,
+      onSaleProducts,
       currentSlide,
       slidesPerView,
       handleNextSlide,
@@ -135,13 +135,15 @@ export function ProductTabs() {
           await updateNewArrival(id, formData);
         } else if (activeTab === "best-sellers") {
           await updateBestSeller(id, formData);
+        } else if (activeTab === "on-sale") {
+          await updateOnSaleProduct(id, formData);
         }
         setEditingProduct(null);
       } catch (error) {
         console.error("Update error:", error);
       }
     },
-    [activeTab, updateNewArrival, updateBestSeller]
+    [activeTab, updateNewArrival, updateBestSeller, updateOnSaleProduct]
   );
 
   const handleRemove = React.useCallback(
@@ -151,11 +153,18 @@ export function ProductTabs() {
           await removeNewArrival(id);
         } else if (activeTab === "best-sellers") {
           await removeBestSeller(id);
+        } else if (activeTab === "on-sale") {
+          await removeOnSaleProduct(id);
         }
 
         // If current slide is empty after removal, go back one slide
         const products =
-          activeTab === "new-arrivals" ? newArrivals : bestSellers;
+          activeTab === "new-arrivals"
+            ? newArrivals
+            : activeTab === "best-sellers"
+              ? bestSellers
+              : onSaleProducts;
+
         const productsInCurrentSlide = products.slice(
           currentSlide * slidesPerView,
           (currentSlide + 1) * slidesPerView
@@ -172,8 +181,10 @@ export function ProductTabs() {
       activeTab,
       removeNewArrival,
       removeBestSeller,
+      removeOnSaleProduct,
       newArrivals,
       bestSellers,
+      onSaleProducts,
       currentSlide,
       slidesPerView,
       handlePrevSlide,
@@ -236,24 +247,20 @@ export function ProductTabs() {
                     ? newArrivals
                     : key === "best-sellers"
                       ? bestSellers
-                      : staticProducts[key] || []
+                      : onSaleProducts
                 }
                 currentSlide={currentSlide}
                 slidesPerView={slidesPerView}
                 onNext={handleNextSlide}
                 onPrev={handlePrevSlide}
                 onEdit={
-                  isEditor && key !== "on-sale"
+                  isEditor
                     ? product =>
                         setEditingProduct(product as HighlightedProduct)
                     : undefined
                 }
-                onRemove={
-                  isEditor && key !== "on-sale" ? handleRemove : undefined
-                }
-                onAddNew={
-                  isEditor && key !== "on-sale" ? handleAddNew : undefined
-                }
+                onRemove={isEditor ? handleRemove : undefined}
+                onAddNew={isEditor ? handleAddNew : undefined}
               />
             </TabsContent>
           ))}
@@ -271,6 +278,13 @@ export function ProductTabs() {
               />
             ) : activeTab === "best-sellers" ? (
               <BestSellerFormModal
+                isOpen={showAddForm}
+                onClose={() => setShowAddForm(false)}
+                onSubmit={handleUploadComplete}
+                error={error}
+              />
+            ) : activeTab === "on-sale" ? (
+              <OnSaleFormModal
                 isOpen={showAddForm}
                 onClose={() => setShowAddForm(false)}
                 onSubmit={handleUploadComplete}
@@ -295,6 +309,15 @@ export function ProductTabs() {
                 isOpen={!!editingProduct}
                 onClose={() => setEditingProduct(null)}
                 product={editingProduct}
+                onUpdate={handleUpdate}
+              />
+            ) : activeTab === "on-sale" ? (
+              <OnSaleEditModal
+                isOpen={!!editingProduct}
+                onClose={() => setEditingProduct(null)}
+                product={
+                  editingProduct as HighlightedProduct & { salePrice: number }
+                }
                 onUpdate={handleUpdate}
               />
             ) : null}
