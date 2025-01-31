@@ -1,5 +1,8 @@
+"use client";
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type SortOption = {
   value: "relevance" | "stock-asc" | "stock-desc" | "price-asc" | "price-desc";
@@ -32,30 +35,38 @@ const ProductSortFilter: React.FC<ProductSortFilterProps> = ({
     );
   };
 
-  const toggleDropdown = () => {
-    setIsOpen(prev => !prev);
-  };
-
   return (
     <div className="relative z-30">
       <Button
         variant="outline"
-        className="mb-4 flex w-full items-center justify-between py-2 shadow-2xl shadow-black dark:shadow-gray-500 transition-transform duration-300 hover:scale-95"
-        onClick={toggleDropdown}
+        role="combobox"
+        aria-expanded={isOpen}
+        className={cn(
+          "w-full justify-between bg-background/80 backdrop-blur-sm px-4 py-3",
+          "border border-border/50 shadow-2xl shadow-black min-w-[200px]",
+          "transition-all duration-300 hover:scale-95",
+          "group relative overflow-hidden ",
+          isOpen && "ring-2 ring-primary"
+        )}
+        onClick={() => setIsOpen(!isOpen)}
       >
-        <span className="text-sm font-medium">{getCurrentLabel()}</span>
-        <span
-          className={`text-xl transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+        <div className="flex items-center gap-2 relative z-10">
+          <span className="text-sm font-medium">{getCurrentLabel()}</span>
+        </div>
+        <div
+          className={cn(
+            "transition-transform duration-200",
+            isOpen && "rotate-180"
+          )}
         >
-          ▼
-        </span>
+          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 group-hover:opacity-100" />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity min-w-[200px]" />
       </Button>
 
       {isOpen && (
-        <div className="absolute z-10 mt-2 w-full min-w-[200px] rounded-lg bg-background p-2 shadow-2xl  max-h-[300px]">
-          <div className="flex flex-col gap-2">
+        <div className="absolute z-50 w-full mt-2 bg-background/80 backdrop-blur-sm border rounded-lg shadow-lg overflow-hidden">
+          <div className="max-h-[300px] overflow-y-auto min-w-[200px]">
             {sortOptions.map(option => (
               <button
                 key={option.value}
@@ -63,10 +74,18 @@ const ProductSortFilter: React.FC<ProductSortFilterProps> = ({
                   onSortChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors hover:bg-background
-                  ${currentSort === option.value ? "bg-muted font-medium" : ""}`}
+                className={cn(
+                  "flex w-full items-center justify-between px-4 py-3",
+                  "text-sm transition-colors hover:bg-muted/50",
+                  currentSort === option.value
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted"
+                )}
               >
-                {option.label}
+                <span className="font-medium">{option.label}</span>
+                {currentSort === option.value && (
+                  <Check className="h-4 w-4 shrink-0" />
+                )}
               </button>
             ))}
           </div>

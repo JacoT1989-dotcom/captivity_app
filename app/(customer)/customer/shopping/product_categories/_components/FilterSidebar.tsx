@@ -237,8 +237,8 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ products = [] }) => {
             aria-expanded={categoryOpen}
             className={cn(
               "w-full justify-between bg-background/80 backdrop-blur-sm px-4 py-3",
-              "border border-border/50 shadow-lg",
-              "transition-all duration-300 hover:scale-[0.98] hover:shadow-xl",
+              "border border-border/50 shadow-2xl shadow-black",
+              "transition-all duration-300 hover:scale-95 hover:shadow-xl",
               "group relative overflow-hidden",
               categoryOpen && "ring-2 ring-primary"
             )}

@@ -122,39 +122,6 @@ export const SizeSelector: React.FC<
   );
 };
 
-//   SizeSelectorProps & { productId: string }
-// > = ({ sizes, selectedSize, onSizeSelect, productId }) => {
-//   // Create an array of unique size objects with IDs
-//   const uniqueSizes = Array.from(new Set(sizes)).map(size => ({
-//     id: `${productId}-${size}`,
-//     value: size,
-//   }));
-
-//   return (
-//     <div className="mb-4">
-//       <label
-//         htmlFor={`size-select-${productId}`}
-//         className="font-bold text-card-foreground block mb-2"
-//       >
-//         Size
-//       </label>
-//       <select
-//         id={`size-select-${productId}`}
-//         value={selectedSize || ""}
-//         onChange={onSizeSelect}
-//         className="w-full p-2 pl-4 bg-background hover:bg-muted text-foreground border border-input rounded-md focus:ring-2 focus:ring-ring"
-//       >
-//         <option value="">Select a size</option>
-//         {uniqueSizes.map(({ id, value }) => (
-//           <option key={id} value={value}>
-//             {value}
-//           </option>
-//         ))}
-//       </select>
-//     </div>
-//   );
-// };
-
 export const QuantitySelector: React.FC<
   QuantitySelectorProps & { productId: string }
 > = ({ quantity, maxQuantity, onQuantityChange, productId }) => (

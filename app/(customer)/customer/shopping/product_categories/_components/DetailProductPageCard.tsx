@@ -9,6 +9,13 @@ import AddToCartButton from "../../[id]/AddToCartButton";
 import { useColorStore } from "../../../_store/useColorStore";
 import ViewMore from "@/app/(customer)/_components/ViewMore";
 import ColorPicker from "./ColorPicker";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ChevronDown, Info } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface DetailedProductCardProps {
   product: ProductWithRelations;
@@ -30,6 +37,10 @@ const DetailedProductCard: React.FC<DetailedProductCardProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [recommendedBranding, setRecommendedBranding] = useState<string | null>(
+    null
+  );
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
 
   const averageRating = product.reviews?.length
     ? product.reviews.reduce((acc, review) => acc + review.rating, 0) /
@@ -87,6 +98,14 @@ const DetailedProductCard: React.FC<DetailedProductCardProps> = ({
       setGlobalSelectedColor,
     ]
   );
+  useEffect(() => {
+    const match = product.description.match(
+      /<strong><em>(.*?)<\/em><\/strong>/
+    );
+    if (match && match[1]) {
+      setRecommendedBranding(match[1]);
+    }
+  }, [product.description]);
 
   useEffect(() => {
     const currentColor = selectedColors[0] || null;
@@ -131,6 +150,7 @@ const DetailedProductCard: React.FC<DetailedProductCardProps> = ({
             <h2 className="text-xl font-semibold mb-2">
               {product.productName}
             </h2>
+
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm space-y-1">
                 {selectedVariation && (
@@ -154,21 +174,69 @@ const DetailedProductCard: React.FC<DetailedProductCardProps> = ({
               selectedColor={selectedVariation?.color || null}
               onColorChange={handleColorChange}
             />
-
             <SizeSelector
               sizes={availableSizes}
               selectedSize={selectedVariation?.size}
               onSizeSelect={handleSizeSelect}
               productId={product.id}
             />
-
             <QuantitySelector
               quantity={quantity}
               maxQuantity={selectedVariation?.quantity || 1}
               onQuantityChange={e => setQuantity(parseInt(e.target.value))}
               productId={product.id}
             />
-
+            <Collapsible
+              open={isDescriptionOpen}
+              onOpenChange={setIsDescriptionOpen}
+              className="space-y-2"
+            >
+              <CollapsibleTrigger
+                className={cn(
+                  "w-full group",
+                  "flex items-center justify-between",
+                  "px-4 py-3",
+                  "bg-background border rounded-lg shadow-sm",
+                  "hover:bg-muted/50 hover:shadow-md",
+                  "transition-all duration-200",
+                  "text-sm font-medium"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className={cn(
+                      "p-2 rounded-full",
+                      "bg-primary/10 text-primary",
+                      "group-hover:bg-primary/20",
+                      "transition-colors duration-200"
+                    )}
+                  >
+                    <Info className="h-4 w-4" />
+                  </div>
+                  <span>More Information</span>
+                </div>
+                {/* <ChevronDown
+                  className={cn(
+                    "h-4 w-4 text-muted-foreground",
+                    "transition-transform duration-200",
+                    "group-hover:text-foreground",
+                    isDescriptionOpen && "rotate-180"
+                  )}
+                /> */}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-2">
+                <div
+                  dangerouslySetInnerHTML={{ __html: product.description }}
+                  className="text-sm text-muted-foreground rounded-md bg-muted/50 p-4"
+                />
+                {recommendedBranding && (
+                  <div className="text-sm bg-primary/10 p-4 rounded-md">
+                    <span className="font-medium">Recommended Branding: </span>
+                    {recommendedBranding}
+                  </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>{" "}
             <div className="space-y-2">
               <AddToCartButton
                 selectedVariation={selectedVariation}
