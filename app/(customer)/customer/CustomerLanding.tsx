@@ -1,5 +1,4 @@
 "use client";
-//in stead of last timer logged in do last time ordered
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -55,125 +54,178 @@ const CustomerLanding = ({ initialOrderId }: CustomerLandingProps) => {
   }, []);
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl bg-background">
+    <div className="container mx-auto p-4 max-w-4xl bg-gradient-to-b from-background to-background/80">
       <Header />
 
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
+      <div className="flex items-center justify-between mb-6 p-4 bg-card/50 rounded-lg backdrop-blur-sm">
+        <div className="flex items-center space-x-4">
+          <div className="p-3 bg-primary/10 rounded-full">
+            <User className="h-6 w-6 text-primary" />
+          </div>
           <div>
             <h2 className="text-2xl font-semibold text-foreground">
               Welcome {user.displayName}
             </h2>
+            <p className="text-sm text-muted-foreground">
+              Manage your account and orders
+            </p>
           </div>
         </div>
         <Button
           onClick={() => {
             logout();
           }}
-          variant="default"
-          className="shadow-2xl shadow-black"
+          variant="destructive"
+          className="hover:scale-105 transition-all duration-200"
         >
           <LogOut className="mr-2 h-4 w-4" /> Log out
         </Button>
       </div>
 
       <nav className="mb-5">
-        <ul className="flex flex-wrap justify-between bg-card shadow-2xl shadow-black rounded-lg p-2">
+        <ul className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {[
             {
               icon: ShoppingCart,
               label: "Previous Orders",
               href: "/customer/previous-orders",
+              bgColor: "bg-blue-500/10",
+              iconColor: "text-blue-500",
             },
             {
               icon: User,
               label: "Account Info",
               href: "/customer/account-info",
+              bgColor: "bg-green-500/10",
+              iconColor: "text-green-500",
             },
             {
               icon: MapPin,
               label: "Address Info",
               href: "/customer/address-info",
+              bgColor: "bg-purple-500/10",
+              iconColor: "text-purple-500",
             },
             {
               icon: CreditCard,
               label: "Price List",
               href: "/customer/price-list",
+              bgColor: "bg-orange-500/10",
+              iconColor: "text-orange-500",
             },
             {
               icon: Camera,
               label: "Product Images",
               href: "/customer/product-images",
+              bgColor: "bg-pink-500/10",
+              iconColor: "text-pink-500",
             },
-          ].map(({ icon: Icon, label, href }) => (
+          ].map(({ icon: Icon, label, href, bgColor, iconColor }) => (
             <li key={label}>
               <Link key={href} href={href}>
-                <Button variant="ghost" className="flex items-center">
-                  <Icon className="mr-2 h-4 w-4" />
-                  {label}
-                </Button>
+                <div className="group hover:scale-105 transition-all duration-200">
+                  <Button
+                    variant="ghost"
+                    className="w-full h-24 flex flex-col items-center justify-center space-y-2"
+                  >
+                    <div className={`p-3 rounded-full ${bgColor}`}>
+                      <Icon className={`h-5 w-5 ${iconColor}`} />
+                    </div>
+                    <span>{label}</span>
+                  </Button>
+                </div>
               </Link>
             </li>
           ))}
         </ul>
       </nav>
 
-      <Card className="mb-8 shadow-2xl shadow-black">
-        <CardHeader>
+      <Card className="mb-8 hover:shadow-xl transition-shadow duration-200">
+        <CardHeader className="bg-primary/5">
           <CardTitle>Account Overview</CardTitle>
           <CardDescription>
             Manage your account details and preferences
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" asChild>
-              <Link href={`/customer/order-success/${initialOrderId}`}>
-                <FileText className="mr-2 h-4 w-4" />
-                View Recent Order
+          <div className="grid grid-cols-2 m-5 gap-4">
+            <Button
+              variant="outline"
+              asChild
+              className="h-24 hover:bg-primary/5"
+            >
+              <Link
+                href={`/customer/order-success/${initialOrderId}`}
+                className="flex flex-col items-center space-y-2"
+              >
+                <FileText className="h-6 w-6 text-primary" />
+                <span>View Recent Order</span>
               </Link>
             </Button>
-            <Button variant="outline" asChild>
-              <Link href="/customer/address-info">
-                <Truck className="mr-2 h-4 w-4" />
-                Manage Addresses
+            <Button
+              variant="outline"
+              asChild
+              className="h-24 hover:bg-primary/5"
+            >
+              <Link
+                href="/customer/address-info"
+                className="flex flex-col items-center space-y-2"
+              >
+                <Truck className="h-6 w-6 text-primary" />
+                <span>Manage Addresses</span>
               </Link>
             </Button>
-            <Button variant="outline" asChild>
-              <Link href="/customer/account-info">
-                <Settings className="mr-2 h-4 w-4" />
-                Account Settings
+            <Button
+              variant="outline"
+              asChild
+              className="h-24 hover:bg-primary/5"
+            >
+              <Link
+                href="/customer/account-info"
+                className="flex flex-col items-center space-y-2"
+              >
+                <Settings className="h-6 w-6 text-primary" />
+                <span>Account Settings</span>
               </Link>
             </Button>
-
-            <Button variant="outline" asChild>
-              <Link href="/customer/shopping/product_categories/summer">
-                <LayoutGrid className="mr-2 h-4 w-4" />
-                Product Catalog
+            <Button
+              variant="outline"
+              asChild
+              className="h-24 hover:bg-primary/5"
+            >
+              <Link
+                href="/customer/shopping/product_categories/summer"
+                className="flex flex-col items-center space-y-2"
+              >
+                <LayoutGrid className="h-6 w-6 text-primary" />
+                <span>Product Catalog</span>
               </Link>
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="mb-8 bg-card shadow-2xl shadow-black">
-        <CardHeader className="bg-accent">
-          <CardTitle className="flex items-center text-accent-foreground">
-            <Clock className="mr-2" /> Order Collection Time
+      <Card className="mb-8 overflow-hidden hover:shadow-xl transition-shadow duration-200">
+        <CardHeader className="bg-warning/10">
+          <CardTitle className="flex items-center">
+            <Clock className="mr-2 text-warning" /> Order Collection Time
           </CardTitle>
         </CardHeader>
-        <CardContent className="mt-4">
-          <div className="flex items-center text-lg space-x-2">
-            <Truck className="text-green-500" />
+        <CardContent className="p-6">
+          <div className="flex items-center text-lg space-x-2 bg-warning/5 p-4 rounded-lg">
+            <Truck className="text-warning h-6 w-6" />
             <span>Orders are to be collected</span>
-            <Badge variant="outline" className="font-bold text-destructive">
+            <Badge
+              variant="outline"
+              className="font-bold text-warning text-lg px-4"
+            >
               24 hours
             </Badge>
             <span>after payment received.</span>
           </div>
 
-          <div className="space-y-2 mt-4">
-            <div className="flex items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            <div className="flex items-center p-4 bg-destructive/5 rounded-lg">
               <Badge variant="secondary" className="mr-2">
                 Note
               </Badge>
@@ -181,7 +233,7 @@ const CustomerLanding = ({ initialOrderId }: CustomerLandingProps) => {
                 We do not offer a courier service.
               </span>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center p-4 bg-destructive/5 rounded-lg">
               <Badge variant="secondary" className="mr-2">
                 Note
               </Badge>
@@ -193,8 +245,10 @@ const CustomerLanding = ({ initialOrderId }: CustomerLandingProps) => {
         </CardContent>
       </Card>
 
-      <footer className="mt-8 text-center text-sm text-muted-foreground border-t border-border pt-4">
-        <p>&copy; 2025 Captivity. All rights reserved.</p>
+      <footer className="mt-12 text-center border-t border-border pt-6">
+        <p className="text-sm text-muted-foreground">
+          &copy; 2025 Captivity. All rights reserved.
+        </p>
       </footer>
     </div>
   );
