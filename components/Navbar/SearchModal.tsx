@@ -70,8 +70,7 @@ export const SearchButton = () => {
       </PopoverTrigger>
       <PopoverContent className="w-[600px] p-0" align="end">
         <Command shouldFilter={false}>
-          <div className="flex items-center border-b px-3">
-            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+          <div className="flex items-center justify-between border-b px-3">
             <CommandInput
               value={searchValue}
               onValueChange={handleSearch}
@@ -136,13 +135,13 @@ export const SearchButton = () => {
                     </Link>
                   ))}
                 </div>
-                <Link
+                {/* <Link
                   href={`/search?q=${encodeURIComponent(searchValue)}`}
                   onClick={() => setOpen(false)}
                   className="block text-center text-sm text-primary hover:text-primary/80 p-2 border-t mt-2"
                 >
                   View all results
-                </Link>
+                </Link> */}
               </CommandGroup>
             ) : null}
           </div>
