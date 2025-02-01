@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { SortAsc } from "lucide-react";
 import VariationsGrid from "./VariationsGrid";
-import { Product, SortOrderType } from "./_store/types";
+import { Product, SortOrderType, Variation } from "./_store/types";
 import {
   useCategoryError,
   useCategoryLoading,
@@ -26,6 +26,13 @@ interface ProductLookup {
       amount: string;
       productId: string;
     }[];
+  };
+}
+
+interface GroupedVariation {
+  productId: string;
+  variations: {
+    [color: string]: Variation[];
   };
 }
 
@@ -79,6 +86,39 @@ export default function ProductGridWrapper() {
   const handleSortChange = (value: string) => {
     sortProducts(value as SortOrderType);
     setCurrentPage(1);
+  };
+
+  // Group variations by product and color
+  const groupVariations = (products: Product[]) => {
+    const groupedByProduct: { [productId: string]: GroupedVariation } = {};
+
+    products.forEach(product => {
+      const filteredVariations = product.variations.filter(variation => {
+        const matchesColor =
+          filters.colors.length === 0 ||
+          filters.colors.includes(variation.color);
+        const matchesSize =
+          filters.sizes.length === 0 || filters.sizes.includes(variation.size);
+        return matchesColor && matchesSize;
+      });
+
+      if (filteredVariations.length > 0) {
+        const variationsByColor: { [color: string]: Variation[] } = {};
+        filteredVariations.forEach(variation => {
+          if (!variationsByColor[variation.color]) {
+            variationsByColor[variation.color] = [];
+          }
+          variationsByColor[variation.color].push(variation);
+        });
+
+        groupedByProduct[product.id] = {
+          productId: product.id,
+          variations: variationsByColor,
+        };
+      }
+    });
+
+    return groupedByProduct;
   };
 
   const renderControls = (
@@ -206,17 +246,6 @@ export default function ProductGridWrapper() {
   const startIndex = (currentPage - 1) * itemsPerPage;
 
   if (hasColorSelected) {
-    const variations = filteredProducts.flatMap(product => {
-      return product.variations.filter(variation => {
-        const matchesColor =
-          filters.colors.length === 0 ||
-          filters.colors.includes(variation.color);
-        const matchesSize =
-          filters.sizes.length === 0 || filters.sizes.includes(variation.size);
-        return matchesColor && matchesSize;
-      });
-    });
-
     const productsLookup = filteredProducts.reduce<ProductLookup>(
       (acc, product) => {
         acc[product.id] = {
@@ -230,16 +259,25 @@ export default function ProductGridWrapper() {
       {}
     );
 
-    const totalItems = variations.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const paginatedVariations = variations.slice(
+    const groupedProducts = groupVariations(filteredProducts);
+    const totalProducts = Object.keys(groupedProducts).length;
+    const totalPages = Math.ceil(totalProducts / itemsPerPage);
+
+    // Get paginated products
+    const paginatedProductIds = Object.keys(groupedProducts).slice(
       startIndex,
       startIndex + itemsPerPage
     );
 
+    // Create variations array for paginated products
+    const paginatedVariations = paginatedProductIds.flatMap(productId => {
+      const groupedVariation = groupedProducts[productId];
+      return Object.values(groupedVariation.variations).flat();
+    });
+
     return (
       <div className="w-full space-y-6">
-        {renderControls(startIndex, totalItems, itemsPerPage, true)}
+        {renderControls(startIndex, totalProducts, itemsPerPage, true)}
         <div className="w-full">
           <VariationsGrid
             variations={paginatedVariations}

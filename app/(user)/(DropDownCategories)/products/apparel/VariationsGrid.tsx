@@ -177,28 +177,6 @@ const VariationsGrid = ({
                     {product?.productName || displayVariation.name}
                   </h3>
 
-                  {colorVariations.length > 0 && (
-                    <div className="mt-4 flex items-center gap-2">
-                      {availableColors.map(({ color, variations }) => (
-                        <div
-                          key={color}
-                          className="w-6 h-6 rounded-full border border-border"
-                          style={{ backgroundColor: color.toLowerCase() }}
-                          title={color}
-                        />
-                      ))}
-                      {remainingCount > 0 && (
-                        <Button
-                          onClick={() => setSelectedProduct(productId)}
-                          variant="ghost"
-                          className="h-6 px-2 text-xs"
-                        >
-                          +{remainingCount} more
-                        </Button>
-                      )}
-                    </div>
-                  )}
-
                   <p className="mt-3 text-lg font-bold text-foreground">
                     {formatPrice(effectivePrice)}
                   </p>
