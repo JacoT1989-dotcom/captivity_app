@@ -13,14 +13,24 @@ import Image from "next/image";
 import ProductLookupModal from "@/app/(user)/(DropDownCategories)/products/all-collections/ProductLookupModal";
 import { useSearchStore } from "../_store/search-store";
 
+interface ProductVariation {
+  color: string;
+  variations: any[];
+}
+
+interface SelectedProduct {
+  id: string;
+  product: any;
+  variations: {
+    variations: ProductVariation[];
+  };
+}
+
 export const SearchButton = () => {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<{
-    id: string;
-    product: any;
-    variations: any;
-  } | null>(null);
+  const [selectedProduct, setSelectedProduct] =
+    useState<SelectedProduct | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const store = useSearchStore();
 
@@ -66,18 +76,21 @@ export const SearchButton = () => {
       id: product.id,
       product: product,
       variations: {
-        variations: product.variations.reduce((acc: any[], curr: any) => {
-          const existingColor = acc.find(v => v.color === curr.color);
-          if (existingColor) {
-            existingColor.variations.push(curr);
-          } else {
-            acc.push({
-              color: curr.color,
-              variations: [curr],
-            });
-          }
-          return acc;
-        }, []),
+        variations: product.variations.reduce(
+          (acc: ProductVariation[], curr: any) => {
+            const existingColor = acc.find(v => v.color === curr.color);
+            if (existingColor) {
+              existingColor.variations.push(curr);
+            } else {
+              acc.push({
+                color: curr.color,
+                variations: [curr],
+              });
+            }
+            return acc;
+          },
+          []
+        ),
       },
     });
   };
@@ -94,12 +107,13 @@ export const SearchButton = () => {
         size="icon"
         className="hover:bg-white hover:text-black transition-colors"
         onClick={() => setOpen(true)}
+        aria-label="Search products"
       >
         <Search className="h-5 w-5" />
       </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Search Products</DialogTitle>
             <DialogDescription>
@@ -111,10 +125,12 @@ export const SearchButton = () => {
             <div className="flex items-center gap-2 border-b pb-4">
               <div className="flex-1">
                 <input
+                  type="search"
                   value={inputValue}
                   onChange={e => handleSearch(e.target.value)}
                   placeholder="Search products..."
                   className="w-full px-3 py-2 bg-transparent outline-none"
+                  aria-label="Search products"
                 />
               </div>
               {inputValue && (
@@ -125,9 +141,8 @@ export const SearchButton = () => {
                     setInputValue("");
                     store.clearSearch();
                   }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                  aria-label="Clear search"
+                ></Button>
               )}
             </div>
 
@@ -142,12 +157,19 @@ export const SearchButton = () => {
                   No products found.
                 </div>
               ) : store.filteredProducts.length > 0 ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {store.filteredProducts.map(product => (
                     <div
                       key={product.id}
                       onClick={() => handleProductSelect(product)}
                       className="cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={e => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          handleProductSelect(product);
+                        }
+                      }}
                     >
                       <div className="group rounded-lg border p-4 hover:bg-gray-50 transition-colors">
                         <div className="flex gap-4">
@@ -159,16 +181,14 @@ export const SearchButton = () => {
                                 fill
                                 className="rounded-md object-cover"
                                 sizes="80px"
+                                priority={false}
                               />
                             </div>
                           )}
                           <div className="flex flex-col min-w-0">
-                            <h3 className="font-medium text-sm truncate">
+                            <h3 className="font-medium text-sm line-clamp-2">
                               {product.productName}
                             </h3>
-                            <p className="text-xs text-gray-500 truncate">
-                              {product.category.join(", ")}
-                            </p>
                             <div className="mt-auto">
                               <p className="text-sm font-bold">
                                 R{product.sellingPrice.toFixed(2)}
