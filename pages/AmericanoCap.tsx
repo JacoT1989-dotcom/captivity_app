@@ -4,7 +4,7 @@ import { RiStarSFill } from "react-icons/ri";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
-
+//
 const AmericanoCap = () => {
   const [isHovered, setIsHovered] = useState(false);
 
