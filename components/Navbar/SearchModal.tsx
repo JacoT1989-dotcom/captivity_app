@@ -1,131 +1,151 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Search, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchStore } from "./_store/search-store";
-import { PrismaProduct } from "./types";
 
 export const SearchButton = () => {
   const [open, setOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
-
+  const [inputValue, setInputValue] = useState("");
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const store = useSearchStore();
+
+  useEffect(() => {
+    store.initializeProducts();
+  }, [store]);
 
   const handleSearch = useCallback(
     (value: string) => {
-      setSearchValue(value);
+      setInputValue(value);
 
-      if (!value) {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      if (!value.trim()) {
         store.clearSearch();
         return;
       }
 
-      store.setSearchParams({ query: value, limit: 5 });
-
-      if (value.length >= 2) {
-        store.searchProducts();
+      if (value.trim().length >= 2) {
+        searchTimeoutRef.current = setTimeout(() => {
+          store.searchProducts(value);
+        }, 300);
       }
     },
     [store]
   );
 
-  const handleClear = useCallback(() => {
-    setSearchValue("");
-    store.clearSearch();
-  }, [store]);
-
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
       setOpen(newOpen);
       if (!newOpen) {
-        handleClear();
+        setInputValue("");
+        store.clearSearch();
       }
     },
-    [handleClear]
+    [store]
   );
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="hover:bg-white hover:text-black transition-colors"
-          aria-label="Open search"
-        >
-          <Search className="h-5 w-5" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[600px] p-0" align="end">
-        <Command shouldFilter={false}>
-          <div className="flex items-center justify-between border-b px-3">
-            <CommandInput
-              value={searchValue}
-              onValueChange={handleSearch}
-              placeholder="Search products..."
-              className="h-11 border-0 focus:ring-0"
-            />
-            {searchValue && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={handleClear}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-          <div className="max-h-[400px] overflow-auto p-2">
-            {store.isLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-6 w-6 animate-spin" />
+    <>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="hover:bg-white hover:text-black transition-colors"
+        onClick={() => setOpen(true)}
+      >
+        <Search className="h-5 w-5" />
+      </Button>
+
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Search Products</DialogTitle>
+            <DialogDescription>
+              Search through our catalog of products
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col w-full gap-4">
+            <div className="flex items-center gap-2 border-b pb-4">
+              <div className="flex-1">
+                <input
+                  value={inputValue}
+                  onChange={e => handleSearch(e.target.value)}
+                  placeholder="Search products..."
+                  className="w-full px-3 py-2 bg-transparent outline-none"
+                />
               </div>
-            ) : store.products.length === 0 && searchValue.length >= 2 ? (
-              <CommandEmpty>No products found.</CommandEmpty>
-            ) : store.products.length > 0 ? (
-              <CommandGroup>
-                <div className="grid grid-cols-2 gap-2">
-                  {store.products.map((product: PrismaProduct) => (
+              {inputValue && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setInputValue("");
+                    store.clearSearch();
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            <div className="max-h-96 overflow-y-auto">
+              {store.isLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : store.filteredProducts.length === 0 &&
+                inputValue.trim().length >= 2 ? (
+                <div className="text-center py-6 text-gray-500">
+                  No products found.
+                </div>
+              ) : store.filteredProducts.length > 0 ? (
+                <div className="grid grid-cols-2 gap-4">
+                  {store.filteredProducts.map(product => (
                     <Link
                       key={product.id}
                       href={`/product/${product.id}`}
-                      onClick={() => setOpen(false)}
+                      onClick={() => handleOpenChange(false)}
                       className="block"
                     >
-                      <div className="group rounded-lg border border-border bg-background p-2 transition-colors hover:bg-accent">
-                        <div className="flex space-x-3">
+                      <div className="group rounded-lg border p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex gap-4">
                           {product.featuredImage && (
-                            <div className="h-20 w-20 relative flex-shrink-0">
+                            <div className="relative h-20 w-20 flex-shrink-0">
                               <Image
                                 src={product.featuredImage.thumbnail}
                                 alt={product.productName}
                                 fill
-                                className="object-cover rounded-md"
+                                className="rounded-md object-cover"
+                                sizes="80px"
                               />
                             </div>
                           )}
-                          <div className="flex flex-col flex-1 min-w-0">
-                            <h3 className="font-medium text-sm text-foreground truncate">
+                          <div className="flex flex-col min-w-0">
+                            <h3 className="font-medium text-sm truncate">
                               {product.productName}
                             </h3>
-                            <p className="text-xs text-muted-foreground truncate">
+                            <p className="text-xs text-gray-500 truncate">
                               {product.category.join(", ")}
                             </p>
                             <div className="mt-auto">
-                              <p className="text-sm font-bold text-foreground">
+                              <p className="text-sm font-bold">
                                 R{product.sellingPrice.toFixed(2)}
                               </p>
                             </div>
@@ -135,18 +155,13 @@ export const SearchButton = () => {
                     </Link>
                   ))}
                 </div>
-                {/* <Link
-                  href={`/search?q=${encodeURIComponent(searchValue)}`}
-                  onClick={() => setOpen(false)}
-                  className="block text-center text-sm text-primary hover:text-primary/80 p-2 border-t mt-2"
-                >
-                  View all results
-                </Link> */}
-              </CommandGroup>
-            ) : null}
+              ) : null}
+            </div>
           </div>
-        </Command>
-      </PopoverContent>
-    </Popover>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
+
+export default SearchButton;

@@ -1,106 +1,113 @@
 import { create } from "zustand";
-import { searchProducts as searchProductsApi } from "../search-actions";
-import { PrismaProduct, SearchParams, SearchResult } from "../types";
+import { PrismaProduct } from "../types";
+import { getProducts } from "../search-actions";
 
 interface SearchState {
-  products: PrismaProduct[];
+  allProducts: PrismaProduct[];
+  filteredProducts: PrismaProduct[];
   isLoading: boolean;
   error: string | null;
-  searchParams: SearchParams;
-  setSearchParams: (params: Partial<SearchParams>) => void;
-  searchProducts: () => Promise<void>;
+  searchQuery: string;
+  searchProducts: (query: string) => void;
   clearSearch: () => void;
+  initializeProducts: () => Promise<void>;
 }
 
-export const useSearchStore = create<SearchState>()((set, get) => ({
-  products: [],
+let isInitializing = false;
+let hasInitialized = false;
+
+export const useSearchStore = create<SearchState>((set, get) => ({
+  allProducts: [],
+  filteredProducts: [],
   isLoading: false,
   error: null,
-  searchParams: {
-    query: "",
-    limit: 5,
-    isPublished: true,
-  },
+  searchQuery: "",
 
-  setSearchParams: params => {
-    const currentParams = get().searchParams;
-    const newParams = {
-      ...currentParams,
-      ...params,
-    };
-    console.log("Setting search params:", newParams);
-    set({ searchParams: newParams });
-  },
-
-  searchProducts: async () => {
-    const { searchParams } = get();
-    console.log("Starting search with params:", searchParams);
-
-    if (!searchParams.query || searchParams.query.length < 2) {
-      console.log("Search query too short");
+  initializeProducts: async () => {
+    if (hasInitialized || isInitializing) {
       return;
     }
 
-    set({ isLoading: true });
-
     try {
-      const result: SearchResult = await searchProductsApi(searchParams);
-      console.log("Raw search result:", result);
+      isInitializing = true;
+      set({ isLoading: true });
 
-      // Early return for unsuccessful search
-      if (!result.success) {
-        console.log("Search unsuccessful:", result.error);
-        set({
-          products: [],
-          error: result.error || "Search failed",
-          isLoading: false,
-        });
-        return;
-      }
+      const result = await getProducts(100);
 
-      // Check if data exists and has products
-      if (result.data?.products) {
-        console.log("Found products:", result.data.products.length);
+      if (result.success && result.data) {
         set({
-          products: result.data.products,
+          allProducts: result.data.products,
           error: null,
-          isLoading: false,
         });
-
-        // Log the current state after update
-        const currentState = get();
-        console.log("Current state after update:", {
-          productsCount: currentState.products.length,
-          isLoading: currentState.isLoading,
-          error: currentState.error,
-        });
+        hasInitialized = true;
       } else {
-        console.log("No products in response");
         set({
-          products: [],
-          error: "No products found",
-          isLoading: false,
+          error: result.error || "Failed to fetch products",
+          allProducts: [],
         });
       }
     } catch (error) {
-      console.error("Search error:", error);
       set({
-        products: [],
         error: "An unexpected error occurred",
-        isLoading: false,
+        allProducts: [],
       });
+    } finally {
+      isInitializing = false;
+      set({ isLoading: false });
     }
   },
 
-  clearSearch: () => {
-    console.log("Clearing search state");
+  searchProducts: (query: string) => {
+    const state = get();
+
+    if (!query.trim()) {
+      set({ filteredProducts: [], searchQuery: "" });
+      return;
+    }
+
+    const lowerQuery = query.toLowerCase().trim();
+
+    const filtered = state.allProducts.filter(product => {
+      // Check name
+      if (product.productName.toLowerCase().includes(lowerQuery)) {
+        return true;
+      }
+
+      // Check categories
+      const categoryMatch = product.category.some(cat =>
+        cat.toLowerCase().includes(lowerQuery)
+      );
+      if (categoryMatch) {
+        return true;
+      }
+
+      // Check variations
+      const variationMatch = product.variations.some(variation => {
+        return (
+          variation.name.toLowerCase().includes(lowerQuery) ||
+          variation.color.toLowerCase().includes(lowerQuery) ||
+          variation.sku.toLowerCase().includes(lowerQuery) ||
+          variation.sku2.toLowerCase().includes(lowerQuery)
+        );
+      });
+      if (variationMatch) return true;
+
+      return false;
+    });
+
+    // Take first 5 results
+    const limitedResults = filtered.slice(0, 5);
+
     set({
-      products: [],
-      searchParams: {
-        query: "",
-        limit: 5,
-        isPublished: true,
-      },
+      filteredProducts: limitedResults,
+      searchQuery: query,
+    });
+  },
+
+  clearSearch: () => {
+    set({
+      filteredProducts: [],
+      searchQuery: "",
       error: null,
     });
   },
