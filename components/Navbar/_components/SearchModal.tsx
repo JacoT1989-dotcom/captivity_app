@@ -63,12 +63,12 @@ export const SearchButton = () => {
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
       setOpen(newOpen);
-      if (!newOpen && !selectedProduct) {
+      if (!newOpen) {
         setInputValue("");
         store.clearSearch();
       }
     },
-    [store, selectedProduct]
+    [store]
   );
 
   const handleProductSelect = (product: any) => {
@@ -97,7 +97,7 @@ export const SearchButton = () => {
 
   const handleProductModalClose = () => {
     setSelectedProduct(null);
-    setOpen(false);
+    // Removed setOpen(false) to keep search modal open
   };
 
   return (
@@ -142,7 +142,9 @@ export const SearchButton = () => {
                     store.clearSearch();
                   }}
                   aria-label="Clear search"
-                ></Button>
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               )}
             </div>
 
