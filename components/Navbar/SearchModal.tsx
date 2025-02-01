@@ -8,12 +8,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-} from "@/components/ui/command";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchStore } from "./_store/search-store";
