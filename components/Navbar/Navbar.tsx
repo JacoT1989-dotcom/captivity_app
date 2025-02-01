@@ -8,9 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useSession } from "@/app/SessionProvider";
 import UserButton from "@/app/(user)/_components/UserButton";
-import { headwearItems, apparelItems, collectionsItems } from "./nav-items";
-import MobileDropdown from "./MobileDropdown";
-import { SearchButton } from "./SearchModal";
+import MobileDropdown from "./_components/MobileDropdown";
+import {
+  apparelItems,
+  collectionsItems,
+  headwearItems,
+} from "./_components/nav-items";
+import SearchButton from "./_components/SearchModal";
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

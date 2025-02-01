@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import Link from "next/link";
 import Image from "next/image";
-import { useSearchStore } from "./_store/search-store";
 import ProductLookupModal from "@/app/(user)/(DropDownCategories)/products/all-collections/ProductLookupModal";
+import { useSearchStore } from "../_store/search-store";
 
 export const SearchButton = () => {
   const [open, setOpen] = useState(false);
