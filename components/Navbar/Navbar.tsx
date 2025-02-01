@@ -3,19 +3,18 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, ShoppingBag, User, Menu } from "lucide-react";
+import { ShoppingBag, User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useSession } from "@/app/SessionProvider";
 import UserButton from "@/app/(user)/_components/UserButton";
 import { headwearItems, apparelItems, collectionsItems } from "./nav-items";
 import MobileDropdown from "./MobileDropdown";
+import { SearchButton } from "./SearchModal";
 
 const Navbar: React.FC = () => {
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
-  const searchButtonRef = useRef<HTMLButtonElement>(null);
   const accountDropdownRef = useRef<HTMLDivElement>(null);
   const session = useSession();
   const isEditor = session?.user?.role === "EDITOR";
@@ -81,19 +80,19 @@ const Navbar: React.FC = () => {
                 <div className="py-2 text-black">
                   <MobileDropdown
                     title="Headwear"
-                    href="/products/headwear/all-in-headwear" // Add this
+                    href="/products/headwear/all-in-headwear"
                     items={headwearItems}
                     onItemClick={() => setIsMenuOpen(false)}
                   />
                   <MobileDropdown
                     title="Apparel"
-                    href="/products/apparel/all-in-apparel" // Add this
+                    href="/products/apparel/all-in-apparel"
                     items={apparelItems}
                     onItemClick={() => setIsMenuOpen(false)}
                   />
                   <MobileDropdown
                     title="All Collections"
-                    href="/products/all-collections/all-in-collections" // Add this
+                    href="/products/all-collections/all-in-collections"
                     items={collectionsItems}
                     onItemClick={() => setIsMenuOpen(false)}
                   />
@@ -203,16 +202,7 @@ const Navbar: React.FC = () => {
 
           {/* Right section */}
           <div className="flex items-center space-x-4 h-16">
-            <Button
-              ref={searchButtonRef}
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSearchOpen(true)}
-              className="hover:bg-white hover:text-black transition-colors"
-              aria-label="Open search"
-            >
-              <Search className="h-5 w-5" />
-            </Button>
+            <SearchButton />
 
             {isEditor ? (
               <UserButton />
