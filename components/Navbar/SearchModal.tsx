@@ -11,10 +11,16 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchStore } from "./_store/search-store";
+import ProductLookupModal from "@/app/(user)/(DropDownCategories)/products/all-collections/ProductLookupModal";
 
 export const SearchButton = () => {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<{
+    id: string;
+    product: any;
+    variations: any;
+  } | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const store = useSearchStore();
 
@@ -47,13 +53,39 @@ export const SearchButton = () => {
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
       setOpen(newOpen);
-      if (!newOpen) {
+      if (!newOpen && !selectedProduct) {
         setInputValue("");
         store.clearSearch();
       }
     },
-    [store]
+    [store, selectedProduct]
   );
+
+  const handleProductSelect = (product: any) => {
+    setSelectedProduct({
+      id: product.id,
+      product: product,
+      variations: {
+        variations: product.variations.reduce((acc: any[], curr: any) => {
+          const existingColor = acc.find(v => v.color === curr.color);
+          if (existingColor) {
+            existingColor.variations.push(curr);
+          } else {
+            acc.push({
+              color: curr.color,
+              variations: [curr],
+            });
+          }
+          return acc;
+        }, []),
+      },
+    });
+  };
+
+  const handleProductModalClose = () => {
+    setSelectedProduct(null);
+    setOpen(false);
+  };
 
   return (
     <>
@@ -112,11 +144,10 @@ export const SearchButton = () => {
               ) : store.filteredProducts.length > 0 ? (
                 <div className="grid grid-cols-2 gap-4">
                   {store.filteredProducts.map(product => (
-                    <Link
+                    <div
                       key={product.id}
-                      href={`/product/${product.id}`}
-                      onClick={() => handleOpenChange(false)}
-                      className="block"
+                      onClick={() => handleProductSelect(product)}
+                      className="cursor-pointer"
                     >
                       <div className="group rounded-lg border p-4 hover:bg-gray-50 transition-colors">
                         <div className="flex gap-4">
@@ -146,7 +177,7 @@ export const SearchButton = () => {
                           </div>
                         </div>
                       </div>
-                    </Link>
+                    </div>
                   ))}
                 </div>
               ) : null}
@@ -154,6 +185,16 @@ export const SearchButton = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {selectedProduct && (
+        <ProductLookupModal
+          isOpen={!!selectedProduct}
+          onClose={handleProductModalClose}
+          productId={selectedProduct.id}
+          product={selectedProduct.product}
+          productVariations={selectedProduct.variations}
+        />
+      )}
     </>
   );
 };
