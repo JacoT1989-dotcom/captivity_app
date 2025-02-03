@@ -13,8 +13,18 @@ export default function Page() {
     <main className="flex h-screen items-center justify-center p-5">
       <div className="flex h-full max-h-[40rem] w-full max-w-[64rem] overflow-hidden rounded-2xl bg-card shadow-2xl">
         {/* Left side: Login form */}
-        <div className="flex w-full md:w-1/2 flex-col space-y-10 overflow-y-auto p-10">
-          <h1 className="text-center text-3xl font-bold">Login to Captivity</h1>
+        <div className="flex w-full md:w-1/2 flex-col space-y-10 overflow-y-auto p-10 ">
+          <span className="flex w-full text-center text-3xl font-bold p-5 bg-black rounded-md items-center justify-center">
+            {" "}
+            <Image
+              src="/captivity-logo-white.png"
+              alt="CAPTIVITY"
+              width={150}
+              height={50}
+              className="h-auto w-auto"
+              priority
+            />
+          </span>
           <div className="space-y-5">
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-muted" />
