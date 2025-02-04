@@ -241,53 +241,6 @@ export async function getOrder(orderId?: string): Promise<OrderActionResult> {
   }
 }
 
-// export async function getUserOrders(): Promise<OrderActionResult> {
-//   try {
-//     const { user } = await validateRequest();
-//     if (!user) {
-//       return {
-//         success: false,
-//         message: "Authentication required",
-//         error: "Please login to view orders",
-//       };
-//     }
-
-//     const orders = await prisma.order.findMany({
-//       where: {
-//         userId: user.id,
-//       },
-//       include: {
-//         orderItems: {
-//           include: {
-//             variation: {
-//               include: {
-//                 product: true,
-//               },
-//             },
-//           },
-//         },
-//       },
-//       orderBy: {
-//         createdAt: "desc",
-//       },
-//     });
-
-//     return {
-//       success: true,
-//       message: "Orders retrieved successfully",
-//       data: orders,
-//     };
-//   } catch (error) {
-//     console.error("Error retrieving orders:", error);
-//     return {
-//       success: false,
-//       message: "Failed to retrieve orders",
-//       error:
-//         error instanceof Error ? error.message : "An unexpected error occurred",
-//     };
-//   }
-// }
-
 export async function getUserDetails() {
   try {
     const { user } = await validateRequest();

@@ -1,4 +1,3 @@
-// types.ts
 import { OrderStatus } from "@prisma/client";
 
 import {
