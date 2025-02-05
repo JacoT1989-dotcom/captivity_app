@@ -1,4 +1,3 @@
-// TabNavigation.tsx
 "use client";
 
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
