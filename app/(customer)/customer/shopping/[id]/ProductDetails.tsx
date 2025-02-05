@@ -1,5 +1,7 @@
 "use client";
 
+// *add related product section
+
 import React, { useState, useEffect } from "react";
 import { Variation } from "@prisma/client";
 import {

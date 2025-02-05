@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 export interface ProductCardProps {
   id: number;
   productName: string;
-  sellingPrice: number;
+  // sellingPrice: number;
   featuredImage?: {
     medium?: string;
   } | null;
@@ -14,7 +14,7 @@ export interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({
   id,
   productName,
-  sellingPrice,
+  // sellingPrice,
   featuredImage,
 }) => {
   return (
@@ -33,9 +33,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
         <h3 className="text-lg font-semibold mb-2 truncate">{productName}</h3>
-        <p className="text-xl font-bold text-primary">
+        {/* <p className="text-xl font-bold text-primary">
           R{sellingPrice.toFixed(2)}
-        </p>
+        </p> */}
       </CardContent>
     </Card>
   );

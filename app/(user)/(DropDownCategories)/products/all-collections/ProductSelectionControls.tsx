@@ -161,11 +161,11 @@ const ProductSelectionControls: React.FC<ProductSelectionControlsProps> = ({
               +
             </button>
           </div>
-          {currentVariation && (
+          {/* {currentVariation && (
             <div className="text-sm text-yellow-600">
               {currentVariation.quantity} in stock
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>

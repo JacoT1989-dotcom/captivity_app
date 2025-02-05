@@ -110,7 +110,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
 
   return (
     <Dialog open={isOpen}>
-      <DialogContent className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-7xl h-[90vh] md:h-auto">
+      <DialogContent className="p-0 mx-auto w-[95%] sm:w-[70%] max-w-7xl max-h-[70vh] md:h-auto overflow-auto">
         <DialogTitle className="sr-only">
           {product.productName} - Product Details
         </DialogTitle>
@@ -164,7 +164,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                 disabled={!currentVariation || currentVariation.quantity === 0}
                 asChild
               >
-                <Link href={"/login"}>Login & Add to Cart</Link>
+                <Link href={"/login"}>Login</Link>
               </Button>
             </div>
 
