@@ -148,7 +148,7 @@ export function ProductSlider({
                       {item.title}
                     </h3>
                     <div className="flex items-center gap-2">
-                      {"salePrice" in item ? (
+                      {/* {"salePrice" in item ? (
                         <>
                           <span className="text-xs md:text-sm font-medium text-red-600">
                             R{item.salePrice?.toFixed(2)}
@@ -161,7 +161,7 @@ export function ProductSlider({
                         <span className="text-xs md:text-sm font-medium text-gray-900">
                           R{item.price.toFixed(2)}
                         </span>
-                      )}
+                      )} */}
                     </div>
                     <div className="flex">
                       {[...Array(5)].map((_, i) => (
