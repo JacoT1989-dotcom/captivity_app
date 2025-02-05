@@ -65,7 +65,7 @@ const PricingRanges: React.FC<PricingRangesProps> = ({
               {`${pricing.from}-${pricing.to}`}
             </div>
             <div className="text-gray-600 font-medium">
-              {formatPrice(parseFloat(pricing.amount))}
+              {/* {formatPrice(parseFloat(pricing.amount))} */}login
             </div>
           </React.Fragment>
         ))}
