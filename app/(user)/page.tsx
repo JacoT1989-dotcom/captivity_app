@@ -4,6 +4,7 @@ import { Section2 } from "./_components/(section2)/Section2";
 import { RegisterSection } from "./_components/(section3)/RegisterSection";
 import { ProductTabs } from "./_components/(section4)/Product-tabs";
 import { PlatformSection } from "./_components/(section5)/PlatformSection";
+//import connectDB from "@/config/database"
 
 const Home = async () => {
   return (
@@ -19,8 +20,8 @@ const Home = async () => {
         <RegisterSection />
         {/* Product Tabs Section */}
         <ProductTabs />
-        {/* Platform and FWRD Section
-        <PlatformSection /> */}
+        {/* Platform and FWRD Section */}
+        <PlatformSection />
       </main>
     </div>
   );
