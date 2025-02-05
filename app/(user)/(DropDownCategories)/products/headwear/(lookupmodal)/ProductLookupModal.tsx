@@ -104,7 +104,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
 
   return (
     <Dialog open={isOpen}>
-      <DialogContent className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-7xl h-[90vh] md:h-auto">
+      <DialogContent className="p-0 mx-auto w-[95%] sm:w-[70%] max-w-7xl max-h-[90vh] md:h-auto overflow-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-3 border-b rounded-md bg-white sticky top-0 z-10">
           <h2 className="text-lg font-semibold text-red-600">
@@ -237,9 +237,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                       </button>
                     </div>
                     <div className="text-sm text-yellow-600">
-                      {currentVariation
-                        ? `${currentVariation.quantity} in stock`
-                        : ""}
+                      {currentVariation ? ` in stock` : ""}
                     </div>
                   </div>
                 </div>
@@ -253,7 +251,7 @@ const ProductLookupModal: React.FC<ProductLookupModalProps> = ({
                 disabled={!currentVariation || currentVariation.quantity === 0}
                 asChild
               >
-                <Link href={"/login"}>Login & Add to Cart</Link>
+                <Link href={"/login"}>Login</Link>
               </Button>
             </div>
 

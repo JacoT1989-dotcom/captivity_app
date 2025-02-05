@@ -246,9 +246,7 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
                       </button>
                     </div>
                     <div className="text-sm text-yellow-600">
-                      {currentVariation
-                        ? `${currentVariation.quantity} in stock`
-                        : ""}
+                      {currentVariation ? ` in stock` : ""}
                     </div>
                   </div>
                 </div>
