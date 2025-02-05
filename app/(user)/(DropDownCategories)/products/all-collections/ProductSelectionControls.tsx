@@ -49,18 +49,42 @@ const ProductSelectionControls: React.FC<ProductSelectionControlsProps> = ({
     productVariations.variations.find(v => v.color === selectedColor)
       ?.variations || [];
 
+  const sizeOrder: { [key: string]: number } = {
+    XXS: 0,
+    XS: 1,
+    Small: 2,
+    Medium: 3,
+    Large: 4,
+    XL: 5,
+    "2XL": 6,
+    "3XL": 7,
+    "4XL": 8,
+    "5XL": 9,
+  };
+
+  const sortSizes = (a: string, b: string) => {
+    return (sizeOrder[a] ?? 999) - (sizeOrder[b] ?? 999);
+  };
+
   const allSizes = Array.from(
     new Set(
       productVariations.variations.flatMap(colorVar =>
         colorVar.variations.map(v => v.size)
       )
     )
-  ).sort((a, b) => {
-    const numA = parseFloat(a);
-    const numB = parseFloat(b);
-    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-    return a.localeCompare(b);
-  });
+  ).sort(sortSizes);
+  // const allSizes = Array.from(
+  //   new Set(
+  //     productVariations.variations.flatMap(colorVar =>
+  //       colorVar.variations.map(v => v.size)
+  //     )
+  //   )
+  // ).sort((a, b) => {
+  //   const numA = parseFloat(a);
+  //   const numB = parseFloat(b);
+  //   if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+  //   return a.localeCompare(b);
+  // });
 
   return (
     <div className="bg-white rounded-lg border p-4 space-y-6">
@@ -161,11 +185,11 @@ const ProductSelectionControls: React.FC<ProductSelectionControlsProps> = ({
               +
             </button>
           </div>
-          {/* {currentVariation && (
+          {currentVariation && (
             <div className="text-sm text-yellow-600">
               {currentVariation.quantity} in stock
             </div>
-          )} */}
+          )}
         </div>
       </div>
     </div>

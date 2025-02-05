@@ -186,9 +186,9 @@ export const ProductDetailsDialog: React.FC<ProductDetailsDialogProps> = ({
   const availableColors = Array.from(
     new Set(product.variations.map(v => v.color))
   );
-  const availableSizes = Array.from(
-    new Set(product.variations.map(v => v.size))
-  ).sort();
+  // const availableSizes = Array.from(
+  //   new Set(product.variations.map(v => v.size))
+  // ).sort();
 
   return (
     <Dialog open={!!product} onOpenChange={onClose}>
@@ -243,6 +243,8 @@ export const ProductDetailsDialog: React.FC<ProductDetailsDialogProps> = ({
               </div>
             </div>
 
+            <div dangerouslySetInnerHTML={{ __html: product.description }} />
+            {/* 
             <div className="space-y-2">
               <h4 className="font-semibold">Sizes:</h4>
               <div className="flex flex-wrap gap-2">
@@ -261,7 +263,7 @@ export const ProductDetailsDialog: React.FC<ProductDetailsDialogProps> = ({
                   </button>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             <div className="pt-4">
               <Button asChild className="w-full">
