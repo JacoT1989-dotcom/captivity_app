@@ -60,14 +60,34 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
 
   const productData = groupedVariations[selectedProduct];
   const allColors = productData.variations.map(v => v.color);
+
+  // Define size ordering
+  const sizeOrder: { [key: string]: number } = {
+    XXS: 0,
+    XS: 1,
+    Small: 2,
+    Medium: 3,
+    Large: 4,
+    XL: 5,
+
+    "2XL": 6,
+    "3XL": 7,
+    "4XL": 8,
+    "5XL": 9,
+  };
+
+  // Custom sort function for sizes
+  const sortSizes = (a: string, b: string) => {
+    return (sizeOrder[a] ?? 999) - (sizeOrder[b] ?? 999);
+  };
+
   const allSizes = Array.from(
     new Set(
       productData.variations.flatMap(colorVar =>
         colorVar.variations.map(v => v.size)
       )
     )
-  ).sort();
-
+  ).sort(sortSizes);
   const selectedColorVariations =
     productData.variations.find(v => v.color === selectedColor)?.variations ||
     [];
@@ -109,7 +129,7 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
 
   return (
     <Dialog open={isOpen}>
-      <DialogContent className="p-0 mx-auto w-[95%] sm:w-[90%] max-w-7xl h-[95vh] md:h-auto">
+      <DialogContent className="p-0 mx-auto w-[95%] sm:w-[70%] max-w-7xl max-h-[95vh] md:h-auto overflow-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-3 border-b bg-white rounded-md sticky top-0 z-10">
           <h2 className="text-lg font-semibold text-red-600">
@@ -246,9 +266,7 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
                       </button>
                     </div>
                     <div className="text-sm text-yellow-600">
-                      {currentVariation
-                        ? `${currentVariation.quantity} in stock`
-                        : ""}
+                      {currentVariation ? ` in stock` : ""}
                     </div>
                   </div>
                 </div>
@@ -262,7 +280,7 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
                 disabled={!currentVariation || currentVariation.quantity === 0}
                 asChild
               >
-                <Link href={"/login"}>Login & Add to Cart</Link>
+                <Link href={"/login"}>Login</Link>
               </Button>
             </div>
 

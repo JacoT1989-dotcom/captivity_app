@@ -27,12 +27,12 @@ const ProductGrid = ({ products }: ProductGridProps) => {
     string | null
   >(null);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-ZA", {
-      style: "currency",
-      currency: "ZAR",
-    }).format(price);
-  };
+  // const formatPrice = (price: number) => {
+  //   return new Intl.NumberFormat("en-ZA", {
+  //     style: "currency",
+  //     currency: "ZAR",
+  //   }).format(price);
+  // };
 
   const getBasePrice = (product: StoreProduct) => {
     const basePricing = product.dynamicPricing.find(
@@ -138,9 +138,9 @@ const ProductGrid = ({ products }: ProductGridProps) => {
                 <h3 className="text-base sm:text-lg font-semibold text-foreground line-clamp-1 hover:line-clamp-none text-center">
                   {product.productName}
                 </h3>
-                <p className="mt-2 text-base sm:text-lg font-bold text-foreground text-center">
+                {/* <p className="mt-2 text-base sm:text-lg font-bold text-foreground text-center">
                   {formatPrice(getBasePrice(product))}
-                </p>
+                </p> */}
 
                 {/* Fixed height container for color section */}
                 <div className="h-[3.75rem] mt-2">

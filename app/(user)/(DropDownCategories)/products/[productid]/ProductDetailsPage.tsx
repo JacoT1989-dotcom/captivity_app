@@ -188,10 +188,7 @@ const ProductDetail: React.FC = () => {
                   );
                   return (
                     <SelectItem key={size} value={size}>
-                      {size} -{" "}
-                      {variation
-                        ? `In stock: ${variation.quantity}`
-                        : "Out of stock"}
+                      {size} - {variation ? `In stock` : "Out of stock"}
                     </SelectItem>
                   );
                 })}
@@ -211,7 +208,7 @@ const ProductDetail: React.FC = () => {
               placeholder="0"
             />
           </div>
-
+          {/* 
           {selectedVariation && (
             <div className="mb-4">
               <p>
@@ -220,7 +217,7 @@ const ProductDetail: React.FC = () => {
                   : "Out of stock"}
               </p>
             </div>
-          )}
+          )} */}
           <Link href="/login">
             <Button
               className="w-full mb-4"
@@ -245,10 +242,10 @@ const ProductDetail: React.FC = () => {
             </TabsContent>
             <TabsContent value="features">
               <ul className="list-disc pl-5">
-                <li>Carton box size</li>
-                <li>Carton box size</li>
-                <li>Carton box size</li>
-                <li>Carton box size</li>
+                <li>Waiting for data to display</li>
+                <li>Waiting for data to display</li>
+                <li>Waiting for data to display</li>
+                <li>Waiting for data to display</li>
               </ul>
             </TabsContent>
           </Tabs>

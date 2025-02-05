@@ -146,6 +146,13 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ products = [] }) => {
   };
 
   useEffect(() => {
+    useFilterStore.getState().setPageSource("list");
+    return () => {
+      useFilterStore.getState().setPageSource(null);
+    };
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         categoryRef.current &&

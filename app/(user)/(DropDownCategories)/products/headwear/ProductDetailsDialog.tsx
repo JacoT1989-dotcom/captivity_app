@@ -157,12 +157,12 @@ const ProductDetailsDialog = ({
 
   if (!product) return null;
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-ZA", {
-      style: "currency",
-      currency: "ZAR",
-    }).format(price);
-  };
+  // const formatPrice = (price: number) => {
+  //   return new Intl.NumberFormat("en-ZA", {
+  //     style: "currency",
+  //     currency: "ZAR",
+  //   }).format(price);
+  // };
 
   const getTotalStock = (variations: StoreProduct["variations"]) => {
     return variations.reduce(
@@ -203,9 +203,9 @@ const ProductDetailsDialog = ({
           </div>
 
           <div className="space-y-4">
-            <p className="text-2xl font-bold">
+            {/* <p className="text-2xl font-bold">
               {formatPrice(product.sellingPrice)}
-            </p>
+            </p> */}
 
             <div className="space-y-2">
               <h4 className="font-semibold mb-2">Colors:</h4>
@@ -221,7 +221,9 @@ const ProductDetailsDialog = ({
               </div>
             </div>
 
-            <div>
+            <div dangerouslySetInnerHTML={{ __html: product.description }} />
+
+            {/* <div>
               <h4 className="font-semibold mb-2">Stock Status:</h4>
               <span
                 className={`px-3 py-1 text-sm font-medium rounded-full ${
@@ -234,7 +236,7 @@ const ProductDetailsDialog = ({
                   ? `In Stock (${getTotalStock(product.variations)} units)`
                   : "Out of Stock"}
               </span>
-            </div>
+            </div> */}
 
             <Button className="w-full" asChild>
               <a href={`/products/${product.id}`}>View Full Details</a>

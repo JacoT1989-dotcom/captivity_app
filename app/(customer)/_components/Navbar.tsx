@@ -157,13 +157,13 @@ const Navbar = () => {
             )}
             <div className="text-xs mt-2">Cart</div>
           </button>
-          <Link
+          {/* <Link
             href="/customer/favourites"
             className="flex text-gray-600 flex-col items-center py-2 hover:text-red-500"
           >
             <FaHeart />
             <div className="text-xs mt-2">Favorites</div>
-          </Link>
+          </Link> */}
           <Link
             href="/customer/account-info"
             className="flex flex-col items-center py-2 hover:text-red-500"

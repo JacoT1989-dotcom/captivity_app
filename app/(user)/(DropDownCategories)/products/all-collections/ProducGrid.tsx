@@ -26,12 +26,12 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
     string | null
   >(null);
 
-  const formatPrice = (price: number): string => {
-    return new Intl.NumberFormat("en-ZA", {
-      style: "currency",
-      currency: "ZAR",
-    }).format(price);
-  };
+  // const formatPrice = (price: number): string => {
+  //   return new Intl.NumberFormat("en-ZA", {
+  //     style: "currency",
+  //     currency: "ZAR",
+  //   }).format(price);
+  // };
 
   const getBasePrice = (product: StoreProduct): number => {
     const basePricing = product.dynamicPricing.find(
@@ -118,9 +118,9 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                 <h3 className="text-base sm:text-lg font-semibold text-center text-foreground line-clamp-1 hover:line-clamp-none">
                   {product.productName}
                 </h3>
-                <p className="mt-2 text-base sm:text-lg font-bold text-foreground text-center">
+                {/* <p className="mt-2 text-base sm:text-lg font-bold text-foreground text-center">
                   {formatPrice(getBasePrice(product))}
-                </p>
+                </p> */}
 
                 {/* Fixed Height Color Variants Container */}
                 <div className="h-[3.75rem] mt-2">

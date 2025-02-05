@@ -9,8 +9,8 @@ export function PlatformSection() {
       <div className="container w-full mx-auto px-4">
         <div className="space-y-4">
           {/* Vendor Platform and Loyalty Programme Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Vendor Platform */}
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
             <div className="bg-gradient-to-br from-red-600 to-red-800 rounded-xl overflow-hidden">
               <div className="p-8 text-center text-white h-full flex flex-col justify-between">
                 <div>
@@ -34,7 +34,7 @@ export function PlatformSection() {
               </div>
             </div>
 
-            {/* Coming Soon Highlight */}
+ 
             <div className="bg-gradient-to-br from-red-500 to-red-700 rounded-xl overflow-hidden transform hover:scale-105 transition-transform duration-300">
               <div className="p-8 text-center text-white h-full flex flex-col justify-center items-center">
                 <div className="animate-pulse">
@@ -53,7 +53,7 @@ export function PlatformSection() {
               </div>
             </div>
 
-            {/* Loyalty Programme */}
+  
             <div className="bg-gradient-to-br from-red-700 to-red-900 rounded-xl overflow-hidden">
               <div className="p-8 text-center text-white h-full flex flex-col justify-between">
                 <div>
@@ -76,7 +76,7 @@ export function PlatformSection() {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* FWRD Section */}
           <div className="mx-auto">

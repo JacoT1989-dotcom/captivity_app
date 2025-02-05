@@ -21,6 +21,13 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
     setIsMounted(true);
   }, []);
 
+  useEffect(() => {
+    useFilterStore.getState().setPageSource("detail");
+    return () => {
+      useFilterStore.getState().setPageSource(null);
+    };
+  }, []);
+
   const getSwatchStyle = (colorName: string): React.CSSProperties => {
     const colorValue = getColorValue(colorName);
 

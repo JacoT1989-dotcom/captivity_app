@@ -53,7 +53,7 @@ export function ProductCard({
         </div>
         <div className="mt-4 space-y-1">
           <h3 className="text-sm font-medium">{title}</h3>
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             {salePrice ? (
               <>
                 <span className="text-sm font-medium text-red-600">
@@ -66,7 +66,7 @@ export function ProductCard({
             ) : (
               <span className="text-sm font-medium">R{price}</span>
             )}
-          </div>
+          </div> */}
           <div className="flex">
             <span className="text-yellow-400">★★★★★</span>
           </div>

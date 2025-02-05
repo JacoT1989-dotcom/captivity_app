@@ -1,95 +1,103 @@
+// useFilterStore.ts
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import { COLOR_MAPPINGS } from "../shopping/product_categories/_components/ColorMapping";
-import { ProductWithRelations } from "../shopping/product_categories/types";
-import { Variation } from "@prisma/client";
 
 interface FilterState {
-  currentCategory: string | null;
   selectedColors: string[];
   selectedSizes: string[];
-
-  // Actions
-  setCurrentCategory: (category: string | null) => void;
+  pageSource: "list" | "detail" | null;
   toggleColor: (color: string) => void;
   toggleSize: (size: string) => void;
+  getColorValue: (colorName: string) => string | { colors: string[] };
   resetFilters: () => void;
-
-  // Getters
-  getColorValue: (
-    colorName: string
-  ) => string | { colors: string[]; pattern: string };
-  getAvailableFilters: (products: ProductWithRelations[]) => {
-    colors: Array<{ name: string; count: number; isMultiColor: boolean }>;
-    sizes: Array<{ name: string; count: number }>;
-  };
+  setPageSource: (source: "list" | "detail" | null) => void;
+  hasAvailableSizesForColor: (color: string, products: any[]) => boolean;
+  hasAvailableColorsForSize: (size: string, products: any[]) => boolean;
+  clearFilters: () => void;
+  getAvailableColors: (products: any[]) => string[];
+  getAvailableSizes: (products: any[]) => string[];
 }
 
-export const useFilterStore = create<FilterState>()(
-  persist(
-    (set, get) => ({
-      currentCategory: null,
-      selectedColors: [],
-      selectedSizes: [],
+export const useFilterStore = create<FilterState>((set, get) => ({
+  selectedColors: [],
+  selectedSizes: [],
+  pageSource: null,
 
-      setCurrentCategory: category => {
-        set({
-          currentCategory: category,
-          selectedColors: [],
-          selectedSizes: [],
-        });
-      },
+  setPageSource: source => {
+    set({ pageSource: source });
+    // If we're coming from detail page and going to list, reset filters
+    if (get().pageSource === "detail" && source === "list") {
+      get().resetFilters();
+    }
+  },
 
-      toggleColor: color => {
-        set(state => {
-          const colors = new Set(state.selectedColors);
-          if (colors.has(color)) {
-            colors.delete(color);
-          } else {
-            colors.add(color);
-          }
-          return { selectedColors: Array.from(colors) };
-        });
-      },
+  toggleColor: color => {
+    // Only allow changes from list page
+    if (get().pageSource === "list") {
+      set(state => ({
+        selectedColors: state.selectedColors.includes(color)
+          ? state.selectedColors.filter(c => c !== color)
+          : [...state.selectedColors, color],
+      }));
+    }
+  },
 
-      toggleSize: size => {
-        set(state => {
-          const sizes = new Set(state.selectedSizes);
-          if (sizes.has(size)) {
-            sizes.delete(size);
-          } else {
-            sizes.add(size);
-          }
-          return { selectedSizes: Array.from(sizes) };
-        });
-      },
+  toggleSize: size => {
+    // Only allow changes from list page
+    if (get().pageSource === "list") {
+      set(state => ({
+        selectedSizes: state.selectedSizes.includes(size)
+          ? state.selectedSizes.filter(s => s !== size)
+          : [...state.selectedSizes, size],
+      }));
+    }
+  },
 
-      resetFilters: () => set({ selectedColors: [], selectedSizes: [] }),
+  getColorValue: (colorName: string) => {
+    const normalizedName = colorName.toLowerCase().replace(/[^a-z0-9]/g, "_");
+    return COLOR_MAPPINGS[normalizedName] || colorName;
+  },
 
-      getColorValue: (colorName: string) => {
-        const normalizedName = colorName
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "_")
-          .replace(/_+/g, "_")
-          .replace(/^_|_$/g, "");
-        return COLOR_MAPPINGS[normalizedName] || colorName;
-      },
+  resetFilters: () => {
+    set({ selectedColors: [], selectedSizes: [] });
+  },
 
-      getAvailableFilters: (products: ProductWithRelations[]) => {
-        const colorMap = new Map<string, number>();
-        const sizeMap = new Map<string, number>();
-        const multiColorSet = new Set<string>();
+  hasAvailableSizesForColor: (color: string, products: any[]) => {
+    return products.some(product =>
+      product.variations?.some(
+        (variation: any) =>
+          variation.color === color &&
+          (!get().selectedSizes.length ||
+            get().selectedSizes.includes(variation.size || ""))
+      )
+    );
+  },
 
-        // Process all variations
-        products.forEach(product => {
-          product.variations.forEach((variation: Variation) => {
+  hasAvailableColorsForSize: (size: string, products: any[]) => {
+    return products.some(product =>
+      product.variations?.some(
+        (variation: any) =>
+          variation.size === size &&
+          (!get().selectedColors.length ||
+            get().selectedColors.includes(variation.color || ""))
+      )
+    );
+  },
+
+  clearFilters: () => {
+    set({ selectedColors: [], selectedSizes: [] });
+  },
+
+  getAvailableColors: (products: any[]) => {
+    const colors = new Set<string>();
+    const multiColorSet = new Set<string>();
+
+    if (Array.isArray(products)) {
+      products.forEach(product => {
+        if (product.variations) {
+          product.variations.forEach((variation: any) => {
             if (variation.color) {
-              colorMap.set(
-                variation.color,
-                (colorMap.get(variation.color) || 0) + 1
-              );
-
-              // Check if it's a multi-color option
+              colors.add(variation.color);
               const colorValue =
                 COLOR_MAPPINGS[
                   variation.color.toLowerCase().replace(/[^a-z0-9]/g, "_")
@@ -102,38 +110,37 @@ export const useFilterStore = create<FilterState>()(
                 multiColorSet.add(variation.color);
               }
             }
-            if (variation.size) {
-              sizeMap.set(
-                variation.size,
-                (sizeMap.get(variation.size) || 0) + 1
-              );
-            }
           });
-        });
-
-        // Sort colors: single colors first, then multi-colors, both alphabetically within their groups
-        const colors = Array.from(colorMap.entries())
-          .map(([name, count]) => ({
-            name,
-            count,
-            isMultiColor: multiColorSet.has(name),
-          }))
-          .sort((a, b) => {
-            if (a.isMultiColor !== b.isMultiColor) {
-              return a.isMultiColor ? 1 : -1;
-            }
-            return a.name.localeCompare(b.name);
-          });
-
-        const sizes = Array.from(sizeMap.entries())
-          .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        return { colors, sizes };
-      },
-    }),
-    {
-      name: "filter-storage",
+        }
+      });
     }
-  )
-);
+
+    // Sort colors: put multi-colors at the end
+    return Array.from(colors).sort((a, b) => {
+      const aIsMulti = multiColorSet.has(a);
+      const bIsMulti = multiColorSet.has(b);
+      if (aIsMulti !== bIsMulti) {
+        return aIsMulti ? 1 : -1;
+      }
+      return a.localeCompare(b);
+    });
+  },
+
+  getAvailableSizes: (products: any[]) => {
+    const sizes = new Set<string>();
+
+    if (Array.isArray(products)) {
+      products.forEach(product => {
+        if (product.variations) {
+          product.variations.forEach((variation: any) => {
+            if (variation.size) {
+              sizes.add(variation.size);
+            }
+          });
+        }
+      });
+    }
+
+    return Array.from(sizes).sort();
+  },
+}));
