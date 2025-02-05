@@ -185,12 +185,12 @@ const DynamicColorFilter: React.FC<DynamicColorFilterProps> = ({
   }, [products, pathname]);
 
   // Show first 3 colors in sidebar
-  const initialColors = colorCounts.slice(0, 3);
+  const initialColors = colorCounts.slice(0, 20);
   const remainingCount = Math.max(0, colorCounts.length - 3);
 
   return (
     <>
-      <div className="flex items-center gap-4">
+      <div className="grid grid-cols-4 gap-4">
         {initialColors.map(colorData => (
           <ColorButton
             key={colorData.color}
@@ -215,7 +215,7 @@ const DynamicColorFilter: React.FC<DynamicColorFilterProps> = ({
             <h2 className="text-base sm:text-lg font-semibold">Select Color</h2>
             {selectedValue.length > 0 && (
               <div className="mt-2 max-w-full overflow-hidden">
-                <div className="flex flex-wrap gap-2 max-w-full">
+                <div className="grid grid-cols-4 gap-2 max-w-[200]">
                   {selectedValue.map(color => {
                     const option = colorCounts.find(c => c.color === color);
                     if (!option) return null;

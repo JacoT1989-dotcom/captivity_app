@@ -60,14 +60,34 @@ const ColorDialog: React.FC<ColorDialogProps> = ({
 
   const productData = groupedVariations[selectedProduct];
   const allColors = productData.variations.map(v => v.color);
+
+  // Define size ordering
+  const sizeOrder: { [key: string]: number } = {
+    XXS: 0,
+    XS: 1,
+    Small: 2,
+    Medium: 3,
+    Large: 4,
+    XL: 5,
+
+    "2XL": 6,
+    "3XL": 7,
+    "4XL": 8,
+    "5XL": 9,
+  };
+
+  // Custom sort function for sizes
+  const sortSizes = (a: string, b: string) => {
+    return (sizeOrder[a] ?? 999) - (sizeOrder[b] ?? 999);
+  };
+
   const allSizes = Array.from(
     new Set(
       productData.variations.flatMap(colorVar =>
         colorVar.variations.map(v => v.size)
       )
     )
-  ).sort();
-
+  ).sort(sortSizes);
   const selectedColorVariations =
     productData.variations.find(v => v.color === selectedColor)?.variations ||
     [];
