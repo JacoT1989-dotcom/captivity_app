@@ -16,7 +16,7 @@ interface AccountDetailsSectionProps {
 
 const AccountDetailsSection = ({ form }: AccountDetailsSectionProps) => {
   return (
-    <div className="border p-4">
+    <div className="border p-4 w-full">
       <h2 className="text-lg font-semibold mb-4">Account Details</h2>
       <div className="space-y-4">
         <FormField

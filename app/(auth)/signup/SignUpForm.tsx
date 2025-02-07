@@ -77,7 +77,7 @@ const RegistrationForm = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className=" mx-auto">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <AccountDetailsSection form={form} />

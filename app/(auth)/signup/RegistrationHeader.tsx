@@ -6,9 +6,9 @@ const RegistrationHeader = () => {
       </div>
 
       <div className="mb-6">
-        <p className="font-medium">
-          Our Brand is strictly distributed via authorised distributors namely:
-        </p>
+        <h2 className="font-large font-bold text-1xl">
+          Our Brand is strictly distributed via authorized distributors namely:
+        </h2>
         <ul className="list-disc pl-8 mt-2">
           <li>Advertising Companies</li>
           <li>Branders and Event Companies</li>
