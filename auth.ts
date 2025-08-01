@@ -18,16 +18,7 @@ interface DatabaseUserAttributes {
   googleId: string | null;
   role:
     | "USER"
-    | "CUSTOMER"
-    | "SUBSCRIBER"
-    | "PROMO"
-    | "DISTRIBUTOR"
-    | "SHOPMANAGER"
-    | "EDITOR"
-    | "ADMIN"
-    | "SUPERADMIN"
-    | "VENDOR"
-    | "VENDORCUSTOMER";
+    |
 }
 
 export const lucia = new Lucia(adapter, {
@@ -70,16 +61,7 @@ interface DatabaseUserAttributes {
   googleId: string | null;
   role:
     | "USER"
-    | "CUSTOMER"
-    | "SUBSCRIBER"
-    | "PROMO"
-    | "DISTRIBUTOR"
-    | "SHOPMANAGER"
-    | "EDITOR"
-    | "ADMIN"
-    | "SUPERADMIN"
-    | "VENDOR"
-    | "VENDORCUSTOMER";
+    |
 }
 
 export const google = new Google(
@@ -132,16 +114,7 @@ export const hasRole = (
 ) => {
   const roleHierarchy = [
     "USER",
-    "CUSTOMER",
-    "SUBSCRIBER",
-    "PROMO",
-    "DISTRIBUTOR",
-    "SHOPMANAGER",
-    "EDITOR",
-    "ADMIN",
-    "SUPERADMIN",
-    "VENDOR",
-    "VENDORCUSTOMER",
+    
   ];
   return (
     roleHierarchy.indexOf(user.role) >= roleHierarchy.indexOf(requiredRole)
